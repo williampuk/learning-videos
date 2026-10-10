@@ -20,14 +20,7 @@ The `dist/` preview matches what the deployment publishes.
 
 Push this project to a GitHub repository with a `main` branch. In the repository's
 **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source.
-The included workflow deploys on pushes to `main`, or through **Actions → Deploy
-study library to GitHub Pages → Run workflow**. If the publishing branch has a
-different name, update `.github/workflows/pages.yml`.
-
-The workflow follows [GitHub's custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
-It packages the catalog, the summary pages listed in `videos.json`, and their
-public dependencies. It never copies the entire working directory. Videos,
-transcripts, `.work/`, cookies, prompts, and reference checkouts are excluded.
+The included workflow deploys on pushes to `main`.
 
 ## Add or edit a guide
 
