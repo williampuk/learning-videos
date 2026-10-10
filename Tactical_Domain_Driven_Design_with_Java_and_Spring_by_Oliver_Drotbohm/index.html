@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Make design visible in Java code. Explore aggregates, jMolecules, architecture rules, and event-driven modules with Spring Modulith."><meta name="theme-color" content="#111513">
+<title>Tactical Domain-Driven Design with Java and Spring — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.youtube.com/watch?v=k3o1nSh3g2Q">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#domain-driven-design">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a class="subchapter" href="#subheading-01"><span>·</span><span>TL;DR — the whole talk in 9 bullets</span></a><a href="#heading-01"><span>01</span><span>Why this talk matters</span></a><a href="#heading-02"><span>02</span><span>Domain-Driven Design — the tactical building blocks in Java</span></a><a class="subchapter" href="#subheading-02"><span>·</span><span>1.1 The empirical case for sustainable software</span></a><a class="subchapter" href="#subheading-03"><span>·</span><span>1.2 The DDD tactical building blocks</span></a><a class="subchapter" href="#subheading-04"><span>·</span><span>1.3 Architecturally evident code</span></a><a class="subchapter" href="#subheading-05"><span>·</span><span>1.4 Extensional vs intentional elements</span></a><a class="subchapter" href="#subheading-06"><span>·</span><span>1.5 Verifying the model on the whiteboard</span></a><a class="subchapter" href="#subheading-07"><span>·</span><span>1.6 Introducing J Molecules</span></a><a class="subchapter" href="#subheading-08"><span>·</span><span>1.7 Verifying DDD rules with ArchUnit</span></a><a class="subchapter" href="#subheading-09"><span>·</span><span>1.8 Annotations vs interfaces — pick deliberately</span></a><a class="subchapter" href="#subheading-10"><span>·</span><span>1.9 Killing JPA boilerplate with ByteBuddy</span></a><a class="subchapter" href="#subheading-11"><span>·</span><span>1.10 IDE support — browsing by stereotype</span></a><a class="subchapter" href="#subheading-12"><span>·</span><span>1.11 Part 1 — summary in one sentence per idea</span></a><a href="#heading-03"><span>03</span><span>Modularity — Spring Modulith and how modules talk to each other</span></a><a class="subchapter" href="#subheading-13"><span>·</span><span>2.1 Cutting the onion — the modular monolith</span></a><a class="subchapter" href="#subheading-14"><span>·</span><span>2.2 Application modules — the convention</span></a><a class="subchapter" href="#subheading-15"><span>·</span><span>2.3 Verifying the module arrangement</span></a><a class="subchapter" href="#subheading-16"><span>·</span><span>2.4 Integration-testing a single module</span></a><a class="subchapter" href="#subheading-17"><span>·</span><span>2.5 Documentation as code</span></a><a class="subchapter" href="#subheading-18"><span>·</span><span>2.6 How modules interact — and why that matters</span></a><a class="subchapter" href="#subheading-19"><span>·</span><span>2.7 Style A — direct invocation (the default)</span></a><a class="subchapter" href="#subheading-20"><span>·</span><span>2.8 Style B — Spring events (synchronous)</span></a><a class="subchapter" href="#subheading-21"><span>·</span><span>2.9 Style C — @TransactionalEventListener</span></a><a class="subchapter" href="#subheading-22"><span>·</span><span>2.10 Style D — @ApplicationModuleListener (async, eventually consistent)</span></a><a class="subchapter" href="#subheading-23"><span>·</span><span>2.11 The Event Publication Registry</span></a><a class="subchapter" href="#subheading-24"><span>·</span><span>2.12 The Scenario API — test modules by poking them</span></a><a class="subchapter" href="#subheading-25"><span>·</span><span>2.13 Choosing an interaction style</span></a><a href="#heading-04"><span>04</span><span>Resources</span></a></nav><p class="sidebar-note">Read at your own pace.<br>Keep the original talk close.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">Domain-driven design / Study guide</span>
+<h1>Tactical Domain-Driven Design with Java and Spring</h1><p class="guide-description">
+        A hands-on, code-first guide to putting DDD tactical patterns (value objects, entities, aggregates, repositories) and Spring Modulith (application modules, events, async transactional listeners) into your codebase — and to verifying all of it with the type system, an annotation processor and ArchUnit.
+      </p>
+<div class="guide-meta"><span>By <strong>Oliver Drotbohm</strong></span><span>Devoxx Belgium</span><span>2 h 42 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.youtube.com/watch?v=k3o1nSh3g2Q">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#domain-driven-design">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 29 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a class="subchapter" href="#subheading-01"><span>·</span><span>TL;DR — the whole talk in 9 bullets</span></a><a href="#heading-01"><span>01</span><span>Why this talk matters</span></a><a href="#heading-02"><span>02</span><span>Domain-Driven Design — the tactical building blocks in Java</span></a><a class="subchapter" href="#subheading-02"><span>·</span><span>1.1 The empirical case for sustainable software</span></a><a class="subchapter" href="#subheading-03"><span>·</span><span>1.2 The DDD tactical building blocks</span></a><a class="subchapter" href="#subheading-04"><span>·</span><span>1.3 Architecturally evident code</span></a><a class="subchapter" href="#subheading-05"><span>·</span><span>1.4 Extensional vs intentional elements</span></a><a class="subchapter" href="#subheading-06"><span>·</span><span>1.5 Verifying the model on the whiteboard</span></a><a class="subchapter" href="#subheading-07"><span>·</span><span>1.6 Introducing J Molecules</span></a><a class="subchapter" href="#subheading-08"><span>·</span><span>1.7 Verifying DDD rules with ArchUnit</span></a><a class="subchapter" href="#subheading-09"><span>·</span><span>1.8 Annotations vs interfaces — pick deliberately</span></a><a class="subchapter" href="#subheading-10"><span>·</span><span>1.9 Killing JPA boilerplate with ByteBuddy</span></a><a class="subchapter" href="#subheading-11"><span>·</span><span>1.10 IDE support — browsing by stereotype</span></a><a class="subchapter" href="#subheading-12"><span>·</span><span>1.11 Part 1 — summary in one sentence per idea</span></a><a href="#heading-03"><span>03</span><span>Modularity — Spring Modulith and how modules talk to each other</span></a><a class="subchapter" href="#subheading-13"><span>·</span><span>2.1 Cutting the onion — the modular monolith</span></a><a class="subchapter" href="#subheading-14"><span>·</span><span>2.2 Application modules — the convention</span></a><a class="subchapter" href="#subheading-15"><span>·</span><span>2.3 Verifying the module arrangement</span></a><a class="subchapter" href="#subheading-16"><span>·</span><span>2.4 Integration-testing a single module</span></a><a class="subchapter" href="#subheading-17"><span>·</span><span>2.5 Documentation as code</span></a><a class="subchapter" href="#subheading-18"><span>·</span><span>2.6 How modules interact — and why that matters</span></a><a class="subchapter" href="#subheading-19"><span>·</span><span>2.7 Style A — direct invocation (the default)</span></a><a class="subchapter" href="#subheading-20"><span>·</span><span>2.8 Style B — Spring events (synchronous)</span></a><a class="subchapter" href="#subheading-21"><span>·</span><span>2.9 Style C — @TransactionalEventListener</span></a><a class="subchapter" href="#subheading-22"><span>·</span><span>2.10 Style D — @ApplicationModuleListener (async, eventually consistent)</span></a><a class="subchapter" href="#subheading-23"><span>·</span><span>2.11 The Event Publication Registry</span></a><a class="subchapter" href="#subheading-24"><span>·</span><span>2.12 The Scenario API — test modules by poking them</span></a><a class="subchapter" href="#subheading-25"><span>·</span><span>2.13 Choosing an interaction style</span></a><a href="#heading-04"><span>04</span><span>Resources</span></a></nav></details>
+<div class="guide-content">
+
+    <!-- HERO ============================================== -->
+    
+
+    <!-- TL;DR ============================================== -->
+    <section id="tldr" class="tldr">
+      <h3 id="subheading-01" data-toc>TL;DR — the whole talk in 9 bullets</h3>
+      <ul>
+        <li><strong>The hard part of software is the green zone</strong> — taking an existing codebase to a new state. Optimise for understandability with chunking, hierarchization, and pattern languages (Carola Lilienthal, <em>Sustainable Software Architecture</em>).</li>
+        <li><strong>DDD's tactical building blocks</strong> — Value Object, Entity, Aggregate, Repository, Service — are the most familiar "pattern language" you can apply to a Java codebase.</li>
+        <li><strong>Architecturally evident code</strong> (George Fairbanks) means leaving traces of design decisions in the code. Use the domain language in class names, fields and database columns.</li>
+        <li><strong>J Molecules</strong> gives you a thin library of annotations and interfaces that express DDD stereotypes in Java — with <strong>ArchUnit rules</strong> that come for free to verify them, and a <strong>ByteBuddy Maven plugin</strong> that synthesises JPA mappings for you.</li>
+        <li><strong>Annotations vs interfaces:</strong> annotations let downstream consumers ignore J Molecules (the JVM only needs them at runtime if reflection touches them); interfaces give you type-system checks but bind consumers to the jar.</li>
+        <li><strong>Application Modules</strong> (the basis of <strong>Spring Modulith</strong>) are a horizontal cut of your application. By default a direct sub-package of the package that hosts <code>@SpringBootApplication</code>. <em>Public types in that package form the module's API.</em></li>
+        <li><strong>Three interaction styles</strong> between modules — direct injection, Spring events, asynchronous transactional events — trade coupling against consistency guarantees in a very predictable way.</li>
+        <li><strong>@ApplicationModuleListener</strong> is Spring Modulith's shortcut for "this is a cross-module listener that runs eventually-consistent, asynchronously, with a guaranteed retry". The framework tracks publication in a database table so you can resubmit failed events later.</li>
+        <li><strong>The Scenario API</strong> (<code>@ApplicationModuleTest</code>) replaces "mock 15 collaborators" with "stimulate the module and wait for the event you expect to see published" — which keeps your tests aligned with the verticals, not the horizontals.</li>
+      </ul>
+    </section>
+
+    <!-- WHY THIS MATTERS =================================== -->
+    <section id="why">
+      <h2 id="heading-01">Why this talk matters</h2>
+
+      <p>Oliver opens with a Kent Beck quote — paraphrased — that frames the whole talk:</p>
+
+      <blockquote>
+        "There are only two activities you do to software: you either <strong>increase the value</strong> or you <strong>cut the cost</strong>. Nothing else makes sense."
+      </blockquote>
+
+      <p>The first is the fun part, the second is the part that pays the bills — and most of our work is the second. The brown wedge in the graph below is roughly 80% of a typical codebase's life:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/01-software-cost.png" alt="Diagram showing that most of software's lifetime cost is in the existing codebase, not the initial green-field development">
+        <figcaption>The "green vs brown" cost diagram from the talk. <strong>Goal:</strong> spend as much time as possible in the green zone.</figcaption>
+      </figure>
+
+      <p>That cost is dominated by <strong>understanding</strong> an existing codebase. Oliver pulls in Carola Lilienthal's <em>Sustainable Software Architecture</em> as the empirical backing for three levers you have to make a codebase understandable:</p>
+
+      <div class="concepts">
+        <div class="concept">
+          <h4>Chunking</h4>
+          <p>You don't read letter by letter. You read in chunks of meaningful units. The same should be true when you open a file in your IDE.</p>
+        </div>
+        <div class="concept">
+          <h4>Hierarchization</h4>
+          <p>Organise concepts in a hierarchy with a directed-acyclic dependency graph. Knowing the dependency direction lets you reason top-down.</p>
+        </div>
+        <div class="concept">
+          <h4>Pattern languages</h4>
+          <p>The more of your codebase can be assigned to a known pattern, the easier it is to maintain. DDD's tactical patterns are one such language — and one most Java developers already half-know.</p>
+        </div>
+      </div>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/02-sustainable-arch.png" alt="Carola Lilienthal's book cover plus the three concepts chunking, hierarchization, pattern languages">
+        <figcaption>From the talk: Lilienthal's three pillars of understandability.</figcaption>
+      </figure>
+
+      <div class="callout insight">
+        <div class="callout-title">The mental model of the talk</div>
+        <div class="callout-body">
+          <p>Code is a <em>trace</em> of design decisions. The more design we can leave behind — and the more we can <em>verify</em> that the trace matches our intent — the cheaper the brown zone becomes. DDD gives us the pattern language; <strong>J Molecules</strong> and <strong>Spring Modulith</strong> give us the Java idioms to leave that trace and the toolchain to verify it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================
+         PART 1 — DDD BUILDING BLOCKS
+         ===================================================== -->
+    <div class="part-banner part-1" id="part1">
+      <span class="num">PART 1 · ~1h 15m</span>
+      <h2 id="heading-02">Domain-Driven Design — the tactical building blocks in Java</h2>
+      <p>Value Objects, Entities, Aggregates, Repositories, Services — and how to express them in code so the compiler and your IDE can help you keep the design honest.</p>
+    </div>
+
+    <!-- 1.1 SUSTAINABLE SOFTWARE ============================= -->
+    <section id="sustainable">
+      <h3 id="subheading-02" data-toc>1.1 The empirical case for sustainable software</h3>
+      <p>The talk repeatedly anchors on Lilienthal's maintainability studies: codebases that are organised around a recognised pattern language degrade slower and are easier to refactor. DDD's tactical patterns are explicitly identified in those studies as one of the most common languages teams can map their code to. That alone is reason enough to take them seriously.</p>
+    </section>
+
+    <!-- 1.2 TACTICAL BUILDING BLOCKS ========================= -->
+    <section id="tactical-blocks">
+      <h3 id="subheading-03" data-toc>1.2 The DDD tactical building blocks</h3>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/03-tactical-blocks.png" alt="The DDD pattern-language map from Eric Evans' book, with Value Object, Entity, Aggregate, Repository and Service circled in green">
+        <figcaption>From the talk: Eric Evans' DDD pattern map, with the five building blocks discussed in Part 1 circled in green.</figcaption>
+      </figure>
+
+      <p>Eric Evans introduced (or, more accurately, <em>named</em>) a set of concepts and attached rules to each. They are the building blocks Oliver spends Part 1 on:</p>
+
+      <div class="concepts">
+        <div class="concept">
+          <h4>Value Object</h4>
+          <p>An immutable, identity-less object defined purely by its properties. <code>€20</code> is <code>€20</code> regardless of which banknote you're holding.</p>
+        </div>
+        <div class="concept">
+          <h4>Entity</h4>
+          <p>An object whose identity matters and persists over time. Two <code>Customer</code> instances with the same name are not the same customer.</p>
+        </div>
+        <div class="concept">
+          <h4>Aggregate</h4>
+          <p>A consistency boundary around a set of entities. Everything inside an aggregate changes atomically; everything outside only sees it via its root.</p>
+        </div>
+        <div class="concept">
+          <h4>Repository</h4>
+          <p>A factory for aggregates — reconstituting them from persistence. By convention only aggregates have repositories; entities inside an aggregate do not.</p>
+        </div>
+        <div class="concept">
+          <h4>Service</h4>
+          <p>A stateless operation that doesn't naturally live on any single entity or value object — typically because it spans more than one aggregate.</p>
+        </div>
+      </div>
+
+      <p>These five concepts are very well established and very widely known. That makes them an unusually low-friction choice of pattern language for a Java codebase.</p>
+    </section>
+
+    <!-- 1.3 ARCHITECTURALLY EVIDENT CODE ===================== -->
+    <section id="arch-evident">
+      <h3 id="subheading-04" data-toc>1.3 Architecturally evident code</h3>
+
+      <p>The chapter 10 framing comes from <em>Just Enough Software Architecture</em> by George Fairbanks: every time we touch code we have to bridge the gap between the <em>logical model</em> in our heads and the <em>physical code</em> in the editor. The easier that bridging is, the cheaper the change.</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/04-arch-evident.png" alt="Slides showing the model-to-code gap and the call for architecturally evident code">
+        <figcaption>George Fairbanks' framing: leave traces of design decisions in the code.</figcaption>
+      </figure>
+
+      <p>Fairbanks calls this <strong>architecturally evident code</strong>: the codebase itself tells you which concepts it implements. Two practical implications:</p>
+
+      <ul>
+        <li>Name classes, fields, columns and tables after <em>domain concepts</em> — <code>Customer</code>, <code>EmailAddress</code>, <code>ZipCode</code>, <code>orders.customer_id</code>. Don't append technical suffixes (<code>CustomerEntity</code>, <code>CustomerDTO</code>) unless you have to.</li>
+        <li>If a concept has a rule attached to it (e.g. <em>aggregates refer to other aggregates only by identifier</em>), make the concept explicit in code so the rule can be checked.</li>
+      </ul>
+    </section>
+
+    <!-- 1.4 EXTENSIONAL VS INTENTIONAL ======================= -->
+    <section id="extensional">
+      <h3 id="subheading-05" data-toc>1.4 Extensional vs intentional elements</h3>
+
+      <p>Fairbanks (citing Adam Eden and Rick Kazman) categorises architectural elements into two kinds:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/05-uml-stereotypes.png" alt="Two-column diagram contrasting extensional elements (subsystems, language) and intentional elements (concepts with rules)">
+        <figcaption>Extensional vs intentional — a key distinction for the rest of the talk.</figcaption>
+      </figure>
+
+      <div class="split-2">
+        <div>
+          <h4>Extensional</h4>
+          <p>Described by <em>enumeration</em>: "my system consists of Order, Inventory, Invoicing and Shipment." Translates easily to a package, a Maven module or a deployable.</p>
+        </div>
+        <div>
+          <h4>Intentional</h4>
+          <p>Described by <em>a concept and a set of rules</em>: "an Aggregate has a root, only references other aggregates by identifier, has exactly one Repository." These need a pattern language — and that is harder to embed in code than a name.</p>
+        </div>
+      </div>
+
+      <p>The rest of Part 1 is essentially the question: <em>"what code-level mechanism expresses an intentional element?"</em> The diagram above is the punchline — it's a hand-rolled UML slide in the talk where Oliver literally draws it on screen.</p>
+    </section>
+
+    <!-- 1.5 VERIFYING THE MODEL ============================== -->
+    <section id="verifying">
+      <h3 id="subheading-06" data-toc>1.5 Verifying the model on the whiteboard</h3>
+
+      <p>Even before writing any code, a DDD-fluent team can whiteboard a design and check it against the rules. Oliver uses a deliberately-broken example to make the point:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/06-aggregate-rules.png" alt="Order aggregate referencing Customer aggregate as a full entity instead of an identifier">
+        <figcaption>Two aggregates with a direct object reference between them — and the presenter's annotation: <em>"this and that imply that this is wrong 😱"</em></figcaption>
+      </figure>
+
+      <p>What's wrong? Vaughn Vernon spelled it out cleanly in <em>Implementing Domain-Driven Design</em>:</p>
+
+      <div class="callout warn">
+        <div class="callout-title">Vernon's rule</div>
+        <div class="callout-body">
+          <p><strong>Aggregates only refer to other aggregates via their identifiers.</strong> Modelling an Order → Customer relationship as a full object reference couples two consistency boundaries together. The fix: model it as an identifier reference and resolve through the repository when you actually need the customer.</p>
+        </div>
+      </div>
+
+      <p>Two takeaways from this exercise:</p>
+      <ol>
+        <li>A team familiar with the pattern language can spot these violations on a whiteboard.</li>
+        <li>Even better: the <em>code</em> should give us the same feedback — ideally without us having to hand-roll an ArchUnit rule for every concept we want to check.</li>
+      </ol>
+    </section>
+
+    <!-- 1.6 J MOLECULES ====================================== -->
+    <section id="jmolecules">
+      <h3 id="subheading-07" data-toc>1.6 Introducing J Molecules</h3>
+
+      <p>J Molecules is the Java branch of the X-molecules idea (there are siblings for .NET and PHP). It is a deliberately <em>thin</em> library — basically annotations and interfaces — that lets you express DDD stereotypes in Java code:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/07-jmolecules.png" alt="Slide showing the J Molecules responsibility-of-definition diagram with code, spec, mechanisms and tools">
+        <figcaption>J Molecules' positioning: <em>your code</em> + a thin <em>specification</em> + downstream <em>tools</em> (ArchUnit, ByteBuddy, Spring, Jackson, JPA).</figcaption>
+      </figure>
+
+      <p>Concretely, J Molecules provides:</p>
+
+      <ul>
+        <li><strong>DDD annotations/interfaces</strong> — <code>@AggregateRoot</code>, <code>@Entity</code>, <code>@ValueObject</code>, <code>@Repository</code>, <code>Identifier</code>, <code>AggregateRoot&lt;…&gt;</code>, <code>Association&lt;…&gt;</code>.</li>
+        <li><strong>Events</strong> — <code>@DomainEvent</code>, <code>@DomainEventListener</code> on methods.</li>
+        <li><strong>Architecture styles</strong> — annotations for onion / hexagonal layout and CQS systems.</li>
+        <li><strong>Integrations</strong> (optional) — ArchUnit, jqAssistant, ByteBuddy (JPA mapping), Spring (stereotype mirroring), Jackson.</li>
+      </ul>
+
+      <p>The split between API and integrations is deliberate. You can adopt just the annotations and ignore everything else — there is no runtime weight if you don't pull in the integration jars.</p>
+    </section>
+
+    <!-- 1.7 VERIFICATION WITH ARCHUNIT ======================= -->
+    <section id="archunit">
+      <h3 id="subheading-08" data-toc>1.7 Verifying DDD rules with ArchUnit</h3>
+
+      <p>Oliver walks through a small <code>Order / Customer / Address</code> example. The codebase has an ArchUnit test:</p>
+
+      <pre><code><span class="tok-comment">// AggregateStructureVerificationTests.java</span>
+<span class="tok-keyword">@AnalyzeClasses</span>(<span class="tok-fn">packagesOf</span> = Application.<span class="tok-keyword">class</span>)
+<span class="tok-keyword">class</span> <span class="tok-type">AggregateStructureVerificationTests</span> {
+
+    <span class="tok-keyword">@Test</span>
+    <span class="tok-keyword">void</span> <span class="tok-fn">rejectsInvalidAggregateReference</span>() {
+        JMoleculesDddRules.<span class="tok-fn">all</span>().<span class="tok-fn">check</span>(classes);
+    }
+}</code></pre>
+
+      <p>The DDD rules are exposed as <code>public static</code> methods on <code>JMoleculesDddRules</code>, so you can run the full set (<code>all()</code>) or pick individual ones. Running this test against a deliberately-broken <code>Order</code> produces:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/09-aggregate-root.png" alt="Java editor showing Order implementing AggregateRoot interface">
+        <figcaption>Once both <code>Order</code> and <code>Customer</code> are made <code>AggregateRoot</code>…</figcaption>
+      </figure>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/10-arch-violation.png" alt="JUnit panel showing the architecture violation with the specific message about aggregate reference">
+        <figcaption>…the rule fires: <em>"field Order.customer refers to an aggregate root. Rather use an identifier reference or Association."</em></figcaption>
+      </figure>
+
+      <p>The fix is structural, not cosmetic:</p>
+
+      <pre><code><span class="tok-comment">// Before — broken: aggregates coupled via object reference</span>
+<span class="tok-keyword">class</span> <span class="tok-type">Order</span> <span class="tok-keyword">implements</span> <span class="tok-type">AggregateRoot</span>&lt;<span class="tok-type">Order</span>, <span class="tok-type">OrderId</span>&gt; {
+    <span class="tok-keyword">private</span> <span class="tok-type">Customer</span> customer;          <span class="tok-comment">// ❌ wrong — full object reference</span>
+}
+
+<span class="tok-comment">// After — fixed: identifier reference via Association</span>
+<span class="tok-keyword">class</span> <span class="tok-type">Order</span> <span class="tok-keyword">implements</span> <span class="tok-type">AggregateRoot</span>&lt;<span class="tok-type">Order</span>, <span class="tok-type">OrderId</span>&gt; {
+    <span class="tok-keyword">private</span> <span class="tok-type">Association</span>&lt;<span class="tok-type">Customer</span>, <span class="tok-type">CustomerId</span>&gt; customer;
+}</code></pre>
+
+      <div class="callout insight">
+        <div class="callout-title">Two-layer verification</div>
+        <div class="callout-body">
+          <p>The interfaces are generic, so as soon as you write <code>AggregateRoot&lt;Order, OrderId&gt;</code> the compiler already enforces that <code>OrderId</code> <em>must</em> implement <code>Identifier</code>. The rules that can't be expressed in types (like "don't reference another aggregate by object") are caught by the annotation processor or by ArchUnit. So you get feedback at three depths: <strong>compile time (types) → compile time (annotation processor) → test/build time (ArchUnit)</strong>.</p>
+        </div>
+      </div>
+
+      <p>J Molecules ships equivalent rule sets for jqAssistant and works with IntelliJ out of the box for everything that's an annotation processor.</p>
+    </section>
+
+    <!-- 1.8 ANNOTATIONS VS INTERFACES ======================== -->
+    <section id="annotations-vs-interfaces">
+      <h3 id="subheading-09" data-toc>1.8 Annotations vs interfaces — pick deliberately</h3>
+
+      <p>J Molecules deliberately ships <em>both</em> a stereotype annotation and a typed interface for the same concept. Oliver's guidance:</p>
+
+      <div class="split-2">
+        <div>
+          <h4>Use <strong>annotations</strong> if…</h4>
+          <ul>
+            <li>Your artefact is going to be consumed by code that doesn't (and shouldn't) have J Molecules on the classpath. Annotations are silently ignored if their jar is absent at runtime.</li>
+            <li>You're decorating a non-type element (a method is a <em>DomainEventListener</em>, not a class).</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Use <strong>interfaces</strong> if…</h4>
+          <ul>
+            <li>You want compile-time generic enforcement (e.g. <code>Identifier</code> bound on <code>AggregateRoot&lt;…&gt;</code>).</li>
+            <li>You're happy requiring J Molecules on the classpath.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-title">Annotation processor pragmatics</div>
+        <div class="callout-body">
+          <p>If you don't enable the J Molecules annotation processor in your build, the only rule violations you'll see are the ones ArchUnit catches at test time — and you only see them when you run the tests. With the AP enabled, every <code>javac</code> run tells you about violations. That's a powerful ally, but you may not want to switch it on for a legacy codebase immediately. ArchUnit has a "freeze existing violations" mode that lets you start strict from day one while documenting the existing debt.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1.9 JPA BOILERPLATE ================================== -->
+    <section id="jpa-boilerplate">
+      <h3 id="subheading-10" data-toc>1.9 Killing JPA boilerplate with ByteBuddy</h3>
+
+      <p>Oliver is explicit about the trade-off:</p>
+
+      <ul>
+        <li><strong>"Persistent model as separate concern" camp</strong> — keep a pure domain model and map it to a JPA-specific persistence model (and again to the database). Justified when you don't control the schema or the API contract.</li>
+        <li><strong>"Owned database, single model" camp</strong> — when you own the schema, mapping between a domain model and a persistence model that always mirror each other is friction for no win. Just annotate the domain class.</li>
+      </ul>
+
+      <p>His point is that the second approach gets <em>much</em> more attractive when you can let the persistence annotations be generated rather than written:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/13-order-jpa.png" alt="Side-by-side comparison of a heavy JPA-annotated Order class (left, struck through) and a clean aggregate root (right)">
+        <figcaption>The "before / after" slide. Left: every JPA annotation hand-written. Right: a pure aggregate root that J Molecules + ByteBuddy will persist as-is.</figcaption>
+      </figure>
+
+      <p>What J Molecules + the ByteBuddy Maven plugin will synthesise for you on classes that implement <code>AggregateRoot</code>, <code>Entity</code> or <code>Identifier</code>:</p>
+
+      <ul>
+        <li><code>@Entity</code>, <code>@Embeddable</code>, <code>@EmbeddedId</code>, <code>@Inheritance</code> as appropriate.</li>
+        <li>A <em>protected no-arg constructor</em> for JPA's instantiation needs.</li>
+        <li>Nullability verification callback methods that compensate for the no-arg constructor problem (otherwise you lose any meaningful <em>non-null</em> guarantee).</li>
+        <li><em>Default</em> one-to-many with cascade + orphan removal and a single-column join — because by definition an aggregate controls the lifecycle of its contents.</li>
+        <li>Mirror annotations: a <code>@Value</code> on the domain side becomes a Spring <code>@Service</code> on the runtime side, and vice versa, so tool vendors can pick the language they care about.</li>
+      </ul>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/14-bytebuddy.png" alt="Maven console showing ByteBuddy + J Molecules generating JPA annotations on Customer during the build">
+        <figcaption>Maven console output during a build. The "transform-extended" goal walks the bytecode and synthesises JPA mappings for every aggregate, entity and identifier it finds.</figcaption>
+      </figure>
+
+      <p>The Maven plugin is opt-in:</p>
+
+      <pre><code><span class="tok-comment">&lt;!-- pom.xml --&gt;</span>
+&lt;<span class="tok-keyword">plugin</span>&gt;
+  &lt;<span class="tok-keyword">groupId</span>&gt;net.bytebuddy&lt;/<span class="tok-keyword">groupId</span>&gt;
+  &lt;<span class="tok-keyword">artifactId</span>&gt;byte-buddy-maven-plugin&lt;/<span class="tok-keyword">artifactId</span>&gt;
+  &lt;<span class="tok-keyword">version</span>&gt;${bytebuddy.version}&lt;/<span class="tok-keyword">version</span>&gt;
+  &lt;<span class="tok-keyword">executions</span>&gt;
+    &lt;<span class="tok-keyword">execution</span>&gt;
+      &lt;<span class="tok-keyword">goals</span>&gt;&lt;<span class="tok-keyword">goal</span>&gt;transform-extended&lt;/<span class="tok-keyword">goal</span>&gt;&lt;/<span class="tok-keyword">goals</span>&gt;
+    &lt;/<span class="tok-keyword">execution</span>&gt;
+  &lt;/<span class="tok-keyword">executions</span>&gt;
+  &lt;<span class="tok-keyword">configuration</span>&gt;
+    &lt;<span class="tok-keyword">classPathDiscovery</span>&gt;<span class="tok-keyword">true</span>&lt;/<span class="tok-keyword">classPathDiscovery</span>&gt;
+  &lt;/<span class="tok-keyword">configuration</span>&gt;
+&lt;/<span class="tok-keyword">plugin</span>&gt;</code></pre>
+
+      <p>Oliver is also clear that this is a <em>team decision</em>:</p>
+
+      <div class="callout quote">
+        <div class="callout-title">A pragmatic line</div>
+        <div class="callout-body">
+          <p>"Don't force this on people that don't think that way. If your team knows JPA inside out and would rather see those annotations, write them by hand. The integration is opt-in."</p>
+        </div>
+      </div>
+
+      <p>The same integrations exist for JDBC and Spring Data MongoDB. With document stores the mapping overhead is much smaller anyway, which is one reason document databases pair so naturally with aggregates.</p>
+    </section>
+
+    <!-- 1.10 IDE SUPPORT ==================================== -->
+    <section id="ide-support">
+      <h3 id="subheading-11" data-toc>1.10 IDE support — browsing by stereotype</h3>
+
+      <p>J Molecules 2.0 ships a JSON descriptor of every stereotype it knows about (which annotation / interface marks it, what it means). The Spring Boot Tools for VS Code already consume that descriptor and render a project tree that groups code by stereotype rather than by file path:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/16-stereotypes-ide.png" alt="VS Code project tree showing modules grouped by J Molecules stereotypes like Service and Repository">
+        <figcaption>Browsing a project by stereotypes, not by packages. Aggregates, Entities, Repositories, Services — each in their own virtual folder.</figcaption>
+      </figure>
+
+      <p>Two consequences:</p>
+      <ul>
+        <li>You stop abusing packages as a "service / persistence / controller" bucketing mechanism — which was always an antipattern, because the moment a class is in two layers at once it has to live somewhere awkward.</li>
+        <li>You can define your <em>own</em> stereotypes with <code>@Stereotype</code> and have them show up in the IDE too. So your team's bespoke concepts (<em>"Form"</em>, <em>"ValueRule"</em>, whatever) are first-class citizens.</li>
+      </ul>
+
+      <div class="callout insight">
+        <div class="callout-title">Part 1 takeaway</div>
+        <div class="callout-body">
+          <p>J Molecules turns the DDD tactical pattern language into a Java library. You get <em>expressive code</em> (the stereotypes are visible), <em>verification</em> (ArchUnit + AP + type system), <em>boilerplate elimination</em> (ByteBuddy), and <em>IDE ergonomics</em> (stereotype tree). Everything is opt-in.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="part1-summary">
+      <h3 id="subheading-12" data-toc>1.11 Part 1 — summary in one sentence per idea</h3>
+      <ul>
+        <li><strong>Sustainable software</strong> is won by chunking, hierarchization and pattern languages.</li>
+        <li><strong>Architecturally evident code</strong> = leave traces of design decisions in the code.</li>
+        <li><strong>Extensional</strong> elements name themselves; <strong>intentional</strong> elements need rules.</li>
+        <li><strong>J Molecules</strong> is the thin layer that lets intentional elements live in Java code.</li>
+        <li><strong>ArchUnit + J Molecules DDD rules</strong> verify the model.</li>
+        <li><strong>Interfaces</strong> give compile-time generics; <strong>annotations</strong> are jar-optional.</li>
+        <li><strong>ByteBuddy + J Molecules</strong> synthesise JPA mappings — opt-in per team.</li>
+        <li><strong>IDE stereotype tree</strong> lets you browse by concept, not by package.</li>
+      </ul>
+    </section>
+
+    <!-- =====================================================
+         PART 2 — SPRING MODULITH
+         ===================================================== -->
+    <div class="part-banner part-2" id="part2">
+      <span class="num">PART 2 · ~1h 15m</span>
+      <h2 id="heading-03">Modularity — Spring Modulith and how modules talk to each other</h2>
+      <p>Application modules, the structural decomposition Spring doesn't ship by default. Plus three interaction styles, the Event Publication Registry, and a Scenario API that makes module-level testing almost pleasant.</p>
+    </div>
+
+    <!-- 2.1 CUTTING THE ONION ================================ -->
+    <section id="cutting-onion">
+      <h3 id="subheading-13" data-toc>2.1 Cutting the onion — the modular monolith</h3>
+
+      <p>Part 2 opens with a familiar slide — onion / hexagonal architecture — and then immediately pushes back:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/18-cut-onion.png" alt="Concentric onion diagram with Domain / Application / Infrastructure rings">
+        <figcaption>Concentric onion: Domain core, Application ring, Infrastructure rim. Most teams stop here.</figcaption>
+      </figure>
+
+      <blockquote>
+        "None of these architectures have anything to do with modularisation."
+      </blockquote>
+
+      <p>Oliver's argument is that "domain-centric" architectures put the domain <em>as a single thing</em> at the centre. That was a useful move in the early 2000s when the hard problem was "test the domain code without booting an app server". But once you've accepted that <em>the domain has multiple parts</em> — orders, inventory, customers — the harder problem is the <strong>functional decomposition</strong>: how do you actually separate them? Onion, hexagonal and layered architecture all ignore that problem.</p>
+
+      <p>Oliver's metaphor: <strong>cut the onion.</strong> Slice it vertically and stack the slices side by side. Each slice is an <em>application module</em>:</p>
+
+      <figure class="figure-2col">
+        <img loading="lazy" decoding="async" src="assets/screenshots/18-cut-onion.png" alt="Onion sliced into three vertical modules">
+        <img loading="lazy" decoding="async" src="assets/screenshots/19-module-verify.png" alt="Module verification output showing three application modules and their dependencies">
+        <figcaption>The "cut the onion" metaphor in code: three vertical slices side by side, each still an onion inside.</figcaption>
+      </figure>
+
+      <p>Important implications:</p>
+      <ul>
+        <li>Each module can still use onion / hexagonal / layered internally — that's an implementation detail.</li>
+        <li>The interaction between modules happens <em>at the application ring</em>, by exposing Spring beans and / or publishing events. No going through full "infrastructure adapters" to talk to a sibling module.</li>
+        <li>Whether to use hexagonal inside is governed by the module's domain complexity. A module that just serves reference data with a JDBC template is not committing a sin.</li>
+      </ul>
+    </section>
+
+    <!-- 2.2 APPLICATION MODULES ============================== -->
+    <section id="app-modules">
+      <h3 id="subheading-14" data-toc>2.2 Application modules — the convention</h3>
+
+      <p>The simplest expression of a module is just a package. Spring Modulith's default rule:</p>
+
+      <div class="callout insight">
+        <div class="callout-title">Default rule</div>
+        <div class="callout-body">
+          <p>The direct sub-packages of the package that hosts your <code>@SpringBootApplication</code> class are application modules. <strong>Public types in that base package form the module's API.</strong> Everything else is internal.</p>
+        </div>
+      </div>
+
+      <p>No framework-specific code in your production sources. You can add Spring Modulith as a <em>test-scope dependency</em>, run its verifications, and the runtime artefact stays a plain Spring Boot jar. That's the key onboarding promise.</p>
+
+      <details>
+        <summary>Optional: explicit module declaration with <code>@ApplicationModule</code></summary>
+        <div class="details-body">
+          <p>If you want to make the boundary explicit, you can put a <code>@ApplicationModule</code> on the module's base package, or put it on the <code>@SpringBootApplication</code> class to declare which packages are the modules:</p>
+          <pre><code><span class="tok-keyword">package</span> example;
+
+<span class="tok-keyword">import</span> org.springframework.modulith.ApplicationModule;
+
+<span class="tok-ann">@ApplicationModule</span>
+<span class="tok-keyword">package</span> example.order;</code></pre>
+          <p>For a 90%-legacy codebase, you can also tell Spring Modulith where the module packages live, so you don't have to re-organise to start adopting it.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 2.3 MODULE VERIFICATION ============================== -->
+    <section id="module-verify">
+      <h3 id="subheading-15" data-toc>2.3 Verifying the module arrangement</h3>
+
+      <p>The whole point of the package convention is that you can verify it cheaply. A typical test looks like this:</p>
+
+      <pre><code><span class="tok-keyword">package</span> example;
+
+<span class="tok-keyword">import</span> org.junit.jupiter.api.Test;
+<span class="tok-keyword">import</span> org.springframework.modulith.core.ApplicationModules;
+<span class="tok-keyword">import</span> org.springframework.modulith.docs.Documenter;
+
+<span class="tok-keyword">class</span> <span class="tok-type">ModularityTests</span> {
+
+    <span class="tok-type">ApplicationModules</span> modules = <span class="tok-type">ApplicationModules</span>.<span class="tok-fn">of</span>(Application.<span class="tok-keyword">class</span>);
+
+    <span class="tok-ann">@Test</span>
+    <span class="tok-keyword">void</span> <span class="tok-fn">verifyModularity</span>() {
+        modules.<span class="tok-fn">verify</span>();   <span class="tok-comment">// asserts no forbidden cross-module references</span>
+    }
+
+    <span class="tok-ann">@Test</span>
+    <span class="tok-keyword">void</span> <span class="tok-fn">renderDocumentation</span>() <span class="tok-keyword">throws</span> <span class="tok-type">Exception</span> {
+        <span class="tok-keyword">new</span> <span class="tok-type">Documenter</span>(modules).<span class="tok-fn">writeDocumentation</span>();
+    }
+}</code></pre>
+
+      <p>The intuition behind <code>modules.verify()</code>: a module can depend on another's <em>API surface</em> (its public types) but not on its internals. That single rule already catches most "I imported a package-private class from a sibling" mistakes.</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/19-module-verify.png" alt="Eclipse IDE showing the modularity verification test and the module structure">
+        <figcaption>The verification test in flight. Note the JSON-like output: each module is named, has a base package, lists its dependencies and its public beans.</figcaption>
+      </figure>
+
+      <p>You can also be more prescriptive about what is and isn't allowed:</p>
+
+      <pre><code><span class="tok-ann">@ApplicationModule</span>(<span class="tok-fn">allowedDependencies</span> = <span class="tok-string">"customer"</span>)
+<span class="tok-keyword">package</span> example.order;</code></pre>
+
+      <p>If <code>order</code> then tries to depend on <code>inventory</code>, the verification fails — exactly as in <a href="#app-modules">§2.2</a>.</p>
+    </section>
+
+    <!-- 2.4 INTEGRATION TESTING ============================== -->
+    <section id="module-test">
+      <h3 id="subheading-16" data-toc>2.4 Integration-testing a single module</h3>
+
+      <p>Spring Modulith's most underrated feature is the <code>@ApplicationModuleTest</code> annotation. It bootstraps <em>only</em> the module under test, plus any mocks you provide. The output looks like this:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/20-bootstrap-modes.png" alt="Spring Modulith bootstrapping a single module and listing its beans">
+        <figcaption><code>@ApplicationModuleTest</code> boot log: only the inventory module's beans are in scope.</figcaption>
+      </figure>
+
+      <p>Two bootstrap modes are worth knowing:</p>
+
+      <div class="split-2">
+        <div>
+          <h4><code>BootstrapMode.DIRECT_DEPENDENCIES</code> (default)</h4>
+          <p>Bootstrap the module you are testing. Mock any collaborators with Spring's standard <code>@MockBean</code> machinery.</p>
+        </div>
+        <div>
+          <h4><code>BootstrapMode.ALL_DEPENDENCIES</code></h4>
+          <p>Bootstrap the module <em>and</em> every transitive dependency that the module actually uses. No mocking needed for the in-graph modules.</p>
+        </div>
+      </div>
+
+      <p>This makes the testing strategy <em>align with the verticals</em>: you write a test in the module that owns the behaviour, and the framework decides what to bootstrap. No more "I need to start the whole world to test this one service".</p>
+    </section>
+
+    <!-- 2.5 DOCUMENTATION AS CODE ============================ -->
+    <section id="module-docs">
+      <h3 id="subheading-17" data-toc>2.5 Documentation as code</h3>
+
+      <p>Spring Modulith can render module documentation straight out of the verified module model. The default is Simon Brown's <strong>C4 component diagram</strong>; Oliver's university students apparently prefer UML, so he shows both:</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/21-module-docs.png" alt="IntelliJ project view with a UML-style component diagram and module-specific excerpts">
+        <figcaption>Module documentation generated from the codebase, with a per-module "knowledge graph" excerpt: if I need to change this module, what else should I understand?</figcaption>
+      </figure>
+
+      <p>The same machinery can render, per module:</p>
+      <ul>
+        <li>The <strong>API surface</strong>: Spring beans exposed, aggregate roots exposed.</li>
+        <li>The <strong>events it publishes</strong> and the <strong>events it listens to</strong>, with the Javadoc of the listener method if you bothered to write it.</li>
+        <li>The <strong>configuration properties</strong> that influence the module's behaviour.</li>
+        <li>An <strong>Asciidoctor</strong> bundle you can drop into a larger docs site, with deep-links to your Javadoc.</li>
+      </ul>
+
+      <p>The killer property: <em>it's correct by definition</em>. It's a reflection of the source code, not a hand-maintained wiki page.</p>
+    </section>
+
+    <!-- 2.6 HOW MODULES INTERACT ============================= -->
+    <section id="module-interactions">
+      <h3 id="subheading-18" data-toc>2.6 How modules interact — and why that matters</h3>
+
+      <p>The second half of Part 2 is a long, careful comparison of the three ways modules can interact. Oliver motivates the discussion with a familiar story: an order checkout.</p>
+
+      <p>A typical e-commerce checkout has a <strong>primary</strong> thing it does (record the order) and several <strong>secondary</strong> things attached to it (update inventory stock, award rewards points, send a confirmation email). Those secondary things have <em>very different severities</em> when they fail:</p>
+
+      <div class="callout warn">
+        <div class="callout-title">The functional-gravity problem</div>
+        <div class="callout-body">
+          <p>The more secondary things you glue onto the checkout, the more likely it is that a bug in <em>one</em> of them blocks every order. The bug in the rewards program should not be in the way of accepting a customer order.</p>
+        </div>
+      </div>
+
+      <p>And then there's the testing corollary: every collaborator you inject into your checkout class becomes a mock in your test. The bigger the orchestra, the bigger the mock zoo. That's what motivates the move away from direct calls.</p>
+    </section>
+
+    <!-- 2.7 STYLE A — DIRECT INVOCATION ====================== -->
+    <section id="direct-invocation">
+      <h3 id="subheading-19" data-toc>2.7 Style A — direct invocation (the default)</h3>
+
+      <pre><code><span class="tok-ann">@Service</span>
+<span class="tok-ann">@RequiredArgsConstructor</span>
+<span class="tok-keyword">class</span> <span class="tok-type">Checkout</span> {
+
+    <span class="tok-keyword">private final</span> <span class="tok-type">OrderRepository</span>      orders;
+    <span class="tok-keyword">private final</span> <span class="tok-type">Inventory</span>            inventory;
+    <span class="tok-keyword">private final</span> <span class="tok-type">RewardsProgram</span>        rewards;
+    <span class="tok-keyword">private final</span> <span class="tok-type">NotificationService</span>  notifications;
+
+    <span class="tok-ann">@Transactional</span>
+    <span class="tok-keyword">void</span> <span class="tok-fn">complete</span>(<span class="tok-type">Order</span> order) {
+        order.<span class="tok-fn">markCompleted</span>();
+        orders.<span class="tok-fn">save</span>(order);
+        inventory.<span class="tok-fn">updateStock</span>(order);          <span class="tok-comment">// secondary #1</span>
+        rewards.<span class="tok-fn">awardPointsFor</span>(order);         <span class="tok-comment">// secondary #2</span>
+        notifications.<span class="tok-fn">sendConfirmation</span>(order); <span class="tok-comment">// secondary #3</span>
+    }
+}</code></pre>
+
+      <p>Properties of this style:</p>
+      <ul>
+        <li><strong>Coupling:</strong> very high. Checkout knows about every collaborator.</li>
+        <li><strong>Consistency:</strong> very high. <code>@Transactional</code> covers the whole flow — if any collaborator throws, everything rolls back.</li>
+        <li><strong>Testing:</strong> you have to mock every collaborator. Adding a new collaborator = updating the test.</li>
+        <li><strong>Failure blast radius:</strong> the rewards-program bug really does block every order.</li>
+      </ul>
+
+      <p>This is the "fine starting point" Oliver keeps emphasising — don't replace it just because it's old. The trouble starts when the orchestra grows.</p>
+    </section>
+
+    <!-- 2.8 STYLE B — SPRING EVENTS ========================== -->
+    <section id="spring-events">
+      <h3 id="subheading-20" data-toc>2.8 Style B — Spring events (synchronous)</h3>
+
+      <pre><code><span class="tok-ann">@Service</span>
+<span class="tok-ann">@RequiredArgsConstructor</span>
+<span class="tok-keyword">class</span> <span class="tok-type">Checkout</span> {
+
+    <span class="tok-keyword">private final</span> <span class="tok-type">OrderRepository</span>          orders;
+    <span class="tok-keyword">private final</span> <span class="tok-type">ApplicationEventPublisher</span> events;
+
+    <span class="tok-ann">@Transactional</span>
+    <span class="tok-keyword">void</span> <span class="tok-fn">complete</span>(<span class="tok-type">Order</span> order) {
+        order.<span class="tok-fn">markCompleted</span>();
+        orders.<span class="tok-fn">save</span>(order);
+        events.<span class="tok-fn">publishEvent</span>(<span class="tok-keyword">new</span> <span class="tok-type">OrderCompleted</span>(order.<span class="tok-fn">getId</span>()));
+    }
+}
+
+<span class="tok-keyword">record</span> <span class="tok-type">OrderCompleted</span>(<span class="tok-type">OrderId</span> orderId) {}</code></pre>
+
+      <pre><code><span class="tok-ann">@Service</span>
+<span class="tok-keyword">class</span> <span class="tok-type">Inventory</span> {
+    <span class="tok-ann">@TransactionalEventListener</span>
+    <span class="tok-keyword">void</span> <span class="tok-fn">on</span>(<span class="tok-type">OrderCompleted</span> event) { <span class="tok-comment">/* ... */</span> }
+}</code></pre>
+
+      <p>Properties:</p>
+      <ul>
+        <li><strong>Coupling:</strong> drops. Checkout no longer knows who listens.</li>
+        <li><strong>Consistency:</strong> unchanged. <code>publishEvent</code> is synchronous; if a listener throws, the original transaction rolls back.</li>
+        <li><strong>Testing:</strong> assert that the right event was published (e.g. Spring's <code>AssertableApplicationEvents</code>). Don't mock the listeners.</li>
+      </ul>
+
+      <p>This is Oliver's recommended first step. You change <em>structure</em> but not <em>consistency guarantees</em>, which keeps the migration low-risk.</p>
+    </section>
+
+    <!-- 2.9 STYLE C — TRANSACTIONAL EVENT LISTENER =========== -->
+    <section id="tx-event-listener">
+      <h3 id="subheading-21" data-toc>2.9 Style C — <code>@TransactionalEventListener</code></h3>
+
+      <p>The problem with synchronous listeners: they're still inside the original transaction. If <code>Inventory.on()</code> talks to an SMTP server (slow, can time out) or any external system, you're holding the database connection for no reason. And if the SMTP send succeeds but the database transaction later rolls back, you've sent a phantom email.</p>
+
+      <p>Spring's <code>@TransactionalEventListener</code> defers the listener until transaction commit. The connection is closed before the listener runs, so the SMTP timeout can't burn DB pool slots.</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/24-tx-event-listener.png" alt="Diagram of @TransactionalEventListener executing after Transaction Commit">
+        <figcaption>Transactional event listener — runs <em>after</em> commit, but still inside the original transaction's cleanup phase.</figcaption>
+      </figure>
+
+      <p>But that doesn't actually solve the held-connection problem; the connection is still open during the cleanup phase. So we go one step further.</p>
+    </section>
+
+    <!-- 2.10 APPLICATION MODULE LISTENER ===================== -->
+    <section id="app-module-listener">
+      <h3 id="subheading-22" data-toc>2.10 Style D — <code>@ApplicationModuleListener</code> (async, eventually consistent)</h3>
+
+      <p>This is Spring Modulith's flagship shortcut. Combine <code>@Async</code> + <code>@TransactionalEventListener</code> + a framework-managed retry registry, and you get:</p>
+
+      <pre><code><span class="tok-ann">@Service</span>
+<span class="tok-keyword">class</span> <span class="tok-type">Inventory</span> {
+
+    <span class="tok-ann">@ApplicationModuleListener</span>
+    <span class="tok-keyword">void</span> <span class="tok-fn">on</span>(<span class="tok-type">OrderCompleted</span> event) { <span class="tok-comment">/* ... */</span> }
+}</code></pre>
+
+      <p>What that actually means:</p>
+      <ul>
+        <li>The listener runs on a <em>separate thread</em> from a Spring <code>Executor</code>.</li>
+        <li>The original transaction closes <em>before</em> the listener runs.</li>
+        <li>The listener runs in its <em>own</em> transaction.</li>
+        <li>Successful runs are recorded in a database table; failed runs are recorded with the exception. You can resubmit them later.</li>
+      </ul>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/25-app-module-listener.png" alt="Code showing the @ApplicationModuleListener annotation in use">
+        <figcaption>The annotation in code. It's a shortcut for async + transactional event listener + framework-managed retry.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 2.11 EVENT PUBLICATION REGISTRY ====================== -->
+    <section id="event-pub-registry">
+      <h3 id="subheading-23" data-toc>2.11 The Event Publication Registry</h3>
+
+      <p>Oliver demos this live. The console output walks through what the registry does:</p>
+
+      <ol>
+        <li>Inside the original transaction, JPA inserts an <code>EventPublication</code> row for <em>each</em> <code>@ApplicationModuleListener</code> that will need to run. Status: <code>PROCESSING</code> later, but for now just a pending row.</li>
+        <li>The original transaction commits.</li>
+        <li>The async listeners fire on the executor. Each one updates its publication row to <code>COMPLETED</code> on success or <code>FAILED</code> on exception.</li>
+        <li>Failed publications can be resubmitted via the registry API. They survive a restart because they're in the database.</li>
+      </ol>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/23-event-publication.png" alt="Log output showing transactional event publication rows being inserted, then completed by async listeners">
+        <figcaption>Live console output from Oliver's demo. You can see the inserts happen before the state transition, and the listener threads updating the publications in parallel.</figcaption>
+      </figure>
+
+      <p>This is the part that turns async events from "fire and forget, hope for the best" into something you can run a business on.</p>
+
+      <details>
+        <summary>Example: resubmitting failed publications</summary>
+        <div class="details-body">
+          <pre><code><span class="tok-ann">@Autowired</span> <span class="tok-type">EventPublicationRegistry</span> registry;
+
+<span class="tok-keyword">void</span> <span class="tok-fn">retryFailedNotifications</span>() {
+    <span class="tok-keyword">var</span> failed = registry.<span class="tok-fn">findIncompletePublications</span>();
+    <span class="tok-keyword">var</span> resubmission = <span class="tok-type">ResubmissionOptions</span>.<span class="tok-fn">defaults</span>()
+        .<span class="tok-fn">batchSize</span>(<span class="tok-number">10</span>)
+        .<span class="tok-fn">parallelism</span>(<span class="tok-number">2</span>);
+    registry.<span class="tok-fn">resubmit</span>(failed, resubmission);
+}</code></pre>
+          <p>If you don't manually resubmit, the registry still tells you on shutdown that there are unpublished events left. In a crash-restart scenario they're just picked up next time the module boots.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 2.12 SCENARIO API ==================================== -->
+    <section id="scenario-api">
+      <h3 id="subheading-24" data-toc>2.12 The Scenario API — test modules by poking them</h3>
+
+      <p>The Scenario API is the testing counterpart to the registry. Instead of "given the world, when the orchestrator runs, then this collaborator was called", you say "given nothing, when I stimulate this module, then I expect this event to eventually arrive":</p>
+
+      <pre><code><span class="tok-ann">@ApplicationModuleTest</span>
+<span class="tok-keyword">class</span> <span class="tok-type">CheckoutTests</span> {
+
+    <span class="tok-keyword">private final</span> <span class="tok-type">Checkout</span> checkout;
+
+    <span class="tok-ann">@Test</span>
+    <span class="tok-keyword">void</span> <span class="tok-fn">completesOrder</span>(<span class="tok-type">Scenario</span> scenario) {
+
+        <span class="tok-keyword">var</span> order = <span class="tok-keyword">new</span> <span class="tok-type">Order</span>(<span class="tok-comment">/* … */</span>);
+
+        scenario.<span class="tok-fn">stimulate</span>(() -&gt; checkout.<span class="tok-fn">complete</span>(order))
+            .<span class="tok-fn">andWaitForEventOfType</span>(<span class="tok-type">InventoryUpdated</span>.<span class="tok-keyword">class</span>)
+            .<span class="tok-fn">matchingMappedValue</span>(<span class="tok-type">InventoryUpdated</span>::<span class="tok-fn">getOrderId</span>, order.<span class="tok-fn">getId</span>())
+            .<span class="tok-fn">toArrive</span>();
+    }
+}</code></pre>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/26-scenario-api.png" alt="Slide showing the Scenario API test code">
+        <figcaption>The Scenario API in code — same slide as the live demo. Polled waits, event matchers, eventually-consistent assertions.</figcaption>
+      </figure>
+
+      <p>The Scenario API is backed by Awaitility under the covers, so you can customise timeouts and poll intervals. You can also wait for <em>state changes</em> (e.g. an order row going to status COMPLETED) rather than events.</p>
+    </section>
+
+    <!-- 2.13 COMPARISON ====================================== -->
+    <section id="comparison">
+      <h3 id="subheading-25" data-toc>2.13 Choosing an interaction style</h3>
+
+      <p>Oliver ends with the table that motivates the entire comparison. He calls it "a monstrosity" because it's dense, but it earns its keep the moment you ask "should we use events here?":</p>
+
+      <figure class="figure">
+        <img loading="lazy" decoding="async" src="assets/screenshots/27-comparison-table.png" alt="The famous comparison table from the talk, comparing Classic, Event Listener, and Application Module Listener across module references, tests, consistency and coupling">
+        <figcaption>The "monstrosity" table, reproduced verbatim from the talk.</figcaption>
+      </figure>
+
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table class="compare-table">
+        <thead>
+          <tr>
+            <th>&nbsp;</th>
+            <th class="col-classic">Classic</th>
+            <th class="col-events">Event Listener</th>
+            <th class="col-async">Application Module Listener</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label">Module references</td>
+            <td>via Spring beans</td>
+            <td>via <code>@EventListener</code></td>
+            <td>via <code>@ApplicationModuleListener</code> (<code>@Async</code> <code>@TransactionalEventListener</code>)</td>
+          </tr>
+          <tr>
+            <td class="row-label">Integration style</td>
+            <td>synchronous</td>
+            <td>synchronous</td>
+            <td>asynchronous, transaction-bound</td>
+          </tr>
+          <tr>
+            <td class="row-label" rowspan="4"><strong>Tests</strong></td>
+            <td><span>orientation</span><br>vertical / horizontal</td>
+            <td><span>orientation</span><br>vertical</td>
+            <td><span>orientation</span><br>vertical</td>
+          </tr>
+          <tr>
+            <td><span>focus</span><br>Module interaction</td>
+            <td><span>focus</span><br>Module operation outcome signaled by an event</td>
+            <td><span>focus</span><br>Module operation outcome signaled by an event</td>
+          </tr>
+          <tr>
+            <td><span>approach</span><br>via mocks / <code>@MockBean</code></td>
+            <td><span>approach</span><br>via <code>AssertablePublishedEvents</code></td>
+            <td><span>approach</span><br>via <code>Scenario</code></td>
+          </tr>
+          <tr>
+            <td><span>risk</span><br>Integration tests including multiple modules</td>
+            <td><span>risk</span><br>Tests exclude code that could break the transaction at runtime</td>
+            <td><span>risk</span><br>Asynchronous module interaction</td>
+          </tr>
+          <tr>
+            <td class="row-label">Consistency — boundaries</td>
+            <td>potentially (accidentally) spanning multiple modules</td>
+            <td>potentially (accidentally) spanning multiple modules</td>
+            <td>aligned with module boundaries · eventual consistency</td>
+          </tr>
+          <tr>
+            <td class="row-label">Consistency — mechanism</td>
+            <td>transaction</td>
+            <td>transaction</td>
+            <td>Event Publication Registry</td>
+          </tr>
+          <tr>
+            <td class="row-label">Module coupling</td>
+            <td><strong>High</strong> ↑</td>
+            <td><strong>Medium</strong></td>
+            <td><strong>Low</strong> ↓</td>
+          </tr>
+        </tbody>
+      </table></div>
+
+      <div class="callout quote">
+        <div class="callout-title">Oliver's two-step migration</div>
+        <div class="callout-body">
+          <p>"If you're stuck mocking 15 collaborators, see which interactions can become events — that changes the structure but not the consistency. Once you're comfortable with that, try <code>@ApplicationModuleListener</code>. Both moves <em>prepare</em> you for the day you need to extract a module into its own process, because then you're effectively doing the same thing over Kafka."</p>
+        </div>
+      </div>
+
+      <p>That's the long-term payoff: a modular monolith whose module boundaries are well-chosen is one well-behaved Kafka topic away from a microservice. The architecture doesn't change — only the transport does.</p>
+    </section>
+
+    <!-- =====================================================
+         RESOURCES
+         ===================================================== -->
+    <section id="resources">
+      <h2 id="heading-04">Resources</h2>
+
+      <p>Everything in these notes comes from the talk itself and the libraries it features. The talk references the following for further reading:</p>
+
+      <ul>
+        <li><strong>Carola Lilienthal</strong> — <em>Sustainable Software Architecture</em> (dpunkt.verlag). The empirical basis for the "chunking / hierarchization / pattern languages" framing.</li>
+        <li><strong>Eric Evans</strong> — <em>Domain-Driven Design: Tackling Complexity in the Heart of Software</em>. The source of the tactical pattern language.</li>
+        <li><strong>Vaughn Vernon</strong> — <em>Implementing Domain-Driven Design</em>. The source of the "aggregates only reference other aggregates by identifier" rule.</li>
+        <li><strong>George Fairbanks</strong> — <em>Just Enough Software Architecture</em>. Chapter 10 is the source of "architecturally evident code". Recommended via Simon Brown's <em>Software Architecture for Developers</em>.</li>
+        <li><strong>Adam Eden &amp; Rick Kazman</strong> — the paper on extensional vs intentional elements that Fairbanks cites.</li>
+        <li><strong>Simon Brown</strong> — <em>Software Architecture for Developers</em>; the C4 model is the default rendering of Spring Modulith's documentation.</li>
+        <li><strong>Kent Beck</strong> — the "increase value / cut cost" framing that opens the talk.</li>
+      </ul>
+
+      <p>The libraries:</p>
+      <ul>
+        <li><strong>J Molecules</strong> — <code>org.jmolecules</code> on Maven Central. The specification jars are tiny; the integrations (ArchUnit, ByteBuddy, Spring, Jackson, JPA) are opt-in.</li>
+        <li><strong>ByteBuddy Maven Plugin</strong> — used by the J Molecules integrations to synthesise JPA mappings at build time.</li>
+        <li><strong>ArchUnit</strong> — used to verify the J Molecules DDD rules at test time.</li>
+        <li><strong>Spring Modulith</strong> — first commit 2017; the production-ready version arrived with Spring Boot 3.x.</li>
+      </ul>
+
+      <p>Oliver mentions companion talks given at the same conference:</p>
+      <ul>
+        <li><em>"What's new in Spring Modulith"</em> — deeper coverage of named interfaces and nested application modules.</li>
+        <li><em>"Domain-Driven: Why Hexagonal and Onion Architecture Are Answers to the Wrong Question"</em> — the strategic-design companion talk.</li>
+      </ul>
+    </section>
+
+    <footer class="foot">
+      <p><strong>Source:</strong> "Tactical Domain-Driven Design with Java and Spring" — Oliver Drotbohm, Devoxx Belgium.</p>
+      <p><strong>Note on screenshots:</strong> Captured from the original talk video. They are illustrative of the talk's content; for full clarity watch the recording itself.</p>
+      <p><strong>Note on accuracy:</strong> All technical claims in these notes come from the speaker's presentation or the official documentation of the libraries he references. Direct quotes are marked in blockquote / callout form.</p>
+    </footer>
+
+  </div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>

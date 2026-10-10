@@ -1,0 +1,1076 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build a readable concurrent loan application with Project Loom. Follow the live demos, task trees, context propagation, and failure scenarios."><meta name="theme-color" content="#111513">
+<title>Virtual Threads, Structured Concurrency &amp; Scoped Values — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.youtube.com/watch?v=kz_R6-fdSZc">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#java-and-concurrency">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#heading-01"><span>01</span><span>The 30-second summary</span></a><a href="#heading-02"><span>02</span><span>Who, what, and why</span></a><a href="#heading-03"><span>03</span><span>What is Project Loom?</span></a><a href="#heading-04"><span>04</span><span>Virtual Threads</span></a><a href="#heading-05"><span>05</span><span>Structured Concurrency</span></a><a href="#heading-06"><span>06</span><span>Scoped Values</span></a><a href="#heading-07"><span>07</span><span>All three, in one happy-path request</span></a><a href="#heading-08"><span>08</span><span>What happens when things go wrong?</span></a><a href="#heading-09"><span>09</span><span>What to remember</span></a><a href="#heading-10"><span>10</span><span>Source, video &amp; further reading</span></a></nav><p class="sidebar-note">Read at your own pace.<br>Keep the original talk close.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">Java and concurrency / Study guide</span>
+<h1>Virtual Threads, Structured Concurrency &amp; Scoped Values</h1><p class="guide-description">
+      A learner's companion to Balkrishna Rawool's Spring I/O talk on the three pillars of
+      <b>Project Loom</b>. It distils the live-coding session into a structured, skimmable
+      walkthrough with every code example from the demo, the architectural diagrams, and
+      the exact Spring Boot / Java APIs you need to use them today.
+    </p>
+<div class="guide-meta"><span>By <strong>Balkrishna Rawool</strong></span><span>Spring I/O</span><span>47 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.youtube.com/watch?v=kz_R6-fdSZc">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#java-and-concurrency">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 10 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#heading-01"><span>01</span><span>The 30-second summary</span></a><a href="#heading-02"><span>02</span><span>Who, what, and why</span></a><a href="#heading-03"><span>03</span><span>What is Project Loom?</span></a><a href="#heading-04"><span>04</span><span>Virtual Threads</span></a><a href="#heading-05"><span>05</span><span>Structured Concurrency</span></a><a href="#heading-06"><span>06</span><span>Scoped Values</span></a><a href="#heading-07"><span>07</span><span>All three, in one happy-path request</span></a><a href="#heading-08"><span>08</span><span>What happens when things go wrong?</span></a><a href="#heading-09"><span>09</span><span>What to remember</span></a><a href="#heading-10"><span>10</span><span>Source, video &amp; further reading</span></a></nav></details>
+<div class="guide-content"><div class="guide-overview"><div class="meta">
+      <div><b>Speaker</b> · Balkrishna Rawool (ING Bank)</div>
+      <div><b>Stack</b> · Spring Boot 3.4 · JDK 25 (Loom early access)</div>
+      <div><b>Demo</b> · Maven multi-module <code>abank</code> + <code>services</code></div>
+    </div><div class="chips">
+      <span class="chip vt"><span class="badge">Final</span>Virtual Threads · JDK 21</span>
+      <span class="chip sc"><span class="badge">Preview</span>Structured Concurrency</span>
+      <span class="chip sv"><span class="badge">Final</span>Scoped Values · JDK 25</span>
+    </div></div>
+<section id="tl-dr">
+  <div class="wrap-narrow">
+    <span class="section-num">§ TL;DR</span>
+    <h2 id="heading-01">The 30-second summary</h2>
+    <p class="lead">
+      Project Loom gives Java three primitives that, used together, let you write
+      <b>readable concurrent programs</b> — like structured programming did for
+      procedural code.
+    </p>
+
+    <div class="grid-3">
+      <div class="feature vt">
+        <div class="icon">⚡</div>
+        <h3>Virtual Threads</h3>
+        <p>Lightweight, JVM-managed threads. Millions per app. Don't pool them.</p>
+        <span class="meta-tag">JDK 21+</span>
+      </div>
+      <div class="feature sc">
+        <div class="icon">⑂</div>
+        <h3>Structured Concurrency</h3>
+        <p>Fork/join a tree of tasks. Lifetime of children = lifetime of the parent scope.</p>
+        <span class="meta-tag">JEP 453 · Preview</span>
+      </div>
+      <div class="feature sv">
+        <div class="icon">◎</div>
+        <h3>Scoped Values</h3>
+        <p>Immutable, scope-bound thread-locals. Cheap to share with millions of virtual threads.</p>
+        <span class="meta-tag">JEP 506 · JDK 25</span>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <p class="title">Why it matters</p>
+      <p>
+        Most server workloads are <b>I/O-bound</b>: threads spend most of their life
+        blocked on a database, an HTTP call, or a queue. Virtual threads reclaim all
+        that dead time, and structured concurrency + scoped values give you the
+        <i>control</i> and <i>context</i> you need to keep things correct.
+      </p>
+    </div>
+  </div>
+</section>
+<section id="about">
+  <div class="wrap">
+    <span class="section-num">§ About the talk</span>
+    <h2 id="heading-02">Who, what, and why</h2>
+    <p class="lead">
+      Balkrishna ("Bkesh") Rawool from ING Bank is back at Spring I/O after last
+      year's deep-dive on continuations (the foundation underneath virtual threads).
+      This year he goes <i>one level higher</i> and shows how <b>virtual threads</b>,
+      <b>structured concurrency</b>, and <b>scoped values</b> come together inside a
+      real Spring Boot application.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h4>📌 The premise</h4>
+        <p class="muted small">
+          Each feature has a self-contained demo. The three are introduced one at a time and
+          layered into the same Spring Boot app so you can see how they compose.
+        </p>
+      </div>
+      <div class="card">
+        <h4>🎯 The goal</h4>
+        <p class="muted small">
+          Demonstrate that with these three features you can write
+          <b>readable concurrent programs</b> — the same leap that
+          structured programming gave us for sequential code.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="loom">
+  <div class="wrap">
+    <span class="section-num">§ 01 · Project Loom</span>
+    <h2 id="heading-03">What is Project Loom?</h2>
+    <p class="lead">
+      An OpenJDK project whose stated mission is to deliver <b>easy-to-use,
+      high-throughput, lightweight concurrency</b> — and new programming models
+      to take advantage of it.
+    </p>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/02-loom-features.png" alt="Slide introducing the three Project Loom features and their status">
+      <figcaption>
+        <b>Project Loom — three pillars.</b>
+        Virtual Threads (final in JDK 21), Structured Concurrency (preview), and
+        Scoped Values (final in JDK 25). All three are demoed in a single Spring Boot app
+        in this talk.
+      </figcaption>
+    </figure>
+
+    <div class="grid-3">
+      <div class="feature vt">
+        <div class="icon">⚡</div>
+        <h3>Virtual Threads</h3>
+        <p>Cheap, plentiful, JVM-managed threads. The substrate everything else is built on.</p>
+      </div>
+      <div class="feature sc">
+        <div class="icon">⑂</div>
+        <h3>Structured Concurrency</h3>
+        <p>Control structures for concurrency — fork/join, lifetime, error propagation.</p>
+      </div>
+      <div class="feature sv">
+        <div class="icon">◎</div>
+        <h3>Scoped Values</h3>
+        <p>Immutable, scope-bound context — the safe, virtual-thread-friendly replacement for ThreadLocal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="virtual-threads">
+  <div class="wrap">
+    <span class="section-num">§ 02 · Virtual Threads</span>
+    <h2 id="heading-04">Virtual Threads</h2>
+    <p class="lead">
+      The substrate. A virtual thread is a <b>lightweight user-mode thread</b> managed
+      by the JVM. It runs <i>on top of</i> a platform (carrier) thread, but it can be
+      unmounted the moment it blocks on I/O — letting another virtual thread take its
+      place. No more wasting an entire OS thread on a network round-trip.
+    </p>
+
+    <h3>The mental model: platform vs. virtual</h3>
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/01-architecture-diagram.png" alt="JVM with many virtual threads, few platform threads, fewer OS threads">
+      <figcaption>
+        <b>Many-to-few-to-fewer.</b>
+        Inside the JVM you can have <i>thousands or millions</i> of virtual threads
+        sharing a small pool of platform (carrier) threads, which in turn are backed
+        by OS threads. Platform threads are a thin wrapper over OS threads — creating
+        one is expensive, which is why they're pooled.
+      </figcaption>
+    </figure>
+
+    <div class="kv">
+      <div class="col bad">
+        <span class="tag">Platform Thread</span>
+        <h4>Thin wrapper over an OS thread</h4>
+        <p class="small">
+          1-to-1 mapping. Creating one is expensive. You <b>pool</b> them via an
+          <code>ExecutorService</code>. The pool size caps your concurrency.
+        </p>
+      </div>
+      <div class="col good">
+        <span class="tag">Virtual Thread</span>
+        <h4>Lightweight, JVM-managed</h4>
+        <p class="small">
+          Cheap to create (a few KB of memory). Throw them away when done — the GC
+          reclaims them. <b>Pooling virtual threads is an anti-pattern.</b>
+        </p>
+      </div>
+    </div>
+
+    <h3>Mounting and unmounting</h3>
+    <p>
+      A virtual thread on its own cannot execute anything. It needs a
+      <b>carrier (platform) thread</b>. The new <i>virtual thread scheduler</i>
+      mounts a virtual thread onto a carrier when it needs CPU and
+      <b>unmounts</b> it the moment it blocks (network, DB, lock, sleep).
+      In a typical I/O-bound app, threads spend most of their life waiting —
+      so the same few carriers can serve an enormous population of virtual threads.
+    </p>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/03-virtual-thread-mount.png" alt="Two virtual threads mounting and unmounting a single carrier thread">
+      <figcaption>
+        <b>Mount / unmount.</b> When a virtual thread blocks on I/O the carrier
+        is released; another virtual thread can mount immediately. CPU stays busy,
+        OS thread count stays small.
+      </figcaption>
+    </figure>
+
+    <div class="callout success">
+      <p class="title">Why this matters</p>
+      <p>
+        In an I/O-bound server, your CPU can be kept busy with only a handful of
+        platform threads if the workload is virtual-threaded. The blocking I/O
+        call you used to fear is no longer a cost — it's a context switch the
+        JVM handles for free.
+      </p>
+    </div>
+
+    <h3>Demo 1 — flip a switch in Spring Boot</h3>
+    <p>
+      The talk starts with a one-controller Spring Boot app. With one property,
+      Tomcat is told to handle every request on a fresh virtual thread.
+    </p>
+
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">application.properties</span></div>
+<pre><code><span class="tk-c"># Just one line — every Tomcat worker is now a virtual thread</span>
+<span class="tk-v">spring.threads.virtual.enabled</span>=<span class="tk-s">true</span>
+</code></pre>
+    </div>
+
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">HelloController.java</span></div>
+<pre><code><span class="tk-k">package</span> com.balarawool.bootloom.abank.controller;
+
+<span class="tk-k">import</span> org.springframework.web.bind.annotation.GetMapping;
+<span class="tk-k">import</span> org.springframework.web.bind.annotation.RestController;
+
+<span class="tk-a">@RestController</span>
+<span class="tk-k">public class</span> <span class="tk-t">HelloController</span> {
+
+    <span class="tk-a">@GetMapping</span>(<span class="tk-s">"/hello"</span>)
+    <span class="tk-k">public</span> <span class="tk-t">String</span> <span class="tk-f">hello</span>() {
+        <span class="tk-k">return</span> <span class="tk-s">"Hello from "</span> + <span class="tk-t">Thread</span>.currentThread();
+    }
+}
+</code></pre>
+    </div>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/04-hello-controller.png" alt="HelloController source in IntelliJ">
+      <figcaption><b>HelloController.</b> A runnable example is exposed at <code>/hello</code>.</figcaption>
+    </figure>
+
+    <p>Hit it before flipping the switch — you see a platform thread:</p>
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">terminal — before</span></div>
+<pre><code>$ http :8082/hello
+<span class="tk-c"># Before: spring.threads.virtual.enabled is unset</span>
+Hello from <span class="tk-t">Thread</span>[#<span class="tk-n">43</span>, http-nio-<span class="tk-n">8082</span>-exec-<span class="tk-n">1</span>,<span class="tk-n">5</span>,main]
+</code></pre>
+    </div>
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/05-hello-virtual-thread.png" alt="Terminal output showing http-nio-8082-exec-1 platform thread">
+      <figcaption><b>Without virtual threads.</b> Tomcat uses the default platform-thread pool: <code>http-nio-8082-exec-1</code>.</figcaption>
+    </figure>
+
+    <p>Set the property, restart, hit it again — now it's a virtual thread:</p>
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">terminal — after</span></div>
+<pre><code>$ http :8082/hello
+<span class="tk-c"># After: spring.threads.virtual.enabled=true</span>
+Hello from <span class="tk-v">VirtualThread</span>[#<span class="tk-n">48</span>,tomcat-handler-<span class="tk-n">0</span>]/runnable@<span class="tk-t">ForkJoinPool</span>-<span class="tk-n">1</span>-worker-<span class="tk-n">1</span>
+</code></pre>
+    </div>
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/05b-virtual-thread-output.png" alt="Terminal output showing VirtualThread[#48,tomcat-handler-0]">
+      <figcaption>
+        <b>With virtual threads.</b>
+        Tomcat now creates a fresh <code>VirtualThread[#48,tomcat-handler-0]</code>
+        per request. The carrier thread (<code>ForkJoinPool-1-worker-1</code>) is a
+        regular platform thread — it's just no longer the unit of concurrency.
+      </figcaption>
+    </figure>
+
+    <div class="callout info">
+      <p class="title">Rule of thumb</p>
+      <p>
+        <b>If your code blocks, virtual threads will scale.</b>
+        Don't rewrite your blocking JDBC/HTTP code into reactive cascades —
+        just leave it blocking. The JVM mounts/unmounts for you.
+      </p>
+    </div>
+  </div>
+</section>
+<section id="structured-concurrency">
+  <div class="wrap">
+    <span class="section-num">§ 03 · Structured Concurrency</span>
+    <h2 id="heading-05">Structured Concurrency</h2>
+    <p class="lead">
+      Inspired by <i>structured programming</i>, structured concurrency gives you
+      <b>control structures</b> for concurrency. When the flow of execution splits
+      into concurrent sub-flows, they rejoin in the <b>same code block</b>. The
+      lifetime of children is bounded by the lifetime of the parent scope.
+    </p>
+
+    <h3>Why virtual threads unlock it</h3>
+    <p>
+      With platform threads you can't afford a thread per task, so a single thread
+      represents a "process" that runs many tasks. With virtual threads you can
+      have <b>one thread per task</b>, and arrange the tasks into a tree that
+      mirrors your business logic. That's the whole point.
+    </p>
+
+    <blockquote>
+      <p>
+        "Just as <b>structured programming</b> helps us write readable programs,
+        <b>structured concurrency</b> helps us write readable concurrent programs."
+      </p>
+    </blockquote>
+
+    <h3>Three common patterns</h3>
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/06-structured-concurrency-patterns.png" alt="Three structured concurrency patterns: wait-all, wait-any, conditional fork">
+      <figcaption>
+        <b>Three patterns to know.</b>
+        (1) <b>Wait-all</b> — fork N subtasks, continue when all finish (the classic fan-out/fan-in).
+        (2) <b>Wait-any-success</b> — fork N subtasks, continue as soon as one succeeds.
+        (3) <b>Conditional fork</b> — fork more subtasks based on results from earlier ones.
+      </figcaption>
+    </figure>
+
+    <h3>What you get for free</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4>🛑 Short-circuiting on failure</h4>
+        <p class="small">
+          If any subtask fails, the others are <b>immediately cancelled</b>. No wasted
+          work, no dangling promises, no half-completed business transactions.
+        </p>
+      </div>
+      <div class="card">
+        <h4>↩ Cancellation propagation</h4>
+        <p class="small">
+          If the parent scope is cancelled (e.g. the request is aborted), every
+          child task is cancelled with it.
+        </p>
+      </div>
+      <div class="card">
+        <h4>🪞 Code mirrors the structure</h4>
+        <p class="small">
+          The implementation literally resembles the task tree. What you draw is what
+          you write.
+        </p>
+      </div>
+      <div class="card">
+        <h4>🔍 Observability</h4>
+        <p class="small">
+          Thread dumps show the <b>parent-child hierarchy</b> of virtual threads, so
+          you can trace any task to its root.
+        </p>
+      </div>
+    </div>
+
+    <h3>Demo 2 — the loan application</h3>
+    <p>
+      A customer applies for a loan. The bank needs four pieces of data before
+      it can quote an offer: <b>customer details</b>, <b>account details</b>,
+      <b>loan history</b>, and a <b>credit score</b> (with two competing score
+      providers). The task tree looks like this:
+    </p>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/07-loan-application-structure.png" alt="Loan application task tree: customer -> {accounts, loans, credit score}; credit score -> {score1, score2}">
+      <figcaption>
+        <b>The business logic as a tree.</b>
+        Get the customer, then in parallel fetch accounts/loans/credit score, then
+        calculate the offer. The credit score node is itself a parallel pair —
+        we only need <i>one</i> successful score.
+      </figcaption>
+    </figure>
+
+    <p>
+      In code, that's a <code>try-with-resources</code> over a
+      <code>StructuredTaskScope</code>, four <code>fork()</code> calls, one
+      <code>join()</code>, and a <code>task.get()</code> per result. That's it.
+    </p>
+
+    <h4>Pattern A — wait-all (accounts + loans)</h4>
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">LoanController.java</span></div>
+<pre><code><span class="tk-k">public</span> <span class="tk-t">Offer</span> <span class="tk-f">applyForLoan</span>(<span class="tk-a">@RequestBody</span> <span class="tk-t">LoanApplicationRequest</span> request) {
+
+    <span class="tk-k">try</span> (<span class="tk-k">var</span> scope = <span class="tk-t">StructuredTaskScope</span>.<span class="tk-f">open</span>()) {
+
+        <span class="tk-c">// Each fork() runs on its own virtual thread</span>
+        <span class="tk-k">var</span> task1 = scope.<span class="tk-f">fork</span>(() -&gt; accountService.<span class="tk-f">getAccountsInfo</span>(currentCustomer));
+        <span class="tk-k">var</span> task2 = scope.<span class="tk-f">fork</span>(() -&gt; loanService.<span class="tk-f">getLoansInfo</span>(currentCustomer));
+
+        <span class="tk-c">// Wait for BOTH to finish</span>
+        scope.<span class="tk-f">join</span>();
+
+        <span class="tk-k">var</span> accounts    = task1.<span class="tk-f">get</span>();
+        <span class="tk-k">var</span> loans       = task2.<span class="tk-f">get</span>();
+        <span class="tk-c">// ...continue with credit score + calculate offer...</span>
+
+    } <span class="tk-k">catch</span> (<span class="tk-t">InterruptedException</span> e) {
+        <span class="tk-k">throw new</span> <span class="tk-t">ABankException</span>(e);
+    }
+}
+</code></pre>
+    </div>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/08-loan-controller-scope.png" alt="IntelliJ showing LoanController.applyForLoan with StructuredTaskScope.open and fork calls">
+      <figcaption>
+        <b>Structured concurrency in a controller.</b>
+        The IDE is suggesting <code>StructuredTaskScope&lt;Object, Void&gt;</code> as
+        the type for <code>scope</code>. Note <code>scope.fork(...)</code> on the lines below.
+      </figcaption>
+    </figure>
+
+    <p>The 4-step pattern is the same everywhere you see <code>StructuredTaskScope</code>:</p>
+
+    <div class="stepper">
+      <div class="step"><b>open()</b>Open a new scope. <code>try-with-resources</code> guarantees it is closed.</div>
+      <div class="step"><b>fork(task)</b>Run the task on a new virtual thread. Returns a <code>Subtask&lt;T&gt;</code>.</div>
+      <div class="step"><b>join()</b>Wait for the subtasks per the chosen <code>Joiner</code> policy.</div>
+      <div class="step"><b>task.get()</b>Read each subtask's result (or rethrow its exception).</div>
+    </div>
+
+    <h4>Pattern B — wait-any-success (credit score)</h4>
+    <p>
+      Two competing credit-score services exist; we only need one answer.
+      Pass a different <code>Joiner</code> to <code>open()</code>:
+    </p>
+
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">CreditScoreService.java</span></div>
+<pre><code><span class="tk-k">public</span> <span class="tk-t">CreditScore</span> <span class="tk-f">getCreditScore</span>(<span class="tk-t">Customer</span> customer) {
+
+    <span class="tk-c">// Continue as soon as ONE task succeeds; cancel the rest.</span>
+    <span class="tk-c">// If all fail, throw.</span>
+    <span class="tk-k">try</span> (<span class="tk-k">var</span> scope = <span class="tk-t">StructuredTaskScope</span>.<span class="tk-f">open</span>(
+            <span class="tk-t">Joiner</span>.&lt;<span class="tk-t">CreditScore</span>&gt;<span class="tk-f">anySuccessfulResultOrThrow</span>())) {
+
+        scope.<span class="tk-f">fork</span>(() -&gt; <span class="tk-f">getCreditScoreFrom</span>(<span class="tk-s">"credit-score1"</span>, customer));
+        scope.<span class="tk-f">fork</span>(() -&gt; <span class="tk-f">getCreditScoreFrom</span>(<span class="tk-s">"credit-score2"</span>, customer));
+
+        <span class="tk-c">// join() returns the first successful result.</span>
+        <span class="tk-k">var</span> score = scope.<span class="tk-f">join</span>();
+        <span class="tk-k">return</span> score;
+
+    } <span class="tk-k">catch</span> (<span class="tk-t">InterruptedException</span> e) {
+        <span class="tk-k">throw new</span> <span class="tk-t">ABankException</span>(e);
+    }
+}
+</code></pre>
+    </div>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/09-credit-score-service.png" alt="CreditScoreService with StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow())">
+      <figcaption>
+        <b>Same 4-step pattern, different joiner.</b>
+        With <code>anySuccessfulResultOrThrow()</code>, <code>scope.join()</code> returns the
+        first successful result and cancels the rest.
+      </figcaption>
+    </figure>
+
+    <h4>Putting both patterns together in the controller</h4>
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">LoanController.java — full applyForLoan</span></div>
+<pre><code><span class="tk-k">public</span> <span class="tk-t">Offer</span> <span class="tk-f">applyForLoan</span>(<span class="tk-a">@RequestBody</span> <span class="tk-t">LoanApplicationRequest</span> request) {
+
+    <span class="tk-k">var</span> currentCustomer = customerService.<span class="tk-f">getCustomer</span>(request.customerId());
+
+    <span class="tk-k">try</span> (<span class="tk-k">var</span> scope = <span class="tk-t">StructuredTaskScope</span>.<span class="tk-f">open</span>()) {
+
+        <span class="tk-c">// Two wait-all subtasks</span>
+        <span class="tk-k">var</span> task1 = scope.<span class="tk-f">fork</span>(() -&gt; accountService.<span class="tk-f">getAccountsInfo</span>(currentCustomer));
+        <span class="tk-k">var</span> task2 = scope.<span class="tk-f">fork</span>(() -&gt; loanService.<span class="tk-f">getLoansInfo</span>(currentCustomer));
+
+        <span class="tk-c">// One wait-any subtask — already a StructuredTaskScope internally</span>
+        <span class="tk-k">var</span> task3 = scope.<span class="tk-f">fork</span>(() -&gt; creditScoreService.<span class="tk-f">getCreditScore</span>(currentCustomer));
+
+        scope.<span class="tk-f">join</span>();
+
+        <span class="tk-k">var</span> accounts    = task1.<span class="tk-f">get</span>();
+        <span class="tk-k">var</span> loans       = task2.<span class="tk-f">get</span>();
+        <span class="tk-k">var</span> creditScore = task3.<span class="tk-f">get</span>();
+
+        <span class="tk-k">return</span> loanService.<span class="tk-f">calculateOffer</span>(
+            currentCustomer, accounts, loans, creditScore,
+            request.amount(), request.purpose()
+        );
+
+    } <span class="tk-k">catch</span> (<span class="tk-t">InterruptedException</span> e) {
+        <span class="tk-k">throw new</span> <span class="tk-t">ABankException</span>(e);
+    }
+}
+</code></pre>
+    </div>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/10-refactored-loan-controller.png" alt="Refactored LoanController with three fork() calls inside StructuredTaskScope.open()">
+      <figcaption>
+        <b>The "before scoped values" version.</b>
+        Customer is fetched first and then <i>threaded through</i> every service call.
+        Verbose, but at least structured.
+      </figcaption>
+    </figure>
+
+    <div class="callout info">
+      <p class="title">StructuredTaskScope vs. CompletableFuture</p>
+      <p>
+        Both APIs can produce the same results. The difference is that
+        <code>StructuredTaskScope</code> gives you an <b>imperative</b> shape that
+        mirrors the business tree, with no callbacks, no <code>thenApply</code>/<code>thenCompose</code>
+        chains, and no risk of an orphaned future outliving its request.
+      </p>
+    </div>
+  </div>
+</section>
+<section id="scoped-values">
+  <div class="wrap">
+    <span class="section-num">§ 04 · Scoped Values</span>
+    <h2 id="heading-06">Scoped Values</h2>
+    <p class="lead">
+      A <b>ScopedValue</b> is the virtual-thread-friendly successor to <code>ThreadLocal</code>:
+      <b>immutable</b>, shared across all threads in a scope, and automatically freed
+      when the scope ends. Use it to carry request-scoped context (current customer,
+      correlation ID, trace context, …) without passing it through every method signature.
+    </p>
+
+    <h3>What ThreadLocal gave us — and where it breaks</h3>
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/12-threadlocal-problems.png" alt="ThreadLocal slide listing unconstrained mutability, unbounded lifetime, and expensive inheritance as problems">
+      <figcaption>
+        <b>ThreadLocal: useful, but with sharp edges.</b>
+        Each thread gets its own copy — great for request data, non-thread-safe resources,
+        caching, observability. Virtual threads support <code>ThreadLocal</code> too, but
+        the usual problems get amplified.
+      </figcaption>
+    </figure>
+
+    <div class="grid-3">
+      <div class="card">
+        <h4>🧬 Unconstrained mutability</h4>
+        <p class="small">
+          Anyone with the variable can call <code>.set(...)</code> at any time.
+          Classic shared-mutable-state headache.
+        </p>
+      </div>
+      <div class="card">
+        <h4>⏳ Unbounded lifetime</h4>
+        <p class="small">
+          You must remember to call <code>.remove()</code>. Forgetting means the
+          next request reusing that pool thread inherits the previous request's data.
+        </p>
+      </div>
+      <div class="card">
+        <h4>📈 Expensive inheritance</h4>
+        <p class="small">
+          With <code>InheritableThreadLocal</code> each child thread gets a copy.
+          With millions of virtual threads that's a lot of copies.
+        </p>
+      </div>
+    </div>
+
+    <h3>What changes with ScopedValue</h3>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead>
+        <tr><th></th><th><code>ThreadLocal</code></th><th><code>ScopedValue</code></th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Mutability</b></td>
+          <td>Mutable (<code>get</code>/<code>set</code>)</td>
+          <td><b>Immutable</b></td>
+        </tr>
+        <tr>
+          <td><b>Lifetime</b></td>
+          <td>Until you <code>remove()</code> (or never)</td>
+          <td>Bounded by the dynamic scope of <code>where(...)</code></td>
+        </tr>
+        <tr>
+          <td><b>Sharing</b></td>
+          <td>Each thread has its own copy</td>
+          <td>One shared instance, read-only</td>
+        </tr>
+        <tr>
+          <td><b>Inheritance</b></td>
+          <td>Copied per child thread (expensive w/ virtual threads)</td>
+          <td>Inherited automatically through <code>StructuredTaskScope</code></td>
+        </tr>
+        <tr>
+          <td><b>Cleanup</b></td>
+          <td>Manual (<code>remove</code>)</td>
+          <td>Automatic at end of scope</td>
+        </tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout success">
+      <p class="title">The wins, summarised</p>
+      <p>
+        <b>Immutable</b> = no shared-mutability bugs.
+        <b>One shared instance</b> = no per-child memory cost even with millions of virtual threads.
+        <b>Bounded scope</b> = no leaks from a forgotten <code>remove()</code>.
+      </p>
+    </div>
+
+    <h3>Demo 3 — define a <code>RequestContext</code></h3>
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">RequestContext.java — the carrier</span></div>
+<pre><code><span class="tk-k">package</span> com.balarawool.bootloom.abank.domain;
+
+<span class="tk-k">import</span> com.balarawool.bootloom.abank.domain.Model.Customer;
+
+<span class="tk-k">public class</span> <span class="tk-t">RequestContext</span> {
+
+    <span class="tk-k">public static final</span> <span class="tk-t">ScopedValue</span>&lt;<span class="tk-t">Customer</span>&gt; CURRENT_CUSTOMER =
+        <span class="tk-t">ScopedValue</span>.<span class="tk-f">newInstance</span>();
+}
+</code></pre>
+    </div>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/13-request-context-scopedvalue.png" alt="IntelliJ showing RequestContext.java defining ScopedValue&lt;Customer&gt; CURRENT_CUSTOMER = ScopedValue.newInstance()">
+      <figcaption>
+        <b>The "carrier".</b> A <code>ScopedValue</code> is just a typed slot. You set
+        it once at the top of the scope and read it from anywhere downstream.
+      </figcaption>
+    </figure>
+
+    <h3>Setting &amp; reading the value</h3>
+    <p>
+      In the controller, wrap the whole request handler with
+      <code>ScopedValue.where(...)</code>. Everything downstream — including
+      children forked by <code>StructuredTaskScope</code> — sees the same value:
+    </p>
+
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">LoanController.java — bind once at the top</span></div>
+<pre><code><span class="tk-k">public</span> <span class="tk-t">Offer</span> <span class="tk-f">applyForLoan</span>(<span class="tk-a">@RequestBody</span> <span class="tk-t">LoanApplicationRequest</span> request) {
+
+    <span class="tk-k">var</span> currentCustomer = customerService.<span class="tk-f">getCustomer</span>(request.customerId());
+
+    <span class="tk-c">// Bind the customer to the scope for everything inside .call(...)</span>
+    <span class="tk-k">return</span> <span class="tk-t">RequestContext</span>.<span class="tk-f">withCustomer</span>(currentCustomer)
+        .<span class="tk-f">call</span>(() -&gt; {
+            <span class="tk-k">var</span> info = <span class="tk-f">getCustomerInfo</span>();
+            <span class="tk-k">return</span> loanService.<span class="tk-f">calculateOffer</span>(
+                info.accounts, info.loans, info.creditScore,
+                request.amount(), request.purpose());
+        });
+}
+</code></pre>
+    </div>
+
+    <p>
+      Inside <code>getCustomerInfo</code> we just read it — no parameters, no plumbing:
+    </p>
+
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">getCustomerInfo() — read it anywhere</span></div>
+<pre><code><span class="tk-k">private</span> <span class="tk-t">CustomerInfo</span> <span class="tk-f">getCustomerInfo</span>() {
+
+    <span class="tk-c">// No need to pass `customer` around — just read it from the scope.</span>
+    <span class="tk-k">var</span> currentCustomer = <span class="tk-t">RequestContext</span>.<span class="tk-f">getCurrentCustomer</span>();
+
+    <span class="tk-k">try</span> (<span class="tk-k">var</span> scope = <span class="tk-t">StructuredTaskScope</span>.<span class="tk-f">open</span>()) {
+        <span class="tk-k">var</span> task1 = scope.<span class="tk-f">fork</span>(accountService::<span class="tk-f">getAccountsInfo</span>);
+        <span class="tk-k">var</span> task2 = scope.<span class="tk-f">fork</span>(loanService::<span class="tk-f">getLoansInfo</span>);
+        <span class="tk-k">var</span> task3 = scope.<span class="tk-f">fork</span>(creditScoreService::<span class="tk-f">getCreditScore</span>);
+        scope.<span class="tk-f">join</span>();
+
+        <span class="tk-k">return new</span> <span class="tk-t">CustomerInfo</span>(task1.<span class="tk-f">get</span>(), task2.<span class="tk-f">get</span>(), task3.<span class="tk-f">get</span>());
+    } <span class="tk-k">catch</span> (<span class="tk-t">InterruptedException</span> e) {
+        <span class="tk-k">throw new</span> <span class="tk-t">ABankException</span>(e);
+    }
+}
+
+<span class="tk-k">private record</span> <span class="tk-t">CustomerInfo</span>(<span class="tk-t">List</span>&lt;<span class="tk-t">Account</span>&gt; accounts,
+                            <span class="tk-t">List</span>&lt;<span class="tk-t">Loan</span>&gt; loans,
+                            <span class="tk-t">CreditScore</span> creditScore) {}
+</code></pre>
+    </div>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/14-method-references.png" alt="IntelliJ showing fork() calls using method references: accountService::getAccountsInfo etc">
+      <figcaption>
+        <b>Method references make it sing.</b>
+        Once <code>customer</code> is bound at the top, every service can drop its
+        <code>customer</code> parameter entirely — and the <code>fork()</code> lines
+        collapse to <code>scope.fork(accountService::getAccountsInfo)</code>.
+      </figcaption>
+    </figure>
+
+    <h3>The clean controller after refactoring</h3>
+    <p>
+      Before scoped values, every service had to accept the <code>customer</code> as a parameter
+      and the controller had to thread it through every call. After scoped values, the
+      signature of the services becomes parameterless and the controller body shrinks
+      to almost nothing.
+    </p>
+
+    <div class="kv">
+      <div class="col bad">
+        <span class="tag">Before</span>
+        <h4>Customer is passed everywhere</h4>
+<pre><code>accountService.<span class="tk-f">getAccountsInfo</span>(currentCustomer);
+loanService.<span class="tk-f">getLoansInfo</span>(currentCustomer);
+creditScoreService.<span class="tk-f">getCreditScore</span>(currentCustomer);
+loanService.<span class="tk-f">calculateOffer</span>(
+    currentCustomer, accounts, loans,
+    creditScore, amount, purpose);
+</code></pre>
+      </div>
+      <div class="col good">
+        <span class="tag">After</span>
+        <h4>Customer is read from the scope</h4>
+<pre><code>scope.<span class="tk-f">fork</span>(accountService::<span class="tk-f">getAccountsInfo</span>);
+scope.<span class="tk-f">fork</span>(loanService::<span class="tk-f">getLoansInfo</span>);
+scope.<span class="tk-f">fork</span>(creditScoreService::<span class="tk-f">getCreditScore</span>);
+loanService.<span class="tk-f">calculateOffer</span>(
+    accounts, loans, creditScore, amount, purpose);
+</code></pre>
+      </div>
+    </div>
+
+    <div class="callout violet">
+      <p class="title">Inheritance for free</p>
+      <p>
+        Because <code>StructuredTaskScope</code> is the integration point between
+        <code>ScopedValue</code> and threads, <b>every child virtual thread</b>
+        forked inside the scope automatically sees the same scoped value — without
+        you doing anything. That's why the credit-score subtask can read
+        <code>RequestContext.getCurrentCustomer()</code> with no plumbing.
+      </p>
+    </div>
+  </div>
+</section>
+<section id="putting-it-together">
+  <div class="wrap">
+    <span class="section-num">§ 05 · Putting it all together</span>
+    <h2 id="heading-07">All three, in one happy-path request</h2>
+    <p class="lead">
+      The final demo fires <code>POST /loan-application</code>. The server log shows
+      the four I/O calls starting in parallel — and only joining when all are done —
+      exactly the way the task tree was drawn.
+    </p>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/15-final-demo.png" alt="LoanController alongside structured concurrency log output: customer, accounts, loans, two credit scores all start in parallel">
+      <figcaption>
+        <b>The "Start/Done" log is the proof.</b>
+        All four subtasks (<code>getAccountsInfo</code>, <code>getLoansInfo</code>,
+        <code>getCreditScore /credit-score1</code>, <code>getCreditScore /credit-score2</code>)
+        start <i>before any of them finishes</i>. Only after all four complete does
+        <code>calculateOffer</code> run. This is structured concurrency behaving
+        exactly like the diagram.
+      </figcaption>
+    </figure>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/11-loan-offer-response.png" alt="Same log output as the previous figure from a slightly different angle">
+      <figcaption>
+        <b>Success log.</b>
+        <code>credit-score1</code> and <code>credit-score2</code> both return; the
+        <code>anySuccessfulResultOrThrow()</code> joiner picks the first one and
+        cancels the other. <code>calculateOffer</code> then produces the final offer.
+      </figcaption>
+    </figure>
+
+    <h3>The flow, end to end</h3>
+    <div class="flow">
+      <div class="node"><b>1</b>Request hits Tomcat</div>
+      <span class="arrow">→</span>
+      <div class="node"><b>2</b>Tomcat spawns a<br/>virtual thread</div>
+      <span class="arrow">→</span>
+      <div class="node"><b>3</b>Customer fetched<br/>(blocking call)</div>
+      <span class="arrow">→</span>
+      <div class="node"><b>4</b>Bind to<br/><code>ScopedValue</code></div>
+      <span class="arrow">→</span>
+      <div class="node"><b>5</b>Open scope, fork<br/>accounts / loans / credit</div>
+      <span class="arrow">→</span>
+      <div class="node"><b>6</b>Join, calculate<br/>offer, return</div>
+    </div>
+
+    <h3>What you deleted along the way</h3>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead>
+        <tr><th>Pain point</th><th>How Loom fixed it</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Threading the <code>customer</code> object through every method signature.</td>
+          <td>Bind once via <code>ScopedValue.where(...)</code>; read anywhere downstream.</td>
+        </tr>
+        <tr>
+          <td>Wrapping every blocking call in <code>CompletableFuture</code> + callbacks.</td>
+          <td>Call them directly. Virtual threads handle the blocking.</td>
+        </tr>
+        <tr>
+          <td>Manually cancelling siblings when one task fails.</td>
+          <td>Structured task scope does it on <code>join()</code>.</td>
+        </tr>
+        <tr>
+          <td>Reading the customer from a getter on a request DTO that you forgot to set.</td>
+          <td>Throw <code>NoSuchElementException</code> via <code>orElseThrow()</code> at the leaf.</td>
+        </tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+<section id="errors">
+  <div class="wrap">
+    <span class="section-num">§ 06 · Failure modes</span>
+    <h2 id="heading-08">What happens when things go wrong?</h2>
+    <p class="lead">
+      The talk closes with two failure scenarios. Both are designed to show that
+      structured concurrency's <b>short-circuit</b> + <b>error propagation</b> do
+      the right thing automatically — no manual cleanup code.
+    </p>
+
+    <h3>Scenario 1 — accounts service fails</h3>
+    <p>
+      Force <code>AccountService</code> to throw. Expected: all siblings
+      (<code>loans</code>, both <code>credit-score</code> calls) are
+      <b>cancelled</b>; the request returns 500.
+    </p>
+
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">controller — log the join failure</span></div>
+<pre><code><span class="tk-k">try</span> (<span class="tk-k">var</span> scope = <span class="tk-t">StructuredTaskScope</span>.<span class="tk-f">open</span>()) {
+    <span class="tk-k">var</span> task1 = scope.<span class="tk-f">fork</span>(() -&gt; accountService.<span class="tk-f">getAccountsInfo</span>(customer));
+    <span class="tk-k">var</span> task2 = scope.<span class="tk-f">fork</span>(() -&gt; loanService.<span class="tk-f">getLoansInfo</span>(customer));
+    <span class="tk-k">var</span> task3 = scope.<span class="tk-f">fork</span>(() -&gt; creditScoreService.<span class="tk-f">getCreditScore</span>(customer));
+    scope.<span class="tk-f">join</span>();
+    <span class="tk-c">// ... use results ...</span>
+} <span class="tk-k">catch</span> (<span class="tk-t">FailedException</span> e) {
+    logger.<span class="tk-f">error</span>(<span class="tk-s">"Failed exception"</span>, e);
+    <span class="tk-k">throw e</span>;
+}
+</code></pre>
+    </div>
+
+    <div class="callout danger">
+      <p class="title">What you see</p>
+      <p>
+        <code>join()</code> throws <code>FailedException</code> as soon as any
+        subtask fails. The other subtasks are interrupted and their virtual
+        threads exit cleanly. The client sees a 500. No half-completed business
+        state.
+      </p>
+    </div>
+
+    <h3>Scenario 2 — one credit-score provider fails</h3>
+    <p>
+      Force <code>credit-score1</code> to throw while <code>credit-score2</code> is
+      healthy. Expected: <b>the offer still succeeds</b> because
+      <code>anySuccessfulResultOrThrow()</code> only requires <i>one</i> successful
+      result.
+    </p>
+
+    <div class="codeblock">
+      <div class="code-head"><span class="dots"><span></span><span></span><span></span></span><span class="file">credit-score service — log both outcomes</span></div>
+<pre><code><span class="tk-c">// Both forks attempt the call. The joiner picks the survivor.</span>
+<span class="tk-k">try</span> (<span class="tk-k">var</span> scope = <span class="tk-t">StructuredTaskScope</span>.<span class="tk-f">open</span>(
+        <span class="tk-t">Joiner</span>.&lt;<span class="tk-t">CreditScore</span>&gt;<span class="tk-f">anySuccessfulResultOrThrow</span>())) {
+    scope.<span class="tk-f">fork</span>(() -&gt; <span class="tk-f">getCreditScoreFrom</span>(<span class="tk-s">"credit-score1"</span>, customer));
+    scope.<span class="tk-f">fork</span>(() -&gt; <span class="tk-f">getCreditScoreFrom</span>(<span class="tk-s">"credit-score2"</span>, customer));
+    <span class="tk-k">return</span> scope.<span class="tk-f">join</span>();
+}
+</code></pre>
+    </div>
+
+    <div class="callout success">
+      <p class="title">What you see</p>
+      <p>
+        <code>credit-score2</code> returns first → its value flows back, the
+        in-flight <code>credit-score1</code> is cancelled, and the rest of the
+        pipeline runs to completion. <b>The user gets an offer.</b>
+      </p>
+    </div>
+
+    <h3>Scenario 3 — both credit-score providers fail</h3>
+    <p>
+      Now both providers throw. <code>join()</code> throws
+      <code>FailedException</code>, the outer scope in the controller also fails,
+      and the client sees a 500. Exactly the behaviour you want.
+    </p>
+
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead>
+        <tr><th>Scenario</th><th>What the user gets</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Accounts service fails</td><td>500</td><td><code>join()</code> surfaces <code>FailedException</code>; siblings cancelled.</td></tr>
+        <tr><td>One credit-score provider fails</td><td>Offer returned</td><td><code>anySuccessfulResultOrThrow</code> succeeds on the healthy one.</td></tr>
+        <tr><td>Both credit-score providers fail</td><td>500</td><td>No successful result → <code>join()</code> throws.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+<section id="takeaways">
+  <div class="wrap">
+    <span class="section-num">§ 07 · Takeaways</span>
+    <h2 id="heading-09">What to remember</h2>
+
+    <div class="grid-3">
+      <div class="feature vt">
+        <div class="icon">⚡</div>
+        <h3>Virtual threads are cheap</h3>
+        <p>Use one per task. Don't pool them. The blocking call is no longer your enemy.</p>
+      </div>
+      <div class="feature sc">
+        <div class="icon">⑂</div>
+        <h3>Concurrency has structure</h3>
+        <p>Mirror your business tree with <code>StructuredTaskScope</code>. Pick the joiner that matches your policy.</p>
+      </div>
+      <div class="feature sv">
+        <div class="icon">◎</div>
+        <h3>Context is scoped, not leaked</h3>
+        <p>Use <code>ScopedValue</code> for request context. Immutable, bounded, automatically inherited by children.</p>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <p class="title">The "one elevator pitch" version</p>
+      <p>
+        With these three features together you write concurrent programs that
+        look like sequential programs — same readability, same reasoning,
+        same lifetime, same error handling. That is the leap
+        <b>structured programming</b> made decades ago, now applied to
+        concurrency.
+      </p>
+    </div>
+
+    <h3>Cheat-sheet: which feature do I reach for?</h3>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead>
+        <tr><th>I need…</th><th>Reach for…</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>To handle many concurrent requests without huge thread pools.</td><td>Virtual threads (often just <code>spring.threads.virtual.enabled=true</code>)</td></tr>
+        <tr><td>To run N sub-tasks in parallel and combine their results.</td><td><code>StructuredTaskScope.open()</code> + <code>fork()</code> + <code>join()</code></td></tr>
+        <tr><td>To succeed on the first response of N parallel calls.</td><td><code>Joiner.anySuccessfulResultOrThrow()</code></td></tr>
+        <tr><td>To fail the whole pipeline if any sub-task fails.</td><td>The default joiner (<code>allUntil</code> / <code>throw</code>) — short-circuiting is automatic.</td></tr>
+        <tr><td>To pass request-scoped data without threading it through every method.</td><td><code>ScopedValue.where(...).call(...)</code></td></tr>
+        <tr><td>To replace a buggy <code>ThreadLocal</code> that leaks between pooled requests.</td><td><code>ScopedValue</code></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+<section id="resources">
+  <div class="wrap">
+    <span class="section-num">§ 08 · Resources</span>
+    <h2 id="heading-10">Source, video &amp; further reading</h2>
+
+    <div class="grid-2">
+      <div class="card">
+        <h4>🎥 The original talk</h4>
+        <p class="small">
+          Balkrishna Rawool, "<b>Virtual Threads, Structured Concurrency and Scoped Values — Putting it all together</b>", Spring I/O 2025 (Barcelona, May 2025).
+          Follow the original recording linked above for the full talk.
+        </p>
+      </div>
+      <div class="card">
+        <h4>💻 Source code</h4>
+        <p class="small">
+          The Maven project <code>SpringBootLoom</code> (modules <code>abank</code> + <code>services</code>) was shared during the talk. The QR code on
+          the closing slide links to the GitHub repo — see the final slide image
+          below.
+        </p>
+      </div>
+    </div>
+
+    <figure class="figure">
+      <img loading="lazy" decoding="async" src="assets/screenshots/16-summary-qr.png" alt="Closing slide with QR code linking to source code and the speaker's social handles">
+      <figcaption>
+        <b>The closing slide.</b>
+        QR to the GitHub repo, plus the speaker's social handles
+        (<code>@balarawool.bsky.social</code>, <code>/balkrishnarawool</code>).
+      </figcaption>
+    </figure>
+
+    <h3>OpenJDK / JEP references</h3>
+    <div class="grid-3">
+      <div class="card">
+        <h4>JEP 444 — Virtual Threads</h4>
+        <p class="small muted">Final in JDK 21.</p>
+      </div>
+      <div class="card">
+        <h4>JEP 453 — Structured Concurrency</h4>
+        <p class="small muted">Preview as of this talk.</p>
+      </div>
+      <div class="card">
+        <h4>JEP 506 — Scoped Values</h4>
+        <p class="small muted">Final in JDK 25.</p>
+      </div>
+    </div>
+
+    <h3>Talk timeline at a glance</h3>
+    <div class="timeline">
+      <div class="ev">
+        <span class="t">00:00 — 02:30</span>
+        <div class="h">Intro &amp; Project Loom</div>
+        <p>Speaker, motivation, the three pillars and their JDK status.</p>
+      </div>
+      <div class="ev">
+        <span class="t">02:30 — 08:20</span>
+        <div class="h">Virtual Threads — theory + Spring Boot demo</div>
+        <p>Architecture diagram, mount/unmount, the <code>HelloController</code> one-property switch.</p>
+      </div>
+      <div class="ev">
+        <span class="t">08:20 — 31:30</span>
+        <div class="h">Structured Concurrency — theory + loan application demo</div>
+        <p>Patterns, benefits, <code>LoanController</code>, <code>CreditScoreService</code> with <code>anySuccessfulResultOrThrow()</code>.</p>
+      </div>
+      <div class="ev">
+        <span class="t">31:30 — 47:30</span>
+        <div class="h">Scoped Values — theory + refactor demo</div>
+        <p>ThreadLocal pain points, <code>RequestContext</code>, binding at the top, method references, failure scenarios.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <h4>About this page</h4>
+        <p class="small">
+          A learner's companion page for Balkrishna Rawool's Spring I/O 2025 talk on
+          Project Loom. Built from the original transcript and screenshots captured from the
+          talk video. All code shown is from the live demo.
+        </p>
+      </div>
+      <div>
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="#virtual-threads">Virtual Threads</a></li>
+          <li><a href="#structured-concurrency">Structured Concurrency</a></li>
+          <li><a href="#scoped-values">Scoped Values</a></li>
+          <li><a href="#putting-it-together">All Together</a></li>
+          <li><a href="#errors">Failure modes</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Speaker</h4>
+        <ul>
+          <li>Balkrishna Rawool — ING Bank</li>
+          <li>Bluesky: <code>@balarawool.bsky.social</code></li>
+          <li>GitHub: <code>/balkrishnarawool</code></li>
+          <li>Conference: Spring I/O 2025</li>
+        </ul>
+      </div>
+    </div>
+    <hr/>
+    <p class="small muted">
+      Built as a study aid. Not affiliated with Spring I/O, ING, or the OpenJDK Project Loom team.
+      Code snippets are illustrative, adapted from the talk's live demo.
+    </p>
+  </div>
+</footer></div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>

@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Follow one e-commerce example from Event Storming and bounded contexts to core domains, team boundaries, and tactical design."><meta name="theme-color" content="#111513">
+<title>Domain-Driven Design: A Complete Example — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.youtube.com/watch?v=f91ubquN3Tc">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#domain-driven-design">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#heading-01"><span>01</span><span>TL;DR — Nine bullets, five minutes</span></a><a href="#heading-02"><span>02</span><span>1. Welcome &amp; Why This Talk</span></a><a href="#heading-03"><span>03</span><span>2. Event Storming (Big Picture)</span></a><a href="#heading-04"><span>04</span><span>3. Bounded Contexts &amp; Ubiquitous Language</span></a><a href="#heading-05"><span>05</span><span>4. Core Domain — where to put your best people</span></a><a href="#heading-06"><span>06</span><span>5. From Strategic Design to Team Topologies</span></a><a href="#heading-07"><span>07</span><span>6. Tactical Design — the building blocks</span></a><a href="#heading-08"><span>08</span><span>7. When NOT to use tactical DDD</span></a><a href="#heading-09"><span>09</span><span>8. Supporting tactical design in code</span></a><a href="#heading-10"><span>10</span><span>9. Conclusion &amp; resources</span></a><a href="#heading-11"><span>11</span><span>G Glossary — every term, one paragraph each</span></a><a href="#heading-12"><span>12</span><span>Cheat sheet — one page, printed, ready</span></a></nav><p class="sidebar-note">Read at your own pace.<br>Keep the original talk close.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">Domain-driven design / Study guide</span>
+<h1>Domain-Driven Design: A Complete Example</h1><p class="guide-description">Everything Eberhard Wolff said, restructured so a junior developer can read it in 20 minutes and remember it a year from now — with diagrams from the slides, code-shaped examples, and research-backed enrichment.</p>
+<div class="guide-meta"><span>By <strong>Eberhard Wolff</strong></span><span>JCON Europe</span><span>47 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.youtube.com/watch?v=f91ubquN3Tc">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#domain-driven-design">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 12 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#heading-01"><span>01</span><span>TL;DR — Nine bullets, five minutes</span></a><a href="#heading-02"><span>02</span><span>1. Welcome &amp; Why This Talk</span></a><a href="#heading-03"><span>03</span><span>2. Event Storming (Big Picture)</span></a><a href="#heading-04"><span>04</span><span>3. Bounded Contexts &amp; Ubiquitous Language</span></a><a href="#heading-05"><span>05</span><span>4. Core Domain — where to put your best people</span></a><a href="#heading-06"><span>06</span><span>5. From Strategic Design to Team Topologies</span></a><a href="#heading-07"><span>07</span><span>6. Tactical Design — the building blocks</span></a><a href="#heading-08"><span>08</span><span>7. When NOT to use tactical DDD</span></a><a href="#heading-09"><span>09</span><span>8. Supporting tactical design in code</span></a><a href="#heading-10"><span>10</span><span>9. Conclusion &amp; resources</span></a><a href="#heading-11"><span>11</span><span>G Glossary — every term, one paragraph each</span></a><a href="#heading-12"><span>12</span><span>Cheat sheet — one page, printed, ready</span></a></nav></details>
+<div class="guide-content">
+
+    <section id="tldr">
+      <div class="eyebrow">Start here</div>
+      <h2 id="heading-01"><span class="chap-num">★</span>TL;DR — Nine bullets, five minutes</h2>
+      <div class="intro-callout">
+        Eberhard Wolff's <strong>"Domain-Driven Design: A Complete Example"</strong> walks through a single imaginary e-commerce project and applies one DDD tool after another. The whole talk is 47 minutes; this page is the same content, re-shaped for reading and remembering. <strong>If you only have five minutes, read the nine bullets below.</strong>
+      </div>
+      <ol>
+        <li><strong>DDD is a toolbox, not a waterfall.</strong> Eberhard moves from abstract (Event Storming) to concrete (Java patterns) but stresses: iterate, change abstraction level, do not treat this as phases. (Ch 1)</li>
+        <li><strong>Event Storming</strong> — domain experts + engineers stick past-tense events on a wall, order them in time, find parallel "swim lanes," and mark "pivotal events" where the world is genuinely different afterwards (e.g. <em>Order accepted</em>). Low-tech, parallel-friendly, reveals hidden social structures. (Ch 2)</li>
+        <li><strong>Bounded Context + Ubiquitous Language</strong> — a boundary inside which one model and one vocabulary are consistent. The same word means different things across contexts (Eberhard's <em>Customer</em>: invoice vs delivery). Candidates come from swim-lane/pivotal-event patterns, but it's judgment, not a rule. (Ch 3)</li>
+        <li><strong>Core Domain</strong> — the part of the system you should invest your best engineers in. You cannot identify it without domain experts; "I don't know" is a legitimate answer. In Eberhard's example, <em>delivery</em> is the core, the rest is generic/supporting. (Ch 4)</li>
+        <li><strong>Team Topologies</strong> — Eberhard prefers it over Evans' Strategic Design because it's simpler and adds <em>fracture planes</em> beyond just domain (location, regulatory, change cadence). Four team types: Stream-aligned, Platform, Enabling, Complicated-Subsystem. Three interaction modes: Collaboration, X-as-a-Service, Facilitating. <em>Magnets, not mandates</em>: the org chart alone won't change behavior. (Ch 5)</li>
+        <li><strong>Tactical building blocks</strong> form a hierarchy — Services → Factories → Repositories → Aggregates → Entities + Value Objects + Domain Events. Lower levels don't know about higher ones. (Ch 6)</li>
+        <li><strong>Don't reach for tactical DDD when simpler patterns fit.</strong> For pure CRUD or thin reporting, Martin Fowler's Transaction Script or Table Module is correct. Eberhard: ask the domain expert <em>why</em> before building a rich model. (Ch 7)</li>
+        <li><strong>In code:</strong> keep the domain as plain POJOs (no JPA leakage); use <em>jMolecules</em> to express DDD roles as architectural stereotypes; use <em>architecture-management tools</em> (Structure 101, ArchUnit, jQAssistant) to <em>reveal</em> dependency violations and provoke conversation, not to police. (Ch 8)</li>
+        <li><strong>The whole talk is iterative, not a recipe.</strong> Eberhard's most-repeated line: "It might look like a waterfall. It's not. Repeat any step whenever you need to." (Ch 1, Ch 9)</li>
+      </ol>
+      <p><em>Skip ahead to the chapters below, or jump to the <a href="#cheat-sheet">cheat sheet</a> or <a href="#glossary">glossary</a>.</em></p>
+    </section>
+
+    <article id="ch1" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-02"><span class="chap-num">1.</span>Welcome & Why This Talk</h2>
+        <div class="meta">
+          <span class="badge">00:00 – 02:38</span>
+          <span>~2 min 38 s</span>
+          <span>3 frames</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=0" target="_blank" rel="noopener">▶ Watch from 0:00</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Eberhard Wolff (Head of Architecture at <em>swag</em>, an e-commerce consultancy) introduces the talk.</li>
+          <li>The "Why": DDD has many tools — Bounded Context, Aggregates, Event Storming, etc. — and people keep asking how they fit together.</li>
+          <li><strong>It might look like a waterfall (abstract → concrete). It is not.</strong> Iterate, change level of abstraction, redo any step.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_001_030.0s.jpg" alt="Title slide: Domain-driven Design: A Complete Example, Eberhard Wolff, Head of Architecture, swaglab.rocks, ewolff.com" loading="lazy" />
+        <figcaption><strong>Frame 1 (00:30) — Opening slide.</strong> Eberhard's title card with QR code for live questions, JCON Europe 2024 branding. Speaker visible in lower-right headshot.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="assets/frames/frame_002_120.0s.jpg" alt="Slide titled Note: This might look like a waterfall. It is about different levels of abstractions. Work in iterations! Change the level of abstraction!" loading="lazy" />
+        <figcaption><strong>Frame 2 (02:00) — The "Note" slide.</strong> Eberhard's pre-emptive disclaimer. He spends the next 45 minutes going from abstract to concrete — and he wants you to remember that every step is repeatable.</figcaption>
+      </figure>
+
+      <h3>Why this talk?</h3>
+      <p>Eberhard opens with a meta-question: DDD has a <em>lot</em> of tools — Event Storming, Bounded Contexts, Ubiquitous Language, Aggregates, Repositories, Domain Events, Value Objects, Strategic Design, Core Domain… If you've only read the Wikipedia page, it looks like a checklist. It is not. The tools compose, and the order matters less than the iteration.</p>
+      <div class="quote">"The whole thing might look like a waterfall because we are going from more abstract to more concrete techniques, but it's certainly not supposed to be a waterfall. You need to work in iterations."
+        <cite>— Eberhard Wolff, 00:01:29</cite>
+      </div>
+      <h3>The domain Eberhard will use</h3>
+      <p>An imaginary <strong>e-commerce</strong> project. Not because he's an e-commerce expert, but because "we have all been there and ordered something at some e-commerce site." It takes one slide to explain, which means domain experts can follow it.</p>
+      <h3>What you'll leave with</h3>
+      <p>By the end of the talk, Eberhard has applied <strong>9 DDD techniques</strong> to the same e-commerce project, in order:</p>
+      <ol>
+        <li>Event Storming</li><li>Bounded Contexts + Ubiquitous Language</li><li>Identifying BC candidates</li>
+        <li>Core Domain</li><li>Team Topologies (instead of Evans' Strategic Design)</li>
+        <li>Tactical building blocks (Entities, VOs, Aggregates, Repositories, Factories, Services)</li>
+        <li>Alternatives for less complex systems</li><li>POJOs + jMolecules</li><li>Architecture management tools</li>
+      </ol>
+      <p>Each one is a technique you can use independently. None of them are mandatory. Use what fits.</p>
+      <div class="mnemonic">
+        <h4>The "NOT a waterfall" mnemonic</h4>
+        <p><strong>W-I-C-C</strong> — <strong>W</strong>ork in <strong>I</strong>terations, <strong>C</strong>hange level of abstraction, repeat any <strong>C</strong>oncrete step.</p>
+        <p>Whenever you feel yourself thinking "we did Event Storming, so now we do Bounded Contexts" — stop. Go back. Repeat. The order is convenient for teaching, not for shipping.</p>
+      </div>
+      <h3>Further reading</h3>
+      <ul>
+        <li><a href="https://www.domainlanguage.com/ddd/">Eric Evans — Domain-Driven Design</a> (the canonical book, 2003/2004)</li>
+        <li><a href="https://vaughnvernon.com/">Vaughn Vernon — Implementing Domain-Driven Design</a> (2013)</li>
+        <li>Eberhard Wolff's homepage: <a href="https://ewolff.com/">ewolff.com</a></li>
+      </ul>
+    </article>
+
+    <article id="ch2" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-03"><span class="chap-num">2.</span>Event Storming (Big Picture)</h2>
+        <div class="meta">
+          <span class="badge">02:38 – 12:40</span><span>~10 min</span><span>8 frames</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=158" target="_blank" rel="noopener">▶ Watch from 2:38</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li><strong>What</strong>: a workshop where domain experts + engineers put past-tense events on a wall as orange stickies, then enforce a timeline, identify parallel <em>swim lanes</em>, and mark <em>pivotal events</em> where the world changes.</li>
+          <li><strong>Why</strong>: domain experts don't know formal methods; engineers don't know the domain. Event Storming is the low-tech shared workspace where both can meet.</li>
+          <li><strong>Bonus</strong>: it reveals <em>social</em> structure — who controls whom, who knows what — not just business structure.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_003_210.0s.jpg" alt="Slide Why Event Storming? Two faces facing each other — Domain Experts (brain) and Software Engineers (gears) — central question How does domain knowledge become software?" loading="lazy" />
+        <figcaption><strong>Frame 3 (03:30) — Why Event Storming?</strong> The collaboration problem in one image: domain experts have the knowledge but no formalism; engineers have the formalism but no domain. Event Storming is the bridge.</figcaption>
+      </figure>
+
+      <h3>The problem Event Storming solves</h3>
+      <p>Domain experts <em>understand the domain</em>. Software engineers <em>know how to structure knowledge so it becomes software</em>. If you only listen to the experts, you don't get structure. If you only listen to the engineers, you don't get the domain. And the domain experts "don't know any formal methods" — UML, ER diagrams, sequence diagrams — they "can't really follow and probably shouldn't."</p>
+      <p>So you need a method that both groups can use without one having to learn the other's toolkit.</p>
+
+      <h3>The mechanics (Eberhard's version)</h3>
+      <h4>1. Write events in the past</h4>
+      <p>An event is <strong>"something that has happened"</strong>. It needs at least a noun and a verb, and the verb is in past tense — because it's a fact, not an intention.</p>
+      <figure>
+        <img src="assets/frames/frame_004_270.0s.jpg" alt="Slide What is Event Storming? Event in the past, at least noun + verb, verb in past tense, write event on orange sticky. Example Order accepted." loading="lazy" />
+        <figcaption><strong>Frame 4 (04:30) — What is Event Storming?</strong> A big orange sticky with a folded corner shows Eberhard's reference event: "Order accepted."</figcaption>
+      </figure>
+      <p>Examples: <code>Order accepted</code>, <code>Payment received</code>, <code>Parcel left warehouse</code>, <code>Invoice sent</code>.</p>
+
+      <h4>2. Chaotic exploration</h4>
+      <p>First phase: <em>everyone</em> writes stickies and sticks them anywhere on the wall. No order. Bias toward volume, not order. The chaos is the point — it surfaces disagreement early.</p>
+
+      <h4>3. Enforce the timeline</h4>
+      <p>Re-order the stickies left-to-right. Remove duplicates. Argue about what really needs to come next.</p>
+      <figure>
+        <img src="assets/frames/frame_005_330.0s.jpg" alt="Slide Phase: Enforce the timeline — scattered yellow sticky-note rectangles representing events before ordering." loading="lazy" />
+        <figcaption><strong>Frame 5 (05:30) — Enforcing the timeline.</strong> Twenty-plus golden stickies scattered in loose horizontal clusters. Before-order.</figcaption>
+      </figure>
+
+      <h4>4. Identify swim lanes</h4>
+      <p>Once the events are in order, parallel sequences become visible. Draw a line. Name the lane. In Eberhard's e-commerce example: <em>Invoicing</em> and <em>Delivery</em> run in parallel after the order is accepted.</p>
+      <figure>
+        <img src="assets/frames/frame_006_360.0s.jpg" alt="Slide Phase: Identify Swim Lanes — events more horizontally aligned, red horizontal line separates one sequence, red callout Swimlane Invoicing points to the upper lane." loading="lazy" />
+        <figcaption><strong>Frame 6 (06:00) — Swim lanes appear.</strong> Same events, now grouped; a red line separates the invoicing sequence from the rest.</figcaption>
+      </figure>
+
+      <h4>5. Pivotal events</h4>
+      <p>Eberhard's heuristic: <strong>"Somehow the world is different afterwards."</strong> The event isn't about compensating actions or reversibility — it's about phase transitions.</p>
+      <ul>
+        <li><code>Order accepted</code>: <em>before</em> you can fiddle with a shopping cart. <em>After</em> the cart is dead and a real Order exists.</li>
+        <li><code>Parcel left warehouse</code>: <em>before</em> the warehouse can hold it back. <em>After</em> DHL will deliver it.</li>
+      </ul>
+      <figure>
+        <img src="assets/frames/frame_007_410.0s.jpg" alt="Slide Phase: Identify Pivotal Events — golden event notes around two red horizontal separators, red callouts Swimlane Invoicing above and Swimlane Delivery below." loading="lazy" />
+        <figcaption><strong>Frame 7 (06:50) — Two swim lanes in place.</strong> Now we can start looking for the events that separate them.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/frames/frame_008_450.0s.jpg" alt="Same Phase slide now with a yellow callout identifying Order accepted at the pivotal boundary." loading="lazy" />
+        <figcaption><strong>Frame 8 (07:30) — <code>Order accepted</code> marked as the pivotal event.</strong> Before/after the marker, the model changes: cart → order, edit → cancel-only, no invoice → invoice pending.</figcaption>
+      </figure>
+
+      <h3>Why Event Storming works (Eberhard's three reasons)</h3>
+      <ol>
+        <li><strong>Low-tech, easy for domain experts.</strong> It's stickies and a wall. No UML. No notation to learn.</li>
+        <li><strong>Parallel by nature.</strong> 10+ people can stick events simultaneously. The wall absorbs everyone.</li>
+        <li><strong>Social structures become visible.</strong> The person who hovers near the invoicing events knows invoicing. The person trying to control everyone's stickies is trying to control the team. Eberhard: <em>"if there is someone who wants to control everyone, well, it's going to be obvious."</em></li>
+      </ol>
+      <figure>
+        <img src="assets/frames/frame_010_570.0s.jpg" alt="Slide Event Storming: Benefits — Low-tech: easy to understand for domain experts, People can work in parallel, Social structures become obvious." loading="lazy" />
+        <figcaption><strong>Frame 10 (09:30) — The three benefits, on one slide.</strong></figcaption>
+      </figure>
+      <figure>
+        <img src="assets/frames/frame_011_720.0s.jpg" alt="Slide Event Storming: Result — Common understanding of the domain; A model of the domain; …that must be tweaked before it can be implemented; Roles and collaboration in the project become obvious." loading="lazy" />
+        <figcaption><strong>Frame 11 (12:00) — The result.</strong> A <em>common understanding</em>, not a finished spec. You'll still need to "tweak before implemented."</figcaption>
+      </figure>
+      <div class="quote">"If you have users that actually use the system, they might not have the vision and the context to understand why this system was created in the first place. If you just stick to managers, they will not understand how the day-to-day work works. You need both."
+        <cite>— Eberhard Wolff, 00:09:30</cite>
+      </div>
+
+      <h3>The people in the room (often forgotten)</h3>
+      <p>Eberhard stresses: Event Storming is not just about the <em>artifact</em> on the wall — it's about <em>collaboration</em>. You need:</p>
+      <ul>
+        <li>Users who actually use the system (for day-to-day reality).</li>
+        <li>Managers (for vision and value).</li>
+        <li>People with vision <em>and</em> day-to-day knowledge (rare, but essential).</li>
+      </ul>
+
+      <h3>Enrichment — the full Event Storming lifecycle (Alberto Brandolini)</h3>
+      <p>Eberhard mentions three phases. The canonical sequence (Brandolini's book <em>Introducing EventStorming</em>) has seven, plus Big Picture feeds into Process-Level and Design-Level workshops. If you only take one thing from the enrichment: <strong>Phase 2 must be silent.</strong></p>
+      <ol>
+        <li><strong>Kick-off</strong> — frame the goal, scope, agenda.</li>
+        <li><strong>Chaotic Exploration</strong> — silent writing of past-tense events.</li>
+        <li><strong>Enforcing the Timeline</strong> — order, dedupe, surface disagreements.</li>
+        <li><strong>People and Systems</strong> — yellow stickies for actors/roles, blue for external systems.</li>
+        <li><strong>Pivotal Events</strong> — mark the few events that represent phase transitions.</li>
+        <li><strong>Problems and Opportunities</strong> — neon-pink "hotspot" stickies at conflicts and unknowns.</li>
+        <li><strong>Pick Your Problem</strong> — vote, assign an owner, leave the room with a commitment.</li>
+      </ol>
+      <p>After Big Picture: <strong>Process-Level ES</strong> (adds commands and policies) and finally <strong>Design-Level ES</strong> (adds aggregates, used as a 1:1 input to code).</p>
+
+      <div class="pitfall">
+        <h4>Anti-patterns — Brandolini's "Common Pitfalls"</h4>
+        <ul>
+          <li><strong>The Big Table at the Center of the Room.</strong> Blocks the wall. Remove it.</li>
+          <li><strong>The Dungeon Master.</strong> Facilitator writes stickies for participants. Stay out of the way.</li>
+          <li><strong>The Committee Trap.</strong> Phase 2 must be <em>silent</em>; otherwise it becomes a debate.</li>
+          <li><strong>Divide and Conquer Too Early.</strong> Converge first, split for Process-Level.</li>
+          <li><strong>Precise Notation Too Early.</strong> Commands, policies, aggregates belong in Design-Level, not Big Picture.</li>
+          <li><strong>Adding Special Stickies.</strong> Custom colors get ignored. Stick to the official palette: orange=event, yellow=actor, blue=external system, lilac=software, pink=hotspot, green=opportunity.</li>
+          <li><strong>Remote participants via robot/AV.</strong> Brandolini and Bourgau both tried it; it doesn't work yet. ES is a co-located activity.</li>
+        </ul>
+      </div>
+
+      <div class="analogy">
+        <div class="label">Junior-friendly analogy</div>
+        Event Storming is like <strong>storyboarding a movie before filming</strong>. The whole cast stands around a long strip of paper and drops cards for every key moment — <em>Hero enters</em>, <em>Villain appears</em>, <em>Explosion</em> — then argues about the order. Out of that argument, the plot, and the boundaries between subplots, become visible.
+      </div>
+
+      <div class="mnemonic">
+        <h4>The six official sticky colors</h4>
+        <p><strong>O</strong>range = event · <strong>P</strong>ink = hotspot · <strong>Y</strong>ellow = actor · Pale <strong>B</strong>lue = external system · <strong>L</strong>ilac = software system · <strong>G</strong>reen = opportunity.</p>
+        <p>Brandolini insists: stick to this palette. Adding your own color silently signals that you've made up your own dialect — and the next room won't read your wall.</p>
+      </div>
+
+      <h3>Further reading</h3>
+      <ul>
+        <li><a href="https://leanpub.com/introducing_eventstorming">Alberto Brandolini — <em>Introducing EventStorming</em></a> (Leanpub)</li>
+        <li><a href="https://www.eventstorming.com/patterns/">eventstorming.com — patterns and glossary</a></li>
+        <li><a href="https://ddd-crew.github.io/eventstorming-glossary-cheat-sheet/">DDD-Crew EventStorming cheat sheet</a></li>
+        <li><a href="https://philippe.bourgau.net/21-more-event-storming-tips-part-3-anti-and-meta-patterns/">Bourgau — 21 Event Storming Tips (anti-patterns)</a></li>
+      </ul>
+    </article>
+
+    <article id="ch3" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-04"><span class="chap-num">3.</span>Bounded Contexts & Ubiquitous Language</h2>
+        <div class="meta">
+          <span class="badge">12:40 – 21:42</span><span>~9 min</span><span>6 frames</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=760" target="_blank" rel="noopener">▶ Watch from 12:40</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li><strong>Bounded Context</strong> = a boundary inside which one model + one Ubiquitous Language are consistent. Belongs to <em>one team</em> (a team may own several BCs, but never the other way around).</li>
+          <li>The killer example: Eberhard's <em>Customer</em>. For <strong>Invoicing</strong>, the customer is whoever pays (his company). For <strong>Delivery</strong>, the customer is whoever receives (himself, at his home). Same word, two meanings — exactly because they're two BCs.</li>
+          <li>BC candidates come from the Event Storming wall: areas between swim lanes and pivotal events are good starting points. <em>Not all pivotal events separate BCs.</em></li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_013_870.0s.jpg" alt="Slide Ubiquitous Language — Code, Database, Software Engineers, Domain Experts with document icon, database cylinder, and human figures showing shared vocabulary across people, code, data." loading="lazy" />
+        <figcaption><strong>Frame 13 (14:30) — The Ubiquitous Language diagram.</strong> One vocabulary that lives in the code, the database, and how every human in the room talks.</figcaption>
+      </figure>
+
+      <h3>What lives inside a Bounded Context?</h3>
+      <p>Two things, tightly coupled:</p>
+      <ol>
+        <li>A <strong>model</strong> (the code that represents the domain).</li>
+        <li>A <strong>Ubiquitous Language</strong> — a vocabulary that is "everywhere": in the code, in the database schema, in the team's mouth, and in the domain expert's mouth.</li>
+      </ol>
+      <p>Some terms are obvious (Customer, Order). Some are project-specific jargon that nobody outside the team will know. Eberhard's project has a thing called <em>"Zupas"</em> that "truly only they know" — and that's fine. The point is: <em>that</em> team's code, database, and conversations all agree on what a Zupa is.</p>
+
+      <h3>The Customer example — Eberhard's centerpiece</h3>
+      <p>Eberhard is buying a laptop. <strong>swag</strong> (his company) is paying. So:</p>
+      <figure>
+        <img src="assets/frames/frame_014_930.0s.jpg" alt="Slide Bounded Context Example — two separate magenta rectangles labeled Invoicing Process and Delivery." loading="lazy" />
+        <figcaption><strong>Frame 14 (15:30) — Two BCs, side by side.</strong> The differing meanings haven't been revealed yet.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/frames/frame_015_990.0s.jpg" alt="Same slide now defining customer differently per context — Invoicing: Customer who pays the bill. Delivery: Customer who the products are sent to." loading="lazy" />
+        <figcaption><strong>Frame 15 (16:30) — Same word, two meanings, side by side.</strong> The spotlight makes the Delivery definition pop. Same English noun, two different domain objects.</figcaption>
+      </figure>
+
+      <div class="quote">"Those are actually two different things that have the same name. And now we can easily reason about this, because we don't have to say 'the customer' — we can say 'the customer in the context of delivery' or 'the customer in the context of invoice processing.'"
+        <cite>— Eberhard Wolff, 00:16:13</cite>
+      </div>
+      <p>Without the BC split, you'd need to say "the customer who pays" or "the customer who receives" every time, or invent two ugly class names (<code>PayingCustomer</code> and <code>ReceivingCustomer</code>). <em>With</em> the BC split, each context's <code>Customer</code> is internally consistent and you can call it <code>Customer</code> everywhere inside that context.</p>
+
+      <h3>How to find BC candidates</h3>
+      <p>Eberhard's heuristic (which matches Brandolini's <em>Finding Bounded Contexts with EventStorming</em>):</p>
+      <ol>
+        <li><strong>Look at the Event Storming wall.</strong> Areas between swim lanes and pivotal events are good candidates.</li>
+        <li><strong>Not all pivotal events separate BCs.</strong> Eberhard thinks <em>Parcel left warehouse</em> does <em>not</em> start a new BC — you still care about the same domain (products, delivery) before and after; you've just lost the ability to undo. But <em>Order accepted</em> does, because the model changes shape (cart → order, edit → cancel-only).</li>
+        <li><strong>Discuss and disagree.</strong> Eberhard: <em>"You might have a different opinion and that's great."</em> Boundaries are a judgment call. Two teams looking at the same wall will draw different boundaries.</li>
+      </ol>
+      <figure>
+        <img src="assets/frames/frame_016_1050.0s.jpg" alt="Slide Identify Candidates for Bounded Contexts — cyan rounded outlines enclosing initial order-processing cluster and invoicing/delivery lanes; yellow vertical pivotal-event markers; red lines for swim lanes." loading="lazy" />
+        <figcaption><strong>Frame 16 (17:30) — BC candidates highlighted on the wall.</strong> Cyan boxes enclose the three candidate BCs; yellow markers show pivotal events; the third pivotal (<em>Parcel left warehouse</em>) is intentionally <em>not</em> splitting a new BC.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/frames/frame_018_1260.0s.jpg" alt="Same Identify Candidates slide darkened with circular spotlight on Parcel left warehouse and the boundary around nearby invoicing/delivery events." loading="lazy" />
+        <figcaption><strong>Frame 18 (21:00) — Eberhard's spotlight on the decision.</strong> "Does <em>Parcel left warehouse</em> deserve its own BC?" His answer: probably not.</figcaption>
+      </figure>
+
+      <h3>Why Bounded Contexts are worth the trouble</h3>
+      <ul>
+        <li><strong>Changes localize.</strong> Want to change how delivery works? Touch the delivery BC. Nothing else.</li>
+        <li><strong>Dependencies are unidirectional.</strong> Order processing uses delivery and invoicing; the reverse is not true. Clean dependency graph.</li>
+        <li><strong>Responsibilities are locally owned.</strong> Requests are "properly local to one bounded context" — a phrase Eberhard uses to remind you: if a request spans BCs, that's a smell.</li>
+      </ul>
+
+      <h3>Enrichment — "same word, different meaning" beyond Eberhard's Customer</h3>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Term</th><th>Context A</th><th>Context B</th><th>Why they differ</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Product</strong></td><td>Sales / Catalog</td><td>Procurement / Warehouse</td><td>Sales wants image, price, marketing copy; Procurement wants supplier, lead time, margin; Warehouse wants SKU, bin location, weight.</td></tr>
+          <tr><td><strong>Account</strong></td><td>Retail Banking</td><td>Investment Banking</td><td>Retail = balance, overdraft, debit/credit history. Investment = holdings, cost basis, custody, performance attribution.</td></tr>
+          <tr><td><strong>Address</strong></td><td>Shipping</td><td>Billing / Tax</td><td>Shipping needs access notes, GPS, delivery windows. Billing needs invoicing postal address. Tax authority needs the registered legal entity — often different from both.</td></tr>
+          <tr><td><strong>Order</strong></td><td>Sales</td><td>Fulfillment</td><td>Sales calls it "order" the moment payment clears; fulfillment only treats it as actionable when inventory is reserved and a carrier label exists.</td></tr>
+          <tr><td><strong>Active</strong></td><td>Sales ("has open orders")</td><td>Support ("has open tickets")</td><td>One boolean, two completely different definitions.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Enrichment — the Context Map patterns (Evans 2003, Vernon 2013)</h3>
+      <p>When two BCs need to talk, Evans named the ways it can happen. The right pattern depends on power dynamics:</p>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Pattern</th><th>When to use it</th><th>Trade-off</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Shared Kernel</strong></td><td>Two teams share a small subset (e.g. a <code>Money</code> type, a shared identity) and coordinate changes.</td><td>Maximizes reuse <em>only if the kernel stays tiny</em>. Grows toxic fast.</td></tr>
+          <tr><td><strong>Customer / Supplier</strong></td><td>Upstream accepts downstream's needs as input to planning; downstream can negotiate priorities.</td><td>Healthy while the supplier listens. Collapses into Conformist the moment they stop.</td></tr>
+          <tr><td><strong>Conformist</strong></td><td>Downstream has no leverage over upstream (external SaaS, government API, legacy with no owner). Adopt upstream as-is.</td><td>Cheap and fast. <em>Corrupts your ubiquitous language over time</em> as upstream terminology leaks in.</td></tr>
+          <tr><td><strong>Anti-Corruption Layer (ACL)</strong></td><td>Downstream builds a translation layer that converts upstream model into its own domain terms.</td><td>Protects model integrity. Costs effort to build, pays back every time upstream changes.</td></tr>
+          <tr><td><strong>Open Host Service (OHS)</strong></td><td>Upstream exposes a single, stable, well-documented public protocol.</td><td>Decouples upstream's internal model from the public contract. Requires upstream discipline.</td></tr>
+          <tr><td><strong>Published Language (PL)</strong></td><td>The interchange format itself is a shared schema (JSON Schema, Avro, Protobuf, AsyncAPI). Almost always paired with OHS.</td><td>Standardizes integration at the data layer. Becomes a governance burden once many contexts depend on it.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="pitfall">
+        <h4>Anti-patterns — Bounded Contexts gone wrong</h4>
+        <ul>
+          <li><strong>Big Ball of Mud pretending to be a BC.</strong> A "context" with 300 entities and no clear ownership is a legacy monolith with a sticker on it.</li>
+          <li><strong>Distributed Monolith.</strong> 15 microservices that can't deploy independently because they share a database or call each other synchronously in a chain.</li>
+          <li><strong>Wrong granularity — too fine.</strong> "Grains of sand" anti-pattern: nano-services whose boundaries are CRUD verbs, not business capabilities.</li>
+          <li><strong>Wrong granularity — too coarse.</strong> "Fat service" / mini-monolith: one BC handles payment + inventory + shipping.</li>
+          <li><strong>The Shared Database.</strong> When two contexts share the same schema, the boundary effectively disappears (Vlad Khononov). The single most common DDD anti-pattern.</li>
+        </ul>
+      </div>
+
+      <div class="analogy">
+        <div class="label">Junior-friendly analogy</div>
+        <strong>Two hospitals sharing the word "Patient."</strong> In Billing, a Patient = name + insurance ID + invoice history. In the ER, a Patient = triage level + allergies + blood type. Forcing both departments to share one <code>Patient</code> class produces a bloated god-object with hundreds of mostly-null fields. The fix: each department owns its own <code>Patient</code> model inside its own BC, and they exchange only the IDs they need.
+      </div>
+
+      <div class="mnemonic">
+        <h4>"BCs are linguistic boundaries"</h4>
+        <p>When the same noun genuinely means different things to different stakeholders, you have found the boundary. Don't fight it — <strong>formalize it.</strong></p>
+        <p>If you ever find yourself naming classes <code>PayingCustomer</code>, <code>ReceivingCustomer</code>, <code>CatalogProduct</code>, <code>WarehouseProduct</code> — you don't need new classes. You need <em>two Bounded Contexts</em>.</p>
+      </div>
+
+      <h3>Further reading</h3>
+      <ul>
+        <li><a href="https://martinfowler.com/bliki/BoundedContext.html">Martin Fowler — BoundedContext</a></li>
+        <li><a href="https://github.com/ddd-crew/context-mapping">DDD-Crew — Context Mapping</a> (free, regularly updated)</li>
+        <li><a href="https://vladikk.com/2018/01/21/bounded-contexts-vs-microservices/">Vlad Khononov — Bounded Contexts are NOT Microservices</a></li>
+        <li>Vaughn Vernon, <em>Implementing Domain-Driven Design</em> (2013), Chapters 2 &amp; 7</li>
+      </ul>
+    </article>
+
+    <article id="ch4" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-05"><span class="chap-num">4.</span>Core Domain — where to put your best people</h2>
+        <div class="meta">
+          <span class="badge">21:33 – 24:43</span><span>~3 min</span><span>3 frames</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=1293" target="_blank" rel="noopener">▶ Watch from 21:33</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li><strong>Core Domain</strong> = the part of the system you exist to build. The reason a customer picks <em>you</em>.</li>
+          <li>You cannot identify it without domain experts. <em>"I don't know"</em> is a legitimate answer.</li>
+          <li>In Eberhard's e-commerce project: <strong>delivery</strong> is the core (fast, reliable). Order and invoicing are <em>generic</em> or <em>supporting</em> subdomains.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_019_1350.0s.jpg" alt="Slide What is the Core Domain? — cyan rounded rectangles enclose Order Processing (large, left) and two narrower stacked rectangles for Invoicing and Delivery Process on the right; yellow target icon upper-right." loading="lazy" />
+        <figcaption><strong>Frame 19 (22:30) — Three candidate BCs, target icon in the corner.</strong> Eberhard asks the audience: which one is the core?</figcaption>
+      </figure>
+
+      <h3>The trick question</h3>
+      <p>Eberhard asks the audience, "Which is the core domain — Order Processing, Invoicing, or Delivery Process?" Hands go up for each. Then he reveals:</p>
+      <div class="quote">"I would argue that this is a question that we cannot answer unless we talk to the domain experts. In our case it's about delivering quickly and reliably — so the core is the delivery process. The rest are just generic subdomains or supporting subdomains."
+        <cite>— Eberhard Wolff, 00:22:57</cite>
+      </div>
+      <p>The answer is <em>contextual</em>. For a different e-commerce business — say, one that competes on <em>recommendation quality</em> — the core would be the catalog/recommendations engine, not delivery.</p>
+      <figure>
+        <img src="assets/frames/frame_020_1410.0s.jpg" alt="Slide bullets: We delivery quickly and reliably; So core domain = delivery process; Rest: generic subdomain; …or supporting subdomain." loading="lazy" />
+        <figcaption><strong>Frame 20 (23:30) — The reveal.</strong> "Core = delivery process. Rest: generic or supporting."</figcaption>
+      </figure>
+
+      <h3>What changes once you know the Core?</h3>
+      <p>You direct your <strong>best engineers</strong> at the core domain. Everything else gets less attention, off-the-shelf solutions, junior staff, or outsourced. Evans: <em>"The heroes are working in the core domain."</em></p>
+
+      <div class="analogy">
+        <div class="label">Junior-friendly analogy — a restaurant</div>
+        The <strong>chef's recipe and technique</strong> is your Core Domain — that's what diners come for. The <strong>reservation system</strong> is Supporting — necessary, custom to your restaurant, but not what makes the food special. The <strong>light bulbs and dishwasher</strong> are Generic — buy them off the shelf.
+      </div>
+
+      <h3>Enrichment — the three subdomain types (Evans 2004, Vernon 2013)</h3>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Type</th><th>Job</th><th>Investment</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Core Domain</strong></td><td>Source of competitive advantage. If it disappeared, your reason-to-exist goes with it.</td><td>Best developers, deepest modeling, custom code, ubiquitous language, constant refactoring.</td></tr>
+          <tr><td><strong>Supporting Subdomain</strong></td><td>Necessary for Core to function, but not differentiating. Often business-specific enough that no off-the-shelf product exists.</td><td>Custom-built, but with a smaller team, less polish, less investment.</td></tr>
+          <tr><td><strong>Generic Subdomain</strong></td><td>Functionality that is solved identically in most companies (auth, email, PDF generation, mapping).</td><td>Buy it, use a library, hand it to juniors. Vernon: "Solution may be available for purchase or be outsourced… NO WAY TO DIFFERENTIATE."</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Enrichment — how to identify which is which</h3>
+      <ol>
+        <li><strong>Ask domain experts, not developers.</strong> Only the operations VP can tell you whether shipping logistics is your differentiator.</li>
+        <li><strong>"I don't know" is legitimate.</strong> Eberhard's point exactly.</li>
+        <li><strong>Apply the replacement test.</strong> Imagine your competitor replaces your implementation of this subdomain with a SaaS product overnight. Do you lose customers? <em>Yes → Core.</em> <em>No → Supporting or Generic.</em></li>
+        <li><strong>Where do the senior people spend time?</strong> If the CTO never talks about it, it isn't Core.</li>
+      </ol>
+
+      <h3>Examples — domains where the "obvious" answer is wrong</h3>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Business</th><th>"Obvious" Core</th><th>Actual Core (depends on strategy)</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>E-commerce platform</td><td>Product catalog</td><td>Could be <strong>shipping logistics</strong></td><td>If you compete on same-day delivery, route optimization is the moat; product data is solved.</td></tr>
+          <tr><td>Banking app</td><td>Account management</td><td>Could be <strong>fraud detection</strong></td><td>Most banks have the same accounts; winners invest in fraud models.</td></tr>
+          <tr><td>B2B SaaS</td><td>Reporting &amp; dashboards</td><td>Could be <strong>onboarding UX</strong></td><td>If customers churn in week 1, a frictionless first-run beats a better pivot table.</td></tr>
+          <tr><td>Cargo shipping (Evans' running example)</td><td>Booking</td><td><strong>Routing &amp; handling-event tracking</strong></td><td>Anyone can take a booking; nobody can replicate your domain knowledge of how cargo moves.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="pitfall">
+        <h4>Anti-patterns — Core Domain gone wrong</h4>
+        <ul>
+          <li><strong>"Everything is Core."</strong> When every team labels its area as Core, nothing gets heroic investment and the term loses all meaning.</li>
+          <li><strong>"Core" as a status symbol.</strong> Using Core to win political battles or justify headcount, rather than to focus investment.</li>
+          <li><strong>No investment difference between subdomains.</strong> Senior engineers polishing logging while auth is neglected.</li>
+          <li><strong>Confusing subdomains with bounded contexts.</strong> Vernon: <em>"Bounded Context = solution; Subdomain = problem."</em></li>
+        </ul>
+      </div>
+
+      <div class="mnemonic">
+        <h4>The replacement test — your pocket heuristic</h4>
+        <p>For every BC candidate, ask: <em>"If our competitor bought a SaaS for this overnight, would we lose customers?"</em></p>
+        <ul>
+          <li><strong>Yes</strong> → Core. Protect it. Best engineers.</li>
+          <li><strong>No, but it's specific to us and we still need it</strong> → Supporting. Adequate is good enough.</li>
+          <li><strong>No, and anyone could replace it</strong> → Generic. Buy it, library it, give it to juniors.</li>
+        </ul>
+      </div>
+
+      <h3>Further reading</h3>
+      <ul>
+        <li><a href="https://www.domainlanguage.com/ddd/">Eric Evans — DDD, Chapter 15 (Distillation)</a></li>
+        <li><a href="https://deviq.com/domain-driven-design/subdomain/">DevIQ — Subdomains in DDD</a></li>
+        <li>Vaughn Vernon, <em>Implementing Domain-Driven Design</em> (2013), Chapter 2</li>
+      </ul>
+    </article>
+
+<!-- CHAPTER 5 -->
+    <article id="ch5" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-06"><span class="chap-num">5.</span>From Strategic Design to Team Topologies</h2>
+        <div class="meta">
+          <span class="badge">24:43 – 34:22</span>
+          <span>~9 min 40 s</span>
+          <span>6 frames</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=1483">▶ Watch from 24:43</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Eberhard <strong>prefers Team Topologies over Evans' Strategic Design</strong> because it's simpler, more intuitive, and covers more <em>fracture planes</em> than just Bounded Context.</li>
+          <li><strong>Four team types</strong>: Stream-aligned, Platform, Enabling, Complicated-Subsystem.</li>
+          <li><strong>Three interaction modes</strong>: Collaboration, X-as-a-Service, Facilitating.</li>
+          <li>Team Topologies defines <em>magnets</em>, not mandates. The org chart alone won't change behavior.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_021_1470.0s.jpg" alt="Section divider slide: Not Strategic Design but Team Topologies." loading="lazy" />
+        <figcaption><strong>Frame 21 (24:30) — The pivot.</strong> Eberhard skips Evans' Strategic Design and goes straight to Team Topologies. He has given a separate talk explaining why.</figcaption>
+      </figure>
+
+      <h3>Why Team Topologies, not Strategic Design?</h3>
+      <ul>
+        <li><strong>Simpler.</strong> Four team types + three interaction modes. That's the entire vocabulary.</li>
+        <li><strong>More intuitive.</strong> Most engineers "get it" in five minutes.</li>
+        <li><strong>More fracture planes.</strong> You don't have to split teams only by domain. Location, regulatory boundary, change cadence, technology, risk profile — all valid fracture planes.</li>
+        <li><strong>More reflective of the wild.</strong> Acknowledges that org charts aren't enough and informal collaboration (Slack, DMs, shared docs) shapes the real organization.</li>
+      </ul>
+
+      <figure>
+        <img src="assets/frames/frame_022_1560.0s.jpg" alt="Slide Why Team Topologies? — Somehow teams need to collaborate, Not too complex, Intuitive (?), Covers more fracture planes then just Bounded Contexts e.g. location." loading="lazy" />
+        <figcaption><strong>Frame 22 (26:00) — Eberhard's four-bullet case.</strong> "Covers more fracture planes than just Bounded Contexts e.g. location."</figcaption>
+      </figure>
+
+      <h3>What is a fracture plane?</h3>
+      <p>A <em>fracture plane</em> is a reason teams should be separate. Eberhard's example: "I don't know, in Hamburg for example there are two locations, and it probably makes sense to have one team per location because they can go in one room and talk." If you ignore that and say "we'll just have people work together for other reasons," every team will be distributed across locations and you'll get the worst of both worlds.</p>
+
+      <h3>The four team types</h3>
+      <figure>
+        <img src="assets/frames/frame_023_1650.0s.jpg" alt="Slide Team Topologies — three long horizontal regions labeled Invoicing, Order Processing, Delivery. A separate orange polygon labeled Delivery Optimization below." loading="lazy" />
+        <figcaption><strong>Frame 23 (27:30) — Stream-aligned teams (the three yellow bars) + one Complicated-Subsystem team (Delivery Optimization, orange octagon).</strong></figcaption>
+      </figure>
+      <figure>
+        <img src="assets/frames/frame_024_1740.0s.jpg" alt="Expanded Team Topologies diagram with XaaS cones from Delivery Optimization and Kubernetes/CI Team connecting upward to multiple stream-aligned areas." loading="lazy" />
+        <figcaption><strong>Frame 24 (29:00) — Full picture.</strong> Two <em>X-as-a-Service</em> cones connect a Platform team (Kubernetes / CI) and the Complicated-Subsystem team to the stream-aligned teams above them.</figcaption>
+      </figure>
+
+      <h4>1. Stream-aligned team</h4>
+      <p><strong>Aligned to a single valuable flow of work</strong> — a product, user journey, or business capability. Owns it end-to-end (build, deploy, run). <em>"You built it, you run it."</em> In Eberhard's example: invoicing, order processing, delivery. The default team type; ~80% of engineering capacity in a healthy org.</p>
+
+      <h4>2. Platform team</h4>
+      <p>Provides an <strong>internal product</strong> that accelerates stream-aligned teams by removing non-differentiating complexity. Treated as a product with internal customers. Measured by developer experience / NPS. Eberhard's example: Kubernetes + CI/CD. Eberhard: <em>"there is no need to actually talk to these people — instead they provide an API."</em></p>
+
+      <h4>3. Enabling team</h4>
+      <p><strong>Specialists who help stream-aligned teams overcome obstacles and grow their own capabilities.</strong> Rotates in for a defined period, then moves on. Coaches, doesn't build for them. Eberhard's example: an architecture team that joins a stream-aligned team "for a short period of time to work on a very specific topic."</p>
+
+      <h4>4. Complicated-Subsystem team</h4>
+      <p>Owns a subsystem that requires deep specialist knowledge — ML models, video codecs, payment-risk engines, scientific computing. Eberhard's example: <em>Delivery Optimization</em> — advanced algorithms, AI, "all that stuff." If you force a stream-aligned team to also do this, their cognitive load explodes.</p>
+
+      <h3>The three interaction modes</h3>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Mode</th><th>What happens</th><th>When</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Collaboration</strong></td><td>Two teams work together closely for a defined period to discover something new (an API, a shared model).</td><td>Temporary — while building a new service, exploring a new domain. <em>Should not become permanent.</em></td></tr>
+          <tr><td><strong>X-as-a-Service</strong></td><td>One team provides something (service, library) that another consumes with minimal interaction.</td><td>The default steady state. Platform teams expose services to stream-aligned teams.</td></tr>
+          <tr><td><strong>Facilitating</strong></td><td>One team helps and mentors another — coaching, not code ownership.</td><td>Enabling teams use this exclusively. <em>Removing obstacles</em>, not doing the work.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>The "magnets" caveat — Eberhard's most important point about org design</h3>
+      <div class="quote">"If you draw an org chart, things won't be different just because you draw the org chart. You somehow have to work on the organization and actually make people collaborate. These are magnets."
+        <cite>— Eberhard Wolff, 00:30:10</cite>
+      </div>
+      <p><strong>What this means in practice:</strong></p>
+      <ul>
+        <li><strong>Don't rename teams and call it done.</strong> Moving labels around on Visio does nothing. The team has to <em>actually own</em> the stream end-to-end.</li>
+        <li><strong>Work on informal structures too.</strong> TT acknowledges that the real organization lives in Slack channels and DMs, not the formal chart.</li>
+        <li><strong>Not every team needs direct business impact.</strong> Enabling teams exist to lower other teams' cognitive load. They are valuable <em>because</em> they don't ship customer features directly.</li>
+        <li><strong>"1 domain = 1 team" is impossible.</strong> Teams are split by fracture planes (regulatory compliance, change cadence, geography, risk profile, technology) — not only by domain.</li>
+      </ul>
+
+      <figure>
+        <img src="assets/frames/frame_025_1800.0s.jpg" alt="Slide Team Topologies: Challenges — single bullet Magnets i.e. a goal." loading="lazy" />
+        <figcaption><strong>Frame 25 (30:00) — "Magnets i.e. a goal."</strong> Eberhard's one-word warning. The pattern is a target, not a command.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/frames/frame_026_1920.0s.jpg" alt="Resource slide — two illustrated Team Topologies reference sheets on the left, a video thumbnail on the right with Eberhard Wolff's name, URL software-architektur.tv." loading="lazy" />
+        <figcaption><strong>Frame 26 (32:00) — Resources.</strong> Sketchnotes on the four team types and three interaction modes, plus Eberhard's German-language video at <a href="https://software-architektur.tv/2024/04/18/folge213.html">software-architektur.tv</a>. English material at <a href="https://teamtopologies.com">teamtopologies.com</a>.</figcaption>
+      </figure>
+
+      <h3>Enrichment — cognitive load (the "why" behind Team Topologies)</h3>
+      <p>Skelton &amp; Pais name <em>team cognitive load</em> as a first-class design constraint — <strong>"the mental effort required for being able to safely make a change in a software system."</strong> Three flavors:</p>
+      <ul>
+        <li><strong>Intrinsic cognitive load</strong> — inherent complexity of the domain. Reduce by splitting the system.</li>
+        <li><strong>Extraneous cognitive load</strong> — accidental complexity from tooling, infrastructure, dependencies on other teams. Reduce with platforms, enabling teams, clean APIs.</li>
+        <li><strong>Germane cognitive load</strong> — the productive effort of building the business. You want <em>more</em> of this, less of the other two.</li>
+      </ul>
+
+      <h3>Enrichment — Team Topologies vs. Evans' Strategic Design</h3>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Aspect</th><th>Evans' Strategic Design (2004)</th><th>Team Topologies (2019)</th></tr></thead>
+        <tbody>
+          <tr><td>Primary unit</td><td>Bounded Context</td><td>Team</td></tr>
+          <tr><td>Goal</td><td>Align software model with business</td><td>Fast flow of value</td></tr>
+          <tr><td>Team types covered</td><td>1 (Bounded Context Team)</td><td>4</td></tr>
+          <tr><td>Fracture planes</td><td>Domain only</td><td>Domain + regulatory + cadence + risk + location + tech</td></tr>
+          <tr><td>Maturity</td><td>Conceptual, no operational guidance</td><td>Operational — interaction modes, cognitive load, sensors</td></tr>
+          <tr><td>Adoption friction</td><td>High</td><td>Lower — pattern language, easier to pilot</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>Eberhard's practical synthesis: <strong>use DDD for <em>what</em> the software models; use Team Topologies for <em>who</em> builds it.</strong></p>
+
+      <div class="pitfall">
+        <h4>Anti-patterns — Team Topologies gone wrong</h4>
+        <ul>
+          <li><strong>Every team becomes "stream-aligned."</strong> No enabling teams, no platform, no complicated-subsystem experts → stream-aligned teams drown in cognitive load.</li>
+          <li><strong>Renaming without behaving.</strong> Moving boxes on the org chart while teams continue to hand off, gate, and wait.</li>
+          <li><strong>The platform becomes a black box.</strong> Cure: build the platform as a <em>product</em> with internal customers and a developer-experience KPI.</li>
+          <li><strong>Enabling teams that never leave.</strong> Cure: explicit time-boxed rotations; measure <em>uplift</em>, not output.</li>
+          <li><strong>Permanent Collaboration mode.</strong> Two teams stuck in joint design forever. Cure: Collaboration should be a <em>phase</em>, then graduate to X-as-a-Service.</li>
+        </ul>
+      </div>
+
+      <div class="mnemonic">
+        <h4>"SPE-C" — the four team types</h4>
+        <p><strong>S</strong>tream-aligned · <strong>P</strong>latform · <strong>E</strong>nabling · <strong>C</strong>omplicated-Subsystem.</p>
+        <p>Default ratio: ~80% stream-aligned, the rest is support.</p>
+      </div>
+
+      <h3>Further reading</h3>
+      <ul>
+        <li><a href="https://teamtopologies.com/book">Skelton &amp; Pais — <em>Team Topologies</em> (2019; 2nd ed. 2025)</a></li>
+        <li><a href="https://teamtopologies.com/key-concepts">Team Topologies — Key Concepts</a></li>
+        <li><a href="https://martinfowler.com/bliki/TeamTopologies.html">Martin Fowler — Team Topologies</a></li>
+        <li><a href="https://speakerdeck.com/ewolff/the-evolution-of-architecture-through-team-topologies">Eberhard Wolff — Evolution of Architecture through Team Topologies</a></li>
+      </ul>
+    </article>
+
+<!-- CHAPTER 6 -->
+    <article id="ch6" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-07"><span class="chap-num">6.</span>Tactical Design — the building blocks</h2>
+        <div class="meta">
+          <span class="badge">34:22 – 38:19</span>
+          <span>~4 min</span>
+          <span>3 frames</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=2062">▶ Watch from 34:22</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>The tactical patterns form a <strong>hierarchy</strong>: Services use Aggregates; Aggregates contain Entities + Value Objects + emit Domain Events; Repositories load whole Aggregates; Factories build complex ones.</li>
+          <li>The rule is <em>unidirectional</em>: lower layers don't know about higher ones.</li>
+          <li>Eberhard applies this to the Delivery context: <code>Parcel</code> (entity), <code>Address</code> (value object), <code>Delivery</code> (aggregate), <code>ScheduleDelivery</code> (service).</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_028_2130.0s.jpg" alt="Slide Tactical Design — green blocks Entity and Value Object; magenta callouts Identity: a person and Value: 2€, 2m." loading="lazy" />
+        <figcaption><strong>Frame 28 (35:30) — Entity vs. Value Object.</strong> Identity (a person is still me even if my name, address, birthday match someone else) vs. value (2 € is 2 € regardless of which bill).</figcaption>
+      </figure>
+
+      <figure>
+        <img src="assets/frames/frame_029_2190.0s.jpg" alt="Slide Tactical Design — green blocks Repository, Aggregate, Entity, Value Object, Domain Event; magenta callouts Illusion of a collection of aggregates, Aggregate Root ensures consistency, Consists of Entities and Value Objects." loading="lazy" />
+        <figcaption><strong>Frame 29 (36:30) — The full hierarchy in one diagram.</strong> Repository + Aggregate upper row; Entity + Value Object + Domain Event lower row.</figcaption>
+      </figure>
+
+      <h3>The hierarchy — Eberhard's mental model</h3>
+      <p><em>"Services should probably use Aggregates, Aggregate should use entities and value objects, but not the other way around."</em> The arrows point <strong>down</strong>: Services <em>use</em> Aggregates, Aggregates <em>contain</em> Entities + Value Objects.</p>
+
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Pattern</th><th>One-line definition</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Entity</strong></td><td>Defined by a thread of identity that survives state changes. <code>Order</code>, <code>Customer</code>, <code>Parcel</code>.</td></tr>
+          <tr><td><strong>Value Object</strong></td><td>Immutable, no identity; equality by attributes. <code>Money</code>, <code>Address</code>, <code>Email</code>.</td></tr>
+          <tr><td><strong>Domain Event</strong></td><td>Past-tense fact emitted by an aggregate after a state change. <code>OrderPlaced</code>, <code>ParcelLeftWarehouse</code>.</td></tr>
+          <tr><td><strong>Aggregate</strong></td><td>Cluster of entities + VOs treated as <strong>one consistency boundary</strong>, accessed only through one root entity.</td></tr>
+          <tr><td><strong>Repository</strong></td><td>Collection-like abstraction for loading and saving <em>whole</em> aggregates. One repo per aggregate root.</td></tr>
+          <tr><td><strong>Factory</strong></td><td>Encapsulates non-trivial construction so invariants are valid the moment the object exists.</td></tr>
+          <tr><td><strong>Domain Service</strong></td><td>Stateless operation whose verb in the Ubiquitous Language naturally spans more than one aggregate.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Eberhard's Delivery example</h3>
+      <ul>
+        <li><code>Parcel</code> is an <strong>entity</strong> — "something I can identify."</li>
+        <li><code>Address</code> is a <strong>value object</strong>.</li>
+        <li>Together they form the <code>Delivery</code> <strong>aggregate</strong>.</li>
+        <li>A factory creates the complex aggregate.</li>
+        <li>A repository handles "all the different deliveries that there ever were."</li>
+        <li><code>Customer</code> is <em>also</em> an aggregate (in this context — the customer who receives the parcel).</li>
+        <li><code>ScheduleDelivery</code> is a <strong>service</strong> because it spans both aggregates — "this logic cannot be part of either aggregate."</li>
+        <li>A <strong>domain event</strong> fires: <em>"a delivery has been scheduled"</em>.</li>
+      </ul>
+
+      <div class="quote">"Service is a stateless object that contains the logic that doesn't fit in entities or aggregates — for example, something like a delivery process, which probably deals with customers and a delivery and products."
+        <cite>— Eberhard Wolff, 00:37:07</cite>
+      </div>
+
+      <h3>Enrichment — Vernon's four rules of thumb for aggregates</h3>
+      <ol>
+        <li><strong>Model true invariants in consistency boundaries.</strong> The aggregate is the atomic consistency unit.</li>
+        <li><strong>Design small aggregates.</strong> Root + only what must be consistent with it.</li>
+        <li><strong>Reference other aggregates by identity.</strong> <code>Order</code> holds <code>CustomerId</code>, not <code>Customer</code>.</li>
+        <li><strong>Use eventual consistency outside the boundary.</strong> Publish a domain event; react asynchronously.</li>
+      </ol>
+      <p>Source: Vaughn Vernon, <em>Effective Aggregate Design</em> (2011).</p>
+
+      <h3>Code sketch — what an aggregate looks like in Java</h3>
+      <p>Eberhard's talk doesn't show actual code, but this is what the patterns produce in idiomatic Java. Read it as illustration, not a copy-paste target.</p>
+
+      <pre><span class="cm">// --- Aggregate root: Order ---</span>
+<span class="kw">public class</span> <span class="ty">Order</span> <span class="kw">implements</span> <span class="ty">AggregateRoot</span>&lt;<span class="ty">Order</span>, <span class="ty">OrderId</span>&gt; {
+    <span class="kw">private final</span> <span class="ty">OrderId</span> id;
+    <span class="kw">private final</span> <span class="ty">CustomerId</span> customer;       <span class="cm">// ID, NOT Customer</span>
+    <span class="kw">private</span> <span class="ty">OrderStatus</span> status;
+    <span class="kw">private final</span> <span class="ty">List</span>&lt;<span class="ty">OrderLine</span>&gt; lines = <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="nm">addLine</span>(<span class="ty">ProductId</span> pid, <span class="kw">int</span> qty, <span class="ty">Money</span> price) {
+        require(qty &gt; <span class="nm">0</span>);
+        lines.add(<span class="kw">new</span> <span class="ty">OrderLine</span>(pid, qty, price));
+        registerEvent(<span class="kw">new</span> <span class="ty">OrderLineAdded</span>(id, pid, qty));   <span class="cm">// domain event</span>
+    }
+
+    <span class="kw">public void</span> <span class="nm">place</span>() {
+        require(!lines.isEmpty());
+        status = <span class="ty">OrderStatus</span>.PLACED;
+        registerEvent(<span class="kw">new</span> <span class="ty">OrderPlaced</span>(id, customer, total()));
+    }
+}
+
+<span class="cm">// --- Value objects ---</span>
+<span class="kw">public record</span> <span class="ty">Money</span>(<span class="ty">BigDecimal</span> amount, <span class="ty">Currency</span> currency) { <span class="cm">/* immutable */</span> }
+<span class="kw">public record</span> <span class="ty">OrderId</span>(<span class="ty">UUID</span> id) <span class="kw">implements</span> <span class="ty">Identifier</span> {}
+<span class="kw">public record</span> <span class="ty">CustomerId</span>(<span class="ty">UUID</span> id) <span class="kw">implements</span> <span class="ty">Identifier</span> {}
+
+<span class="cm">// --- Repository: ONE per aggregate root ---</span>
+<span class="kw">public interface</span> <span class="ty">Orders</span> <span class="kw">extends</span> <span class="ty">Repository</span>&lt;<span class="ty">Order</span>, <span class="ty">OrderId</span>&gt; {
+    <span class="ty">Optional</span>&lt;<span class="ty">Order</span>&gt; findById(<span class="ty">OrderId</span> id);
+    <span class="kw">void</span> save(<span class="ty">Order</span> order);
+}
+
+<span class="cm">// --- Domain service: spans >1 aggregate ---</span>
+<span class="kw">public class</span> <span class="ty">TransferMoney</span> {
+    <span class="kw">public void</span> <span class="nm">transfer</span>(<span class="ty">AccountId</span> from, <span class="ty">AccountId</span> to, <span class="ty">Money</span> amount) {
+        <span class="cm">// load both, apply rules on each, persist; emits Withdrawn/Deposited events</span>
+    }
+}</pre>
+
+      <h3>Heuristic tests for aggregate boundaries</h3>
+      <ul>
+        <li><strong>Can you delete the aggregate in one transaction?</strong> If no, you probably mixed lifecycles.</li>
+        <li><strong>Are all cross-aggregate associations <code>*Id</code> fields?</strong> If you see an object reference to another aggregate root, the boundary is wrong.</li>
+        <li><strong>Does one user request modify exactly one aggregate?</strong> If you need two, ask <em>"is this one user's job?"</em> — if not, switch to eventual consistency.</li>
+      </ul>
+
+      <div class="pitfall">
+        <h4>Anti-patterns — tactical patterns gone wrong</h4>
+        <ul>
+          <li><strong>Anemic Domain Model</strong> — entities are bags of getters/setters, all rules live in services. Martin Fowler: <em>"the fundamental horror of object-oriented programming."</em> Fix: move behavior onto the entity, keep setters private, expose domain verbs (<code>order.place()</code>).</li>
+          <li><strong>God Aggregate</strong> — one cluster that owns everything "for convenience." Destroys performance and concurrency because unrelated use cases compete for the same locks.</li>
+          <li><strong>Wrong aggregate boundary</strong> — splitting two objects that share a true invariant into separate aggregates forces multi-aggregate transactions; lumping unrelated lifecycles into one causes the God Aggregate.</li>
+          <li><strong>Repository leaks persistence</strong> — returning JPA <code>EntityManager</code> proxies, exposing <code>Session</code>, returning managed ORM entities with lazy loaders.</li>
+          <li><strong>Domain events used as integration events</strong> — pushing <code>OrderPlaced</code> onto Kafka verbatim. Translate at the publication boundary into a versioned <em>integration event</em>.</li>
+        </ul>
+      </div>
+
+      <div class="mnemonic">
+        <h4>"EVE-ARF-S" — pattern order</h4>
+        <p><strong>E</strong>ntity · <strong>V</strong>alue Object · <strong>E</strong>vent (the leaf types) → <strong>A</strong>ggregate (wraps them) → <strong>R</strong>epository (loads/saves aggregate) → <strong>F</strong>actory (builds complex ones) → <strong>S</strong>ervice (spans multiple aggregates).</p>
+        <p>Lower levels don't know about higher ones.</p>
+      </div>
+
+      <h3>Further reading</h3>
+      <ul>
+        <li><a href="https://www.dddcommunity.org/library/vernon_2011/">Vaughn Vernon — Effective Aggregate Design (Parts I–III)</a></li>
+        <li><a href="https://martinfowler.com/bliki/AnemicDomainModel.html">Martin Fowler — AnemicDomainModel</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/azure/architecture/microservices/model/tactical-domain-driven-design">Microsoft Learn — Use Tactical DDD to Design Microservices</a></li>
+        <li>Vaughn Vernon, <em>Implementing Domain-Driven Design</em> (2013), Chapters 5–10</li>
+      </ul>
+    </article>
+
+<!-- CHAPTER 7 -->
+    <article id="ch7" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-08"><span class="chap-num">7.</span>When NOT to use tactical DDD</h2>
+        <div class="meta">
+          <span class="badge">38:19 – 41:55</span>
+          <span>~3 min 30 s</span>
+          <span>3 frames</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=2299">▶ Watch from 38:19</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Eberhard's most counter-intuitive advice: <strong>DDD's tactical patterns are not always the right choice.</strong></li>
+          <li>For simpler systems, Fowler's <em>Transaction Script</em> or <em>Table Module</em> can be correct.</li>
+          <li><strong>Heuristic</strong>: ask the domain expert <em>why</em> first. "Just display this data" → Transaction Script. "We need to figure out whether we can deliver based on customer status, address, history" → Domain Model.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_030_2310.0s.jpg" alt="Slide Alternatives for Less Complex Systems — Transaction script: handles a single request from the presentation incl. database code." loading="lazy" />
+        <figcaption><strong>Frame 30 (38:30) — First alternative.</strong> "Transaction script: handles a single request from the presentation incl. database code."</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/frames/frame_031_2370.0s.jpg" alt="Slide adds: Table model: Single instance handles business logic for all rows in a database table or view." loading="lazy" />
+        <figcaption><strong>Frame 31 (39:30) — Second alternative.</strong> "Table model: Single instance handles business logic for all rows in a database table or view."</figcaption>
+      </figure>
+
+      <h3>The example Eberhard uses</h3>
+      <p>"I want to see this information about the customer." Most engineers jump to: build a Customer aggregate, add a getter, render it. But:</p>
+      <blockquote>"Okay, why?"<br>"Because I want to figure out whether I can deliver to him — depending on the address, depending on whatever his status is, whether he's a person we want to deliver stuff to."</blockquote>
+      <p>That second answer is <em>business logic</em>. It changes the question from "display this data" to "decide based on rules." That second question is what tactical DDD exists for. The first is not.</p>
+
+      <h3>The decision heuristic</h3>
+      <div class="quote">"If you have very simple logic — if you just want to copy data from A to B, if you just want to add something to a database — maybe [Transaction Script] is what you want to do."
+        <cite>— Eberhard Wolff, 00:38:51</cite>
+      </div>
+      <p>Fowler's own rule (PofEAA, Chapter 9):</p>
+      <blockquote>It all comes down to the complexity of the behavior in your system. If you have complicated and ever-changing business rules involving validation, calculations, and derivations, chances are you'll want an object model to handle them. On the other hand, if you have simple not-null checks and a couple of sums to calculate, a Transaction Script is a better bet.</blockquote>
+
+      <h3>Enrichment — the three domain-logic patterns (Fowler, PofEAA Ch. 9)</h3>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Pattern</th><th>Style</th><th>Best for</th><th>Watch out for</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Transaction Script</strong></td><td>Procedural — one script handles one request from presentation to database</td><td>Simple CRUD, low logic, "not-null checks and a couple of sums"</td><td>Logic duplication across scripts as rules multiply; turns into spaghetti past the cutover</td></tr>
+          <tr><td><strong>Table Module</strong></td><td>One class per database table; a single instance handles all rows</td><td>DataSet/DataTable-driven apps, reports that mirror the schema</td><td>Locks the object model to the table structure; fights you when the domain shape diverges from the schema</td></tr>
+          <tr><td><strong>Domain Model</strong></td><td>Rich interconnected objects that carry both behavior and data</td><td>Complex, ever-changing business rules with validation, calculations, derivations</td><td>High upfront cost; overkill when there is little behavior; needs a team trained to think in objects</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="analogy">
+        <div class="label">Junior-friendly analogy — three restaurants</div>
+        <strong>Transaction Script</strong> = a food truck with one handwritten menu and one employee shouting orders at the cook. Fine when the menu has five items.<br>
+        <strong>Table Module</strong> = a chain restaurant where every dish is just a row in a <em>Dishes</em> spreadsheet; the kitchen reads the spreadsheet and follows the same procedure per row. Efficient when menu = table.<br>
+        <strong>Domain Model</strong> = a real restaurant with a chef who knows that "vegan changes dessert, removes butter, swaps the garnish." That knowledge lives in the kitchen, not in a single procedure.
+      </div>
+
+      <h3>When Domain Model is overkill</h3>
+      <ul>
+        <li><strong>CRUD-only apps</strong> — admin panels, internal tools, configuration UIs.</li>
+        <li><strong>Thin reporting / ETL / dashboards</strong> — read models, BI extracts.</li>
+        <li><strong>Very simple business logic</strong> — Fowler's "not-null checks and a couple of sums."</li>
+        <li><strong>Low team maturity in OOP</strong> — learning Domain Model is a "significant exercise"; forcing it produces anemic models.</li>
+        <li><strong>Short-lived software</strong> — prototypes, campaigns, throwaway scripts.</li>
+      </ul>
+
+      <h3>When Domain Model is necessary</h3>
+      <ul>
+        <li><strong>Complex, evolving business rules</strong> — revenue recognition, pricing tiers, eligibility, fraud scoring.</li>
+        <li><strong>Long-lived software (10+ years)</strong> — refactoring cost out of a tangled Transaction Script dwarfs upfront modeling cost.</li>
+        <li><strong>Multiple teams / contexts touching the same rules</strong> — Bounded Contexts + Aggregates prevent the "two teams using the same word" failure mode.</li>
+        <li><strong>Compliance / regulatory complexity</strong> — when an auditor needs to see the rule in one place, not scattered across 200 transaction scripts.</li>
+        <li><strong>High cost of a bug</strong> — finance, healthcare, logistics: behavior must be <em>executable specification</em>, not buried in SQL.</li>
+      </ul>
+
+      <div class="pitfall">
+        <h4>Anti-patterns — choosing wrong</h4>
+        <ul>
+          <li><strong>Choosing Domain Model because it "sounds advanced."</strong> Ceremony without complexity is just slower delivery.</li>
+          <li><strong>Choosing Transaction Script because "we don't have time to model."</strong> The opposite is often true: skipping the model borrows time now but charges compound interest later.</li>
+          <li><strong>Anemic Domain Model</strong> — objects that are just data bags, with all behavior in services. Worst of both worlds.</li>
+          <li><strong>Premature Event Sourcing / CQRS.</strong> Eberhard explicitly questions why you'd reach for these when a single bounded context with a plain state store would do.</li>
+        </ul>
+      </div>
+
+      <div class="mnemonic">
+        <h4>"ASK before you MODEL"</h4>
+        <p>Before reaching for tactical DDD, <strong>ASK the domain expert why</strong>:</p>
+        <ul>
+          <li>"Just display this data" → <strong>Transaction Script</strong>.</li>
+          <li>"Same procedure per row" → <strong>Table Module</strong>.</li>
+          <li>"Decide based on rules that change" → <strong>Domain Model</strong>.</li>
+        </ul>
+      </div>
+
+      <h3>Modern equivalents to know</h3>
+      <ul>
+        <li><strong>Active Record</strong> (Rails, Laravel, Django ORM) — Fowler's "simple Domain Model": one object per row, object carries CRUD behavior.</li>
+        <li><strong>Event Sourcing</strong> — store events, derive state. Use when audit, temporal queries, or integration with other contexts dominate.</li>
+        <li><strong>CQRS</strong> — separate command and query models. Use when read and write shapes diverge sharply.</li>
+      </ul>
+
+      <h3>Further reading</h3>
+      <ul>
+        <li><a href="http://media.techtarget.com/tss/static/articles/content/FowlerPatterns/Fowler_ch09.pdf">Fowler — <em>PofEAA</em>, Chapter 9 (Domain Logic Patterns)</a> — the canonical PDF.</li>
+        <li><a href="https://martinfowler.com/eaaCatalog/domainModel.html">Fowler — Domain Model catalog entry</a></li>
+        <li><a href="https://martinfowler.com/eaaCatalog/transactionScript.html">Fowler — Transaction Script catalog entry</a></li>
+        <li><a href="https://speakerdeck.com/ewolff/domain-driven-design-a-complete-example">Eberhard Wolff — slides (slide 43 is "Alternatives for Less Complex Systems")</a></li>
+      </ul>
+    </article>
+
+<!-- CHAPTER 8 -->
+    <article id="ch8" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-09"><span class="chap-num">8.</span>Supporting tactical design in code</h2>
+        <div class="meta">
+          <span class="badge">41:55 – 45:02</span>
+          <span>~3 min 10 s</span>
+          <span>3 frames</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=2515">▶ Watch from 41:55</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Eberhard argues for <strong>plain POJOs</strong> at the domain layer — no JPA, no Spring, no Serializable leaking in.</li>
+          <li><strong>jMolecules</strong> (Oliver Drotbohm) expresses DDD roles as <em>architectural stereotypes</em> (<code>@Entity</code>, <code>@ValueObject</code>, <code>@AggregateRoot</code>) and a ByteBuddy plugin projects them to JPA / Spring / Jackson at compile time.</li>
+          <li><strong>Architecture-management tools</strong> (Structure 101, ArchUnit, jQAssistant) reveal dependency violations — to <em>facilitate communication</em>, not to police.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_032_2520.0s.jpg" alt="Slide Framework? — POJO (Plain Old Java Objects) might be enough." loading="lazy" />
+        <figcaption><strong>Frame 32 (42:00) — "Framework?"</strong> Eberhard's rhetorical question. The answer is: maybe not. Plain POJOs may be enough.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/frames/frame_033_2610.0s.jpg" alt="Slide Framework? — Might use architecture management tools to enforce dependencies." loading="lazy" />
+        <figcaption><strong>Frame 33 (43:30) — The tool category.</strong> "Might use architecture management tools to enforce dependencies."</figcaption>
+      </figure>
+
+      <h3>POJOs — the foundation</h3>
+      <p>Eberhard (echoing Oliver Drotbohm): a "POJO" in JPA is a lie. To make Hibernate happy you end up with <code>@Entity</code> on the class, <code>@Id</code> on the identifier, public/protected default constructors on objects that shouldn't have one, <code>Serializable</code> on identifiers, <code>@OneToMany</code> relationships that bake aggregate boundaries into the persistence schema, and identifier types that leak into the API.</p>
+      <p>Over time, persistence concerns leak into the domain. What was a database id ends up displayed in the UI and used in URLs.</p>
+
+      <h3>jMolecules — DDD roles as first-class types</h3>
+      <p><a href="https://github.com/xmolecules/jmolecules">jMolecules</a> lets you write plain classes annotated with <strong>architectural stereotypes</strong>:</p>
+
+      <pre><span class="kw">import</span> <span class="ty">org.jmolecules.ddd.annotation</span>.*;
+
+<span class="cm">// POJO domain. No @Entity from JPA. No @Service from Spring.</span>
+<span class="kw">@Entity</span>                                          <span class="cm">// ← jMolecules stereotype</span>
+<span class="kw">public class</span> <span class="ty">BankAccount</span> {
+
+    <span class="kw">@Identity</span>
+    <span class="kw">private final</span> <span class="ty">IBAN</span> iban;                <span class="cm">// value object identifier</span>
+
+    <span class="kw">private</span> <span class="ty">Money</span> balance;
+
+    <span class="kw">public void</span> <span class="nm">withdraw</span>(<span class="ty">Money</span> amount) {
+        <span class="kw">if</span> (balance.amount().compareTo(amount.amount()) &lt; <span class="nm">0</span>)
+            <span class="kw">throw new</span> <span class="ty">InsufficientFundsException</span>(iban);
+        <span class="kw">this</span>.balance = balance.subtract(amount);
+    }
+}
+
+<span class="kw">@ValueObject</span> <span class="kw">public record</span> <span class="ty">IBAN</span>(<span class="ty">String</span> value) { <span class="cm">/* ... */</span> }
+<span class="kw">@ValueObject</span> <span class="kw">public record</span> <span class="ty">Money</span>(<span class="ty">BigDecimal</span> amount, <span class="ty">Currency</span> currency) { <span class="cm">/* ... */</span> }</pre>
+
+      <p>When JPA / Spring / Jackson is on the classpath, the <a href="https://github.com/xmolecules/jmolecules-integrations">jMolecules ByteBuddy plugin</a> synthesises all the technology annotations and boilerplate <em>at compile time</em>. The <code>BankAccount.java</code> file still contains zero framework imports. Your domain stays portable across JPA, MongoDB, JDBC, and Jackson.</p>
+
+      <h3>Architecture management tools — Eberhard's "facilitate, don't enforce"</h3>
+
+      <figure>
+        <img src="assets/frames/frame_034_2670.0s.jpg" alt="Slide Framework? — Might use architecture management tools to enforce dependencies. URL: https://software-architektur.tv/tags.html#Architecture%20Management." loading="lazy" />
+        <figcaption><strong>Frame 34 (44:30) — Eberhard's resources.</strong> Architecture-management content at <a href="https://software-architektur.tv/tags.html#Architecture%20Management">software-architektur.tv/tags.html#Architecture%20Management</a>.</figcaption>
+      </figure>
+
+      <p>Eberhard is emphatic: <em>"I shouldn't say enforce. It's about taking a look at the code, making sure it conforms to the architecture, and if it doesn't, either someone didn't understand the architecture — which should lead to some kind of communication — or there's a problem with the architecture — which should also lead to some kind of communication."</em></p>
+
+      <p>The job of an architecture-management tool is <strong>not</strong> to fail PRs. It's to:</p>
+      <ol>
+        <li><strong>Reveal</strong> — surface the dependency graph so a team can <em>see</em> where it stands.</li>
+        <li><strong>Facilitate communication</strong> — violations are prompts for a discussion about understanding ("didn't know that boundary existed") or design ("we have a reason, the rule is wrong here").</li>
+        <li><strong>Only then enforce</strong> — once the team has internalized the rule and violations are rare exceptions, put it in the build to catch the genuine mistake. CI-as-gate is the <em>end state</em>, not the starting point.</li>
+      </ol>
+
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+        <thead><tr><th>Tool</th><th>Style</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Structure101</strong></td><td>Interactive graph + matrix</td><td>Layered cells, detect cycles/tangles, Levelized Structure Maps. <em>Eberhard mentions this one.</em></td></tr>
+          <tr><td><strong>ArchUnit</strong></td><td>Fluent Java DSL inside unit tests</td><td>Assert layered/onion architectures, slice rules, no-cycles; <strong>ships jMolecules-aware rules</strong>.</td></tr>
+          <tr><td><strong>jQAssistant</strong></td><td>Neo4j graph database + Cypher queries</td><td>Scans artifacts into a graph; <strong>official jMolecules plugin</strong> generates PlantUML of DDD building blocks.</td></tr>
+          <tr><td><strong>NDepend</strong></td><td>CQLinq (LINQ over code) + dependency matrix</td><td>.NET ecosystem; 200+ default rules.</td></tr>
+          <tr><td><strong>Degraph</strong></td><td>Scala/Java DSL + GraphML export</td><td>JVM dependency slices; used by JUnit 5 to keep package cycles out.</td></tr>
+          <tr><td><strong>Spring Modulith</strong></td><td>Spring-native module model</td><td>Verifies module boundaries; ships a jMolecules integration.</td></tr>
+        </tbody>
+      </table></div>
+
+      <pre><span class="cm">// Example ArchUnit rule with jMolecules — fail the build if any aggregate references another by object</span>
+<span class="kw">@ArchTest</span>
+<span class="kw">static final</span> <span class="ty">ArchRule</span> aggregates_should_only_reference_other_aggregates_by_id =
+    <span class="ty">JMoleculesDddRules</span>.aggregatesShouldNotReferToOtherAggregatesByDirectObjectReference();
+
+<span class="cm">// And a layer rule — domain must not depend on JPA</span>
+<span class="kw">@ArchTest</span>
+<span class="kw">static final</span> <span class="ty">ArchRule</span> domain_should_not_depend_on_jpa =
+    noClasses().that().resideInAPackage(<span class="st">"..domain.."</span>)
+        .should().dependOnClassesThat().resideInAPackage(<span class="st">"..jakarta.persistence.."</span>);</pre>
+
+      <div class="pitfall">
+        <h4>Anti-patterns — code-level DDD gone wrong</h4>
+        <ul>
+          <li><strong>The "framework-infested domain"</strong> — <code>Order</code> annotated with <code>@Entity @Table @DynamicUpdate</code>, public no-arg ctor, <code>Serializable</code> id, JPA callbacks for domain events. Fix: move JPA annotations to the adapter layer (ByteBuddy via jMolecules, or an explicit mapping pattern).</li>
+          <li><strong>"Entity suffix" everywhere</strong> — <code>OrderEntity</code>, <code>CustomerEntity</code>, <code>MoneyVO</code>. The role is in the annotation, not the name.</li>
+          <li><strong>Architecture-by-convention-only</strong> — "We agreed in a meeting that <code>domain</code> must not depend on <code>infrastructure</code>." Three months later, someone imports <code>EntityManager</code> from a service.</li>
+          <li><strong>Treating the architecture tool as "the architecture police."</strong> Building rules that auto-fail PRs creates an adversarial relationship.</li>
+        </ul>
+      </div>
+
+      <div class="mnemonic">
+        <h4>"R-E-E" — Eberhard's three-stage rule</h4>
+        <p><strong>R</strong>eveal the graph → <strong>E</strong>ngage in conversation about violations → <strong>E</strong>nforce only after the rule is internalized.</p>
+        <p>The order matters. Skipping R and going straight to E produces a CI gate that nobody understands and everyone routes around.</p>
+      </div>
+
+      <h3>Further reading</h3>
+      <ul>
+        <li><a href="https://odrotbohm.de/2020/03/Implementing-DDD-Building-Blocks-in-Java/">Oliver Drotbohm — Implementing DDD Building Blocks in Java</a></li>
+        <li><a href="https://github.com/xmolecules/jmolecules">xmolecules/jmolecules</a> — official GitHub repo</li>
+        <li><a href="https://archunit.org/userguide/html/000_Index.html">ArchUnit User Guide</a> — fluent DSL, jMolecules-aware rules</li>
+        <li><a href="https://ewolff.com/2025/05/20/the-real-software-architecture-problem-communication-overload.html">Eberhard Wolff — The Real Software Architecture Problem: Communication Overload</a></li>
+      </ul>
+    </article>
+
+<!-- CHAPTER 9 -->
+    <article id="ch9" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-10"><span class="chap-num">9.</span>Conclusion &amp; resources</h2>
+        <div class="meta">
+          <span class="badge">45:02 – 47:44</span>
+          <span>~2 min 30 s</span>
+          <span>1 frame</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=f91ubquN3Tc&amp;t=2702">▶ Watch from 45:02</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Eberhard recaps the 8 techniques he walked through — <em>"like the big brush"</em>, from Event Storming at the top to architecture-management tools at the bottom.</li>
+          <li><strong>Strategic Design</strong> is on the slide but he recommends <strong>Team Topologies</strong> instead.</li>
+          <li><strong>Slides + sample chapters</strong> of his books are free via email (Lambda-backed microservice). Email is logged for 14 days and used only for sending.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/frames/frame_035_2760.0s.jpg" alt="Closing slide — two QR codes for Slides and Questions, email jcon2024@ewolff.com, list of sample book chapters in DE/EN, Powered by Amazon Lambda & Microservices, email address logged for 14 days." loading="lazy" />
+        <figcaption><strong>Frame 35 (46:00) — Closing slide.</strong> Slides + sample chapters via email. Powered by an Amazon Lambda microservice — a small piece of meta-self-demonstration. Email logged for 14 days, used only for sending.</figcaption>
+      </figure>
+
+      <h3>The techniques, in Eberhard's order</h3>
+      <ol>
+        <li>Big-Picture Event Storming — the whole story.</li>
+        <li>Core Domain — where to focus.</li>
+        <li>(Skipped: Strategic Design — he prefers Team Topologies instead.)</li>
+        <li>Bounded Contexts — the architectural unit.</li>
+        <li>Inside one Bounded Context: Technical Design (the tactical building blocks).</li>
+        <li>Alternatives for less complex systems — Transaction Script and Table Module, when DDD is overkill.</li>
+        <li>POJOs in code — keep the domain free of JPA leakage.</li>
+        <li>Architecture management tools — Structure 101, ArchUnit, jQAssistant.</li>
+      </ol>
+
+      <h3>The meta-lesson</h3>
+      <p>Eberhard's strongest point is <em>not</em> any single technique. It's that the talk is a sample menu, not a recipe. He explicitly says the order is convenient for teaching, not for shipping. In your project:</p>
+      <ul>
+        <li>Pick the technique that solves the problem in front of you.</li>
+        <li>Skip the ones that don't apply.</li>
+        <li>Re-run any step whenever new information makes it stale.</li>
+        <li>Iterate between abstract and concrete as you learn more.</li>
+      </ul>
+
+      <div class="quote">"Software development is a learning process. You will never get it right the first time, so you need to iterate and iterate and iterate."
+        <cite>— Eberhard Wolff, 00:02:04</cite>
+      </div>
+
+      <h3>Resources Eberhard mentions in the talk</h3>
+      <ul>
+        <li><strong>Slides + sample chapters of his books</strong> — send an email to <code>jcon2024@ewolff.com</code>. The system is a small microservice on Amazon Lambda. Email addresses are logged for 14 days and used only to send the slides.</li>
+        <li><a href="https://ewolff.com/">ewolff.com</a> — Eberhard's homepage and blog.</li>
+        <li><a href="https://software-architektur.tv/">software-architektur.tv</a> — his German-language architecture stream (the "folge213" episode on Team Topologies was mentioned in Frame 26).</li>
+      </ul>
+
+      <h3>If you only read one more thing after this page</h3>
+      <p>Read Vaughn Vernon's <em>Implementing Domain-Driven Design</em>. It's the single most actionable book on DDD — shorter than Evans, more concrete than Fowler, and organized around the same tactical vocabulary Eberhard uses. Start with Chapter 2 (Domains, Subdomains, and Bounded Contexts) and Chapter 10 (Aggregates).</p>
+
+      <div class="mnemonic">
+        <h4>The Eberhard Wolff mnemonic for the whole talk</h4>
+        <p><strong>I-C-I</strong> — <strong>I</strong>terate · <strong>C</strong>ontexts over categories · <strong>I</strong>nvest in the core.</p>
+        <ul>
+          <li><strong>Iterate</strong>: never treat DDD as phases.</li>
+          <li><strong>Contexts over categories</strong>: a Bounded Context is a linguistic boundary, not a file folder.</li>
+          <li><strong>Invest in the core</strong>: senior engineers on the Core Domain, juniors on Generic, library for everything else.</li>
+        </ul>
+      </div>
+
+      <p><em>Thanks for reading. Now go apply one technique this week — and iterate.</em></p>
+    </article>
+
+<!-- GLOSSARY -->
+    <section id="glossary">
+      <h2 id="heading-11"><span class="chap-num">G</span>Glossary — every term, one paragraph each</h2>
+      <div class="intro-callout">Skim this section before reading the chapters, or come back to it as a reference when a term is unfamiliar. Concepts are roughly ordered from the most foundational (Domain, Subdomain) to the most tactical (Aggregate, Repository).</div>
+      <div class="glossary-grid">
+
+        <div class="glossary-item"><span class="term">Aggregate</span><div class="defn">A cluster of domain objects (entities + value objects) treated as <strong>one consistency boundary</strong>, accessed only through a single root entity. <em>Vaughn Vernon: "Aggregate is synonymous with transactional consistency boundary."</em></div></div>
+
+        <div class="glossary-item"><span class="term">Anti-Corruption Layer (ACL)</span><div class="defn">A translation layer in your Bounded Context that converts an upstream model's terms into your own, protecting your Ubiquitous Language from leaking external jargon.</div></div>
+
+        <div class="glossary-item"><span class="term">Bounded Context</span><div class="defn">An explicit boundary inside which one domain model and one Ubiquitous Language are internally consistent. Introduced by Eric Evans in 2003.</div></div>
+
+        <div class="glossary-item"><span class="term">Chaotic Exploration</span><div class="defn">The first phase of Big-Picture Event Storming. Everyone silently writes past-tense domain events on orange stickies and sticks them anywhere on the wall. <em>Silence is mandatory.</em></div></div>
+
+        <div class="glossary-item"><span class="term">Cognitive Load</span><div class="defn">(Team Topologies) "The mental effort required for being able to safely make a change in a software system." Three flavors: intrinsic, extraneous, germane. Skelton &amp; Pais's central concept.</div></div>
+
+        <div class="glossary-item"><span class="term">Complicated-Subsystem Team</span><div class="defn">A Team Topologies team that owns a subsystem requiring deep specialist knowledge — ML models, video codecs, payment-risk engines — so stream-aligned teams don't drown in it.</div></div>
+
+        <div class="glossary-item"><span class="term">Context Map</span><div class="defn">A documented map of how Bounded Contexts interact: their boundaries, integration patterns (Shared Kernel, Customer/Supplier, ACL, OHS, …), and translation points.</div></div>
+
+        <div class="glossary-item"><span class="term">Core Domain</span><div class="defn">The part of the system whose removal would invalidate the business. Source of competitive advantage; gets the best engineers. <em>You cannot identify it without domain experts.</em></div></div>
+
+        <div class="glossary-item"><span class="term">CQRS</span><div class="defn">Command-Query Responsibility Segregation. Separate command (write) and query (read) models. Useful when read and write shapes diverge sharply (statistics, search, dashboards).</div></div>
+
+        <div class="glossary-item"><span class="term">Domain</span><div class="defn">The sphere of knowledge, influence, or activity that the software is being built for. <em>Problem space</em> (vs. Bounded Context, which is the <em>solution space</em>).</div></div>
+
+        <div class="glossary-item"><span class="term">Domain Event</span><div class="defn">A past-tense fact emitted by an aggregate after a state change — <code>OrderPlaced</code>, <code>MoneyWithdrawn</code>, <code>ParcelLeftWarehouse</code>. Internal to one Bounded Context; should not be confused with integration events.</div></div>
+
+        <div class="glossary-item"><span class="term">Domain Model</span><div class="defn">(Fowler, PofEAA) An object model where the domain objects carry both behavior and data, not just data. The basis of tactical DDD.</div></div>
+
+        <div class="glossary-item"><span class="term">Domain Service</span><div class="defn">A stateless operation whose verb in the Ubiquitous Language naturally spans more than one aggregate. Lives <em>above</em> aggregates; never reaches inside one.</div></div>
+
+        <div class="glossary-item"><span class="term">Enabling Team</span><div class="defn">A Team Topologies team of specialists who help stream-aligned teams overcome specific obstacles and grow their own capabilities. Rotates in, coaches, moves on.</div></div>
+
+        <div class="glossary-item"><span class="term">Entity</span><div class="defn">An object defined by a thread of identity that survives state changes — <code>Order</code>, <code>Customer</code>, <code>Parcel</code>. Two entities with identical attributes are still different.</div></div>
+
+        <div class="glossary-item"><span class="term">Event Sourcing</span><div class="defn">Persist events instead of state; derive current state by replaying them. Useful when audit, temporal queries, or event-driven integration dominate.</div></div>
+
+        <div class="glossary-item"><span class="term">Event Storming</span><div class="defn">A collaborative workshop technique invented by Alberto Brandolini in 2013. A cross-functional group maps a business domain as a timeline of past-tense events on a paper roll, using colored sticky notes.</div></div>
+
+        <div class="glossary-item"><span class="term">Factory</span><div class="defn">Encapsulates non-trivial construction of an aggregate so invariants are valid the moment the object exists. Keeps complex creation out of constructors and the client code.</div></div>
+
+        <div class="glossary-item"><span class="term">Fracture Plane</span><div class="defn">(Team Topologies) A reason teams should be separate — domain boundary, regulatory boundary, geography, change cadence, technology, risk profile.</div></div>
+
+        <div class="glossary-item"><span class="term">Generic Subdomain</span><div class="defn">Functionality solved identically in most companies (auth, email, PDF generation). <em>Buy it, use a library, hand it to juniors.</em></div></div>
+
+        <div class="glossary-item"><span class="term">jMolecules</span><div class="defn">A library (by Oliver Drotbohm) that lets you write plain classes annotated with DDD architectural stereotypes (<code>@Entity</code>, <code>@ValueObject</code>, <code>@AggregateRoot</code>); a ByteBuddy plugin projects them to JPA / Spring / Jackson at compile time.</div></div>
+
+        <div class="glossary-item"><span class="term">Pivotal Event</span><div class="defn">(Event Storming) An event after which <em>"the world is different"</em> — a true phase transition. Eberhard's examples: <code>Order accepted</code> (cart → order, edit → cancel-only), <code>Parcel left warehouse</code> (warehouse can no longer recall it).</div></div>
+
+        <div class="glossary-item"><span class="term">Platform Team</span><div class="defn">(Team Topologies) Provides an internal product (the "thinnest viable platform") that accelerates stream-aligned teams. Example: a Kubernetes + CI/CD team exposing self-service pipelines.</div></div>
+
+        <div class="glossary-item"><span class="term">POJO</span><div class="defn">Plain Old Java Object. A class with no framework dependencies — no JPA, no Spring, no annotations forcing behaviour. The term is from Martin Fowler.</div></div>
+
+        <div class="glossary-item"><span class="term">Repository</span><div class="defn">Collection-like abstraction for loading and saving <em>whole</em> aggregates. One repository per aggregate root, returning fully-loaded aggregate instances.</div></div>
+
+        <div class="glossary-item"><span class="term">Stream-aligned Team</span><div class="defn">(Team Topologies) The default team type. Aligned to a single, valuable flow of work; owns it end-to-end (build, deploy, run). "You built it, you run it."</div></div>
+
+        <div class="glossary-item"><span class="term">Strategic Design</span><div class="defn">Evans' organizational DDD practice: align software model with the business by finding Bounded Contexts and teams to own them. Eberhard prefers Team Topologies instead.</div></div>
+
+        <div class="glossary-item"><span class="term">Subdomain</span><div class="defn">A partition of the business domain — Core, Supporting, or Generic. <em>Problem space</em>. A subdomain can span multiple Bounded Contexts.</div></div>
+
+        <div class="glossary-item"><span class="term">Supporting Subdomain</span><div class="defn">Necessary for the Core Domain to function, but not differentiating. Often business-specific enough that no off-the-shelf product exists. Custom-built but with a smaller team.</div></div>
+
+        <div class="glossary-item"><span class="term">Swim Lane</span><div class="defn">(Event Storming) A horizontal slice of the event wall marking a parallel sequence of activities. Eberhard's e-commerce example: Invoicing and Delivery run in parallel after an order is accepted.</div></div>
+
+        <div class="glossary-item"><span class="term">Table Module</span><div class="defn">(Fowler, PofEAA) One class per database table; a single instance handles all rows. Locks the object model to the table structure.</div></div>
+
+        <div class="glossary-item"><span class="term">Team Topologies</span><div class="defn">A team-organization pattern language by Matthew Skelton &amp; Manuel Pais (book 2019, 2nd ed. 2025). Four team types + three interaction modes + cognitive load as a first-class design constraint.</div></div>
+
+        <div class="glossary-item"><span class="term">Transaction Script</span><div class="defn">(Fowler, PofEAA) One script per use case; procedural from presentation to database. Right for simple CRUD; turns into spaghetti as rules multiply.</div></div>
+
+        <div class="glossary-item"><span class="term">Ubiquitous Language</span><div class="defn">A vocabulary shared by code, database, software engineers, and domain experts — used everywhere inside one Bounded Context. Introduced by Eric Evans in 2003.</div></div>
+
+        <div class="glossary-item"><span class="term">Value Object</span><div class="defn">An immutable object with no identity; equality is by attributes. Examples: <code>Money</code>, <code>Address</code>, <code>Email</code>, <code>IBAN</code>. Two € is two € regardless of which bill.</div></div>
+
+        <div class="glossary-item"><span class="term">X-as-a-Service (XaaS)</span><div class="defn">(Team Topologies) An interaction mode where one team provides a service or platform that another consumes with minimal interaction. The default steady-state between Platform teams and Stream-aligned teams.</div></div>
+
+      </div>
+    </section>
+
+    <!-- CHEAT SHEET -->
+    <section id="cheat-sheet">
+      <h2 id="heading-12"><span class="chap-num">★</span>Cheat sheet — one page, printed, ready</h2>
+      <p>Print this page (Ctrl/Cmd+P) and pin it above your monitor. Each card is a decision rule you'll reach for in design discussions.</p>
+
+      <div class="cheat-grid">
+        <div class="cheat-card"><div class="cheat-title">Identify the Core</div><div class="cheat-body">Apply the replacement test: if a competitor replaced this with a SaaS overnight, would you lose customers? <strong>Yes → Core</strong>. No but specific to you → Supporting. No, anyone could replace it → Generic. <em>Ask domain experts. "I don't know" is fine.</em></div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Find BC boundaries</div><div class="cheat-body">From the Event Storming wall: areas between swim lanes and pivotal events are <em>candidates</em>. <strong>Not all pivotal events split BCs.</strong> Two valid "customers" that mean different things = BC boundary.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Pivotal event check</div><div class="cheat-body">Is the world genuinely different afterwards? (Cart → Order. Edit → Cancel-only. <em>"Cannot recall the parcel."</em>) If yes → pivotal. If only "we have new info" → not pivotal.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Pick a tactical pattern</div><div class="cheat-body"><strong>ASK</strong> the domain expert <em>why</em>. "Just display" → Transaction Script. "Same procedure per row" → Table Module. "Decide based on changing rules" → Domain Model.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Aggregate boundary test</div><div class="cheat-body">Can you delete the aggregate in one transaction? Are all cross-aggregate references <code>*Id</code> fields? Does one user request modify exactly one aggregate? If "no" to any, the boundary is wrong.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Keep the domain clean</div><div class="cheat-body">No <code>@Entity</code> from JPA. No <code>Serializable</code> on identifiers. No public no-arg ctors. Use <strong>jMolecules</strong> stereotypes and let ByteBuddy project to the framework at compile time.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Use arch tools in 3 stages</div><div class="cheat-body"><strong>R</strong>eveal the dependency graph → <strong>E</strong>ngage in conversation about violations → <strong>E</strong>nforce only after the team has internalized the rule. Don't skip straight to CI-as-gate.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Team Topologies default</div><div class="cheat-body">Default team type: <strong>Stream-aligned</strong>. Target ratio: ~80% stream-aligned. The rest are Platform, Enabling, Complicated-Subsystem. Three interaction modes: Collaboration, X-as-a-Service, Facilitating.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Org design caveat</div><div class="cheat-body">Team Topologies defines <em>magnets, not mandates</em>. Renaming teams on paper changes nothing. Work on actual collaboration, not the org chart.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Event Storming silent phase</div><div class="cheat-body">Phase 2 (Chaotic Exploration) <strong>must be silent</strong>. Discussion comes later. Sticky colors: <strong>O</strong>range = event, <strong>P</strong>ink = hotspot, <strong>Y</strong>ellow = actor, <strong>B</strong>lue = external system, <strong>L</strong>ilac = software, <strong>G</strong>reen = opportunity.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">The waterfall disclaimer</div><div class="cheat-body">Eberhard's <strong>W-I-C-C</strong>: Work in Iterations, Change level of abstraction, repeat any Concrete step. Iterate any phase whenever you need to. The order is for teaching, not for shipping.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">The hierarchy (tactical)</div><div class="cheat-body"><strong>EVE-ARF-S</strong>: Entity · Value Object · Event (leaves) → Aggregate (wraps them) → Repository (loads/saves) → Factory (builds) → Service (spans multiple). <em>Lower levels don't know about higher ones.</em></div></div>
+      </div>
+    </section>
+
+    
+
+  
+<footer>
+  <p>Generated as a learning companion from Eberhard Wolff's talk at JCON Europe 2024.</p>
+  <p>Follow the original recording for the full talk; selected frames accompany these notes.</p>
+  <p>Content for educational use only. All quotes from the talk are paraphrased or used in fair-use excerpt.</p>
+</footer></div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>

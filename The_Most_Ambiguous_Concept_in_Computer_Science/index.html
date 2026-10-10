@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Untangle instruction set architecture from microarchitecture, with ALU diagrams, assembly examples, and a quick check of what you remember."><meta name="theme-color" content="#111513">
+<title>The Most Ambiguous Concept in Computer Science — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.youtube.com/watch?v=eNtADpJ2EC4">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#computer-architecture">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#heading-01"><span>01</span><span>Too Long; Didn&#x27;t Watch</span></a><a href="#heading-02"><span>02</span><span>“Architecture” Is a Slippery Word</span></a><a href="#heading-03"><span>03</span><span>From Sand to an ALU</span></a><a href="#heading-04"><span>04</span><span>“Implementation” — The Bridge Idea</span></a><a href="#heading-05"><span>05</span><span>How Do You Even Build an ALU? (And Why It Breaks Compatibility)</span></a><a href="#heading-06"><span>06</span><span>Same Output, Three Totally Different Insides</span></a><a href="#heading-07"><span>07</span><span>The Fix: ISA vs. Microarchitecture</span></a><a href="#heading-08"><span>08</span><span>Real ISAs &amp; a Forest of Microarchitectures</span></a><a href="#heading-09"><span>09</span><span>Deep Dive: RISC vs CISC, Made Tangible</span></a><a href="#heading-10"><span>10</span><span>Why Everyone Dreaded “Porting” in the 1980s</span></a><a href="#heading-11"><span>11</span><span>The Mental Model, Compressed</span></a><a href="#heading-12"><span>12</span><span>Check Your Recall</span></a><a href="#heading-13"><span>13</span><span>Glossary</span></a></nav><p class="sidebar-note">Read at your own pace.<br>Keep the original talk close.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">Computer architecture / Study guide</span>
+<h1>The Most Ambiguous Concept in Computer Science</h1><p class="guide-description">
+    The word <strong>“architecture”</strong> is thrown around everywhere in tech — but it quietly means
+    different things in different rooms. This guide distills the excellent
+    <strong>Core Dumped</strong> video into a clear, recall-friendly study path for developers who want
+    to <em>actually</em> understand what <strong>ISA</strong> and <strong>Microarchitecture</strong> are, and why the
+    difference matters every time you compile or run a program.
+  </p>
+<div class="guide-meta"><span>By <strong>Core Dumped</strong></span><span>Computer science explained</span><span>13 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.youtube.com/watch?v=eNtADpJ2EC4">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#computer-architecture">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 13 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#heading-01"><span>01</span><span>Too Long; Didn&#x27;t Watch</span></a><a href="#heading-02"><span>02</span><span>“Architecture” Is a Slippery Word</span></a><a href="#heading-03"><span>03</span><span>From Sand to an ALU</span></a><a href="#heading-04"><span>04</span><span>“Implementation” — The Bridge Idea</span></a><a href="#heading-05"><span>05</span><span>How Do You Even Build an ALU? (And Why It Breaks Compatibility)</span></a><a href="#heading-06"><span>06</span><span>Same Output, Three Totally Different Insides</span></a><a href="#heading-07"><span>07</span><span>The Fix: ISA vs. Microarchitecture</span></a><a href="#heading-08"><span>08</span><span>Real ISAs &amp; a Forest of Microarchitectures</span></a><a href="#heading-09"><span>09</span><span>Deep Dive: RISC vs CISC, Made Tangible</span></a><a href="#heading-10"><span>10</span><span>Why Everyone Dreaded “Porting” in the 1980s</span></a><a href="#heading-11"><span>11</span><span>The Mental Model, Compressed</span></a><a href="#heading-12"><span>12</span><span>Check Your Recall</span></a><a href="#heading-13"><span>13</span><span>Glossary</span></a></nav></details>
+<div class="guide-content">
+<!-- ===================== HERO ===================== -->
+<div class="tldw" id="tldw">
+    <h2 id="heading-01">⏱ Too Long; Didn't Watch</h2>
+    <p class="big">
+      “Architecture” is ambiguous because a hardware component (like an <b>ALU</b> or <b>CPU</b>) is only
+      <em>loosely</em> defined. To remove the ambiguity we split it into two precise ideas: the
+      <b>Instruction Set Architecture (ISA)</b> — the public contract software depends on — and the
+      <b>Microarchitecture</b> — the secret internal wiring that implements it.
+      <b>One ISA can have many microarchitectures.</b> Code compiled for an ISA runs on every
+      microarchitecture that implements it, but <b>not</b> across different ISAs.
+    </p>
+    <div class="facts">
+      <div class="fact"><div class="k">In one sentence</div><div class="v">ISA = the <b>rules</b>; Microarchitecture = the <b>wiring</b>.</div></div>
+      <div class="fact"><div class="k">The analogy</div><div class="v">ISA : Microarchitecture = <b>Interface : Implementation</b> = Algorithm : Code</div></div>
+      <div class="fact"><div class="k">Big-3 ISAs today</div><div class="v"><b>x86-64</b> (Intel/AMD) · <b>ARM</b> (Apple/phones) · <b>RISC-V</b> (open)</div></div>
+      <div class="fact"><div class="k">Why it bites you</div><div class="v">An x86-64 binary won’t run on an ARM chip — wrong <b>language</b>.</div></div>
+      <div class="fact"><div class="k">Marketing trick</div><div class="v">“New architecture!” usually = new <b>microarchitecture</b>, same ISA.</div></div>
+      <div class="fact"><div class="k">In software-land</div><div class="v">When programmers say “architecture” they <b>almost always mean the ISA</b>.</div></div>
+    </div>
+  </div>
+
+<!-- ===================== 1. PROBLEM ===================== -->
+<section id="problem">
+  <div class="sec-head"><span class="sec-num">01</span><h2 id="heading-02">“Architecture” Is a Slippery Word</h2></div>
+  <p><span class="ts">▶ 0:00</span> The video opens by showing the word <em>architecture</em> repeated over and over in completely
+  different contexts — CPU architecture, system architecture, software architecture, network architecture…</p>
+  <p>Each usage points at <strong>a slightly different idea</strong>. That fuzziness is the whole problem.
+  Before this guide fixes it, the one thing to internalize is:</p>
+  <div class="callout co-warn" data-label="⚠ The core ambiguity">
+    <p>A term like <strong>“ALU”</strong> or <strong>“CPU”</strong> names <em>what</em> something does, but leaves
+    <strong>almost every “how” undecided</strong> — the internal layout, the bit encodings, the widths, the supported
+    operations. Two components can both be “a CPU” and be utterly different inside. That leftover freedom
+    <em>is</em> architecture, and it’s exactly where the word gets ambiguous.</p>
+  </div>
+  <p>The rest of the page builds up the vocabulary to talk about that leftover freedom precisely.</p>
+</section>
+
+<!-- ===================== 2. BUILDING BLOCKS -> ALU ===================== -->
+<section id="alu">
+  <div class="sec-head"><span class="sec-num">02</span><h2 id="heading-03">From Sand to an ALU</h2></div>
+  <p><span class="ts">▶ 0:27</span> A quick recap of the stack, because the ALU is where “architecture” first becomes interesting:</p>
+  <div class="grid2">
+    <div class="card">
+      <span class="tag">The hardware stack</span>
+      <ol>
+        <li><strong>Transistors</strong> — tiny switches.</li>
+        <li><strong>Logic gates</strong> — AND, OR, NOT, XOR… built from transistors.</li>
+        <li><strong>Circuits</strong> — adders, decoders, multiplexers… built from gates.</li>
+        <li><strong>Special-purpose units</strong> — e.g. an adder-only circuit.</li>
+        <li><strong>General-purpose units</strong> — combine many circuits, pick behaviour with an input.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <span class="tag">Why general-purpose matters</span>
+      <p>A circuit that does <em>one</em> thing is just hardware. A circuit that can do
+      <em>several</em> things based on an <strong>opcode</strong> input is the seed of a whole computer. The
+      <strong>ALU</strong> is the canonical example — and the perfect toy model for the rest of this guide.</p>
+    </div>
+  </div>
+
+  <h3>The ALU: our running example</h3>
+  <p>An <strong>Arithmetic Logic Unit (ALU)</strong> takes <em>two data inputs</em> and an <em>opcode</em>, and
+  produces <em>one output</em>. The opcode is a small bundle of bits that selects which operation runs.</p>
+
+  <figure>
+    <svg viewBox="0 0 480 300" role="img" aria-label="ALU block diagram">
+      <defs>
+        <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6 Z" fill="#9fb1c4"/>
+        </marker>
+        <linearGradient id="aluG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2ea043"/><stop offset="1" stop-color="#1c7d33"/>
+        </linearGradient>
+      </defs>
+      <!-- input A -->
+      <text x="115" y="32" text-anchor="middle" fill="#79c0ff" font-family="ui-monospace,monospace" font-size="16" font-weight="700">A = 1010</text>
+      <text x="115" y="52" text-anchor="middle" fill="#6c7d92" font-family="ui-monospace,monospace" font-size="13">(decimal 10)</text>
+      <line x1="115" y1="62" x2="115" y2="100" stroke="#9fb1c4" stroke-width="2.5" marker-end="url(#ar)"/>
+      <!-- input B -->
+      <text x="255" y="32" text-anchor="middle" fill="#ffa657" font-family="ui-monospace,monospace" font-size="16" font-weight="700">B = 0011</text>
+      <text x="255" y="52" text-anchor="middle" fill="#6c7d92" font-family="ui-monospace,monospace" font-size="13">(decimal 3)</text>
+      <line x1="255" y1="62" x2="255" y2="100" stroke="#9fb1c4" stroke-width="2.5" marker-end="url(#ar)"/>
+      <!-- opcode -->
+      <text x="400" y="130" text-anchor="middle" fill="#bc8cff" font-family="ui-monospace,monospace" font-size="14">opcode</text>
+      <text x="400" y="150" text-anchor="middle" fill="#bc8cff" font-family="ui-monospace,monospace" font-size="16" font-weight="700">00 = add</text>
+      <line x1="476" y1="160" x2="338" y2="160" stroke="#bc8cff" stroke-width="2.5" marker-end="url(#ar)"/>
+      <!-- ALU body (classic notched trapezoid) -->
+      <path d="M78 100 H320 L286 150 L320 200 H78 Z" fill="url(#aluG)" stroke="#3fb950" stroke-width="2"/>
+      <text x="183" y="158" text-anchor="middle" fill="#0b0f14" font-size="28" font-weight="800" font-family="ui-monospace,monospace">ALU</text>
+      <!-- output -->
+      <line x1="183" y1="200" x2="183" y2="250" stroke="#9fb1c4" stroke-width="2.5" marker-end="url(#ar)"/>
+      <text x="183" y="272" text-anchor="middle" fill="#3fb950" font-family="ui-monospace,monospace" font-size="16" font-weight="700">out = 1101 (13)</text>
+    </svg>
+    <figcaption>The ALU as a black box: <code>10 + 3 = 13</code> when opcode <code>00</code> selects addition. (Recreated from the video.)</figcaption>
+  </figure>
+
+  <div class="callout co-key" data-label="🔑 Remember the ALU by three ports">
+    <p><strong>Two data in, one opcode in, one result out.</strong> That’s the entire external interface — and notice it
+    says <em>nothing</em> about what’s inside the box. Hold that thought.</p>
+  </div>
+</section>
+
+<!-- ===================== 3. IMPLEMENTATION ===================== -->
+<section id="implementation">
+  <div class="sec-head"><span class="sec-num">03</span><h2 id="heading-04">“Implementation” — The Bridge Idea</h2></div>
+  <p><span class="ts">▶ 1:27</span> To connect hardware to something developers already intuit, the video borrows a software word:
+  <strong>implementation</strong>.</p>
+
+  <div class="callout co-info" data-label="💡 Software → hardware analogy">
+    <p>In software, <strong>one problem has many correct algorithms</strong> — we call each an <em>implementation</em>.</p>
+    <p>In hardware, <strong>one component has many correct internal designs</strong> — we call each an <em>architecture</em>.
+    <br><strong>Architecture is to hardware what an algorithm is to software.</strong></p>
+  </div>
+
+  <p>The video illustrates this with three different C programs that all <em>find the maximum value in an array</em>.
+  Same answer, three completely different strategies. This is the exact same situation as “one ALU, many internal designs.”</p>
+
+  <div class="grid2">
+    <div class="card">
+      <span class="tag">Approach 1 · Iterative</span>
+      <p class="muted">Scan left→right, keep the largest so far.</p>
+      <div class="code-wrap"><pre><code><span class="c-com">// one pass, O(n)</span>
+<span class="c-kw">int</span> <span class="c-fn">find_max</span>(<span class="c-kw">int</span> a[], <span class="c-kw">int</span> n) {
+  <span class="c-kw">int</span> m = a[<span class="c-num">0</span>];
+  <span class="c-kw">for</span> (<span class="c-kw">int</span> i=<span class="c-num">1</span>; i&lt;n; i++)
+    <span class="c-kw">if</span> (a[i] &gt; m) m = a[i];
+  <span class="c-kw">return</span> m;
+}</code></pre></div>
+    </div>
+    <div class="card">
+      <span class="tag">Approach 2 · Recursive</span>
+      <p class="muted">Max of rest, then compare last element.</p>
+      <div class="code-wrap"><pre><code><span class="c-com">// divide &amp; conquer</span>
+<span class="c-kw">int</span> <span class="c-fn">find_max</span>(<span class="c-kw">int</span> a[], <span class="c-kw">int</span> n) {
+  <span class="c-kw">if</span> (n == <span class="c-num">1</span>) <span class="c-kw">return</span> a[<span class="c-num">0</span>];
+  <span class="c-kw">int</span> r = <span class="c-fn">find_max</span>(a, n-<span class="c-num">1</span>);
+  <span class="c-kw">return</span> a[n-<span class="c-num">1</span>] &gt; r ? a[n-<span class="c-num">1</span>] : r;
+}</code></pre></div>
+    </div>
+    <div class="card">
+      <span class="tag">Approach 3 · Sort</span>
+      <p class="muted">Sort ascending, return last element.</p>
+      <div class="code-wrap"><pre><code><span class="c-com">// correct, but wasteful</span>
+<span class="c-kw">int</span> <span class="c-fn">find_max</span>(<span class="c-kw">int</span> a[], <span class="c-kw">int</span> n) {
+  <span class="c-fn">sort</span>(a, n);   <span class="c-com">// O(n log n)</span>
+  <span class="c-kw">return</span> a[n-<span class="c-num">1</span>];
+}</code></pre></div>
+    </div>
+  </div>
+  <p class="muted">All three return the same value for the same input — just like three ALU designs that produce the same output.
+  The choice of strategy is an <em>implementation detail</em>… until it isn’t.</p>
+</section>
+
+<!-- ===================== 4. COMPATIBLE VS INCOMPATIBLE ===================== -->
+<section id="compat">
+  <div class="sec-head"><span class="sec-num">04</span><h2 id="heading-05">How Do You Even Build an ALU? (And Why It Breaks Compatibility)</h2></div>
+  <p><span class="ts">▶ 2:28</span> The simplest recipe: build a <strong>separate circuit for each operation</strong>, then use a
+  <strong>binary decoder</strong> to switch the right one on based on the opcode.</p>
+
+  <h4>The 2-bit opcode table shown in the video</h4>
+  <div class="tbl-wrap">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead><tr><th>Opcode (2 bits)</th><th>Operation</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><span class="bits">00</span></td><td>Addition</td><td class="mono">1010 + 0011 = <span>1101</span> &nbsp;(10 + 3 = 13)</td></tr>
+        <tr><td><span class="bits">01</span></td><td>Subtraction</td><td class="mono">1010 − 0011 = <span>0111</span> &nbsp;(10 − 3 = 7)</td></tr>
+        <tr><td><span class="bits">10</span></td><td>Bitwise AND</td><td class="mono">1010 &amp; 0011 = <span>0010</span> &nbsp;(10 &amp; 3 = 2)</td></tr>
+        <tr><td><span class="bits">11</span></td><td>Bitwise OR</td><td class="mono">1010 | 0011 = <span>1011</span> &nbsp;(10 | 3 = 11)</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <p class="muted">A 3-bit opcode scales this to 8 operations (add, sub, mul, div, NOT, AND, OR, XOR) — the video shows
+  <code>0110 OR 0010 = 0110</code> using opcode <code>110</code>.</p>
+
+  <h3>The decoder routes the opcode</h3>
+  <p>A <strong>binary decoder</strong> turns <em>n</em> opcode bits into <em>2ⁿ</em> enable lines — exactly one of which
+  goes high. That single hot line selects which operation’s result reaches the output.</p>
+
+  <figure>
+    <svg viewBox="0 0 540 230" role="img" aria-label="Binary decoder selecting an ALU operation">
+      <defs><marker id="ar2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#9fb1c4"/></marker></defs>
+      <!-- opcode -->
+      <text x="30" y="120" fill="#bc8cff" font-family="ui-monospace,monospace" font-size="16" font-weight="bold">opcode 01</text>
+      <line x1="120" y1="114" x2="170" y2="114" stroke="#bc8cff" stroke-width="2.5" marker-end="url(#ar2)"/>
+      <!-- decoder -->
+      <rect x="172" y="70" width="86" height="90" rx="8" fill="#16202d" stroke="#58a6ff" stroke-width="2"/>
+      <text x="215" y="108" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">2-to-4</text>
+      <text x="215" y="126" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">DECODER</text>
+      <!-- enable lines -->
+      <g font-family="ui-monospace,monospace" font-size="12">
+        <line x1="258" y1="86"  x2="360" y2="86"  stroke="#2f4156" stroke-width="2"/>
+        <text x="368" y="90" fill="#6c7d92">00 → Add</text>
+        <line x1="258" y1="106" x2="360" y2="106" stroke="#3fb950" stroke-width="2.5"/>
+        <text x="368" y="110" fill="#3fb950" font-weight="700">01 → Sub  ← selected</text>
+        <line x1="258" y1="126" x2="360" y2="126" stroke="#2f4156" stroke-width="2"/>
+        <text x="368" y="130" fill="#6c7d92">10 → AND</text>
+        <line x1="258" y1="146" x2="360" y2="146" stroke="#2f4156" stroke-width="2"/>
+        <text x="368" y="150" fill="#6c7d92">11 → OR</text>
+      </g>
+      <text x="270" y="200" text-anchor="middle" fill="#6c7d92" font-size="13" font-style="italic">Only the subtractor is enabled; its result becomes the ALU output.</text>
+    </svg>
+    <figcaption>Opcode <code>01</code> lights up exactly one enable line, selecting subtraction → <code>10 − 3 = 7</code>.</figcaption>
+  </figure>
+
+  <div class="callout co-warn" data-label="⚠ Same bits, different meaning = INCOMPATIBLE">
+    <p>Here’s the trap: <strong>the bit pattern <code>01</code> is a choice</strong>. One designer might encode
+    <code>01</code>=subtract; another might encode <code>01</code>=multiply. Feed the <em>same</em> bits to both ALUs and you get
+    <strong>completely different results</strong>. They are both “ALUs,” but they speak different languages.</p>
+    <p>So “different architecture” <em>can</em> mean “incompatible” — but, as the next section shows, it doesn’t <em>have</em> to.</p>
+  </div>
+</section>
+
+<!-- ===================== 5. THREE COMPATIBLE DESIGNS ===================== -->
+<section id="three-designs">
+  <div class="sec-head"><span class="sec-num">05</span><h2 id="heading-06">Same Output, Three Totally Different Insides</h2></div>
+  <p><span class="ts">▶ 6:38</span> The video’s pivotal moment: you can wire an ALU <strong>three fundamentally different ways</strong> and still
+  get bit-identical results. They are <strong>different architectures but compatible</strong>.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <span class="tag">Design A · Output selection</span>
+      <ul>
+        <li>Inputs reach <strong>all</strong> units at once</li>
+        <li><strong>Every</strong> operation computes simultaneously</li>
+        <li>A <strong>selector (MUX)</strong> picks one result to output</li>
+      </ul>
+      <p class="muted">Wasteful but dead simple.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Design B · Input routing</span>
+      <ul>
+        <li>A <strong>bus router</strong> sends inputs to <strong>only</strong> the active unit</li>
+        <li>Idle units never see the data</li>
+        <li>Output is taken straight from the active unit</li>
+      </ul>
+      <p class="muted">Routing lives at the entrance.</p>
+    </div>
+    <div class="card">
+      <span class="tag">Design C · Enable / activation</span>
+      <ul>
+        <li>Inputs reach <strong>all</strong> units</li>
+        <li>Decoder <strong>activates only one</strong> unit (others sit idle)</li>
+        <li>Only the active unit produces a real result</li>
+      </ul>
+      <p class="muted">Selection via an enable pin.</p>
+    </div>
+  </div>
+
+  <div class="callout co-key" data-label="🔑 The punchline that defines the whole topic">
+    <p>From the outside — same inputs, same opcode, <strong>same output</strong>. From the inside — three unrelated circuits.
+    They are <strong>different microarchitectures implementing one identical ISA</strong>. This is the precise,
+    non-ambiguous statement we’ve been building toward.</p>
+  </div>
+</section>
+
+<!-- ===================== 6. ISA vs MICROARCHITECTURE ===================== -->
+<section id="isa-vs-micro">
+  <div class="sec-head"><span class="sec-num">06</span><h2 id="heading-07">The Fix: ISA vs. Microarchitecture</h2></div>
+  <p><span class="ts">▶ 7:44</span> To kill the ambiguity, split “computer architecture” into two precise layers. When people say
+  “computer architecture” loosely, they usually mean <strong>both together</strong>.</p>
+
+  <div class="grid2">
+    <div class="card isa">
+      <span class="tag">ISA · Instruction Set Architecture</span>
+      <h4>The public contract</h4>
+      <p>The <strong>programmer-visible rules</strong> between software and the processor: which instructions exist,
+      how they’re encoded into bits, their formats, registers, data types, addressing modes, and privilege levels.</p>
+      <p class="muted">Think of it as <strong>“the language + grammar the CPU speaks.”</strong> Software depends on it; it must not change silently.</p>
+      <p><b>Video’s framing:</b> the externally-visible rules — what inputs exist, what each opcode means, what output to produce.</p>
+    </div>
+    <div class="card micro">
+      <span class="tag">Microarchitecture</span>
+      <h4>The secret wiring</h4>
+      <p>The <strong>internal circuitry and organisation</strong> that makes a processor actually behave as the ISA demands —
+      pipelines, caches, predictors, execution units, the ALU design.</p>
+      <p class="muted">Think of it as <strong>“how the sausage is made.”</strong> Programmers (usually) don’t see it; engineers optimise it.</p>
+      <p><b>Video’s framing:</b> the three different internal ALU designs — all obeying the same external rules.</p>
+    </div>
+  </div>
+
+  <div class="callout co-info" data-label="💡 The relationship, in one line">
+    <p><strong>One ISA → many microarchitectures.</strong> A program compiled for an ISA runs on
+    <em>any</em> microarchitecture that correctly implements it — but <strong>not</strong> on a chip with a different ISA.</p>
+  </div>
+
+  <h3>What an ISA actually specifies (the video’s checklist)</h3>
+  <p>This is why the ISA is a thick rulebook, not a single sentence. The video flashes a sprawling catalogue. Categories include:</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>Instruction set</h4>
+      <p class="muted">Instruction names &amp; opcodes · encoding formats &amp; lengths · fixed vs variable length · prefixes/suffixes · operand count &amp; order · immediate encodings · alignment · illegal/reserved encodings · optional extensions</p>
+    </div>
+    <div class="card">
+      <h4>Registers</h4>
+      <p class="muted">Number &amp; names of GPRs · widths · program counter · stack/frame pointers · status/condition flags · system &amp; control registers · FP &amp; vector/SIMD registers · aliases · privilege-level access</p>
+    </div>
+    <div class="card">
+      <h4>Behaviour</h4>
+      <p class="muted">Arithmetic (signed/unsigned, overflow, carry, saturation) · bitwise (shifts, rotates, popcount) · data types &amp; sizes · comparison &amp; condition flags · addressing modes · memory ordering</p>
+    </div>
+  </div>
+
+  <h4>The one-paragraph effect</h4>
+  <p>For any task, the ISA dictates <strong>which small operations you’re allowed to combine</strong> and
+  <strong>how they must be translated into binary</strong> so a CPU can receive, decode, and execute them. It is an
+  <em>abstract specification</em> — a list of promises the hardware makes to the software.</p>
+</section>
+
+<!-- ===================== 7. REAL-WORLD ISAs ===================== -->
+<section id="real">
+  <div class="sec-head"><span class="sec-num">07</span><h2 id="heading-08">Real ISAs &amp; a Forest of Microarchitectures</h2></div>
+  <p><span class="ts">▶ 10:22</span> The three ISAs you’ll meet in the wild:</p>
+  <div class="tbl-wrap">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead><tr><th>ISA</th><th>Family</th><th>Where you’ll find it</th><th>Who designs microarchitectures</th></tr></thead>
+      <tbody>
+        <tr><td><b>x86-64</b></td><td>CISC</td><td>Most desktops, laptops, servers</td><td>Intel, AMD</td></tr>
+        <tr><td><b>ARM</b> (AArch64/ARM64)</td><td>RISC</td><td>Phones, tablets, Apple Silicon Macs, servers, IoT</td><td>Apple, Qualcomm, Samsung, Amazon (Graviton)…</td></tr>
+        <tr><td><b>RISC-V</b></td><td>RISC (open)</td><td>Research, embedded, custom silicon, accelerators</td><td>Anyone (it’s open &amp; royalty-free)</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <p>Under <strong>one ISA</strong> sits <strong>dozens of microarchitectures</strong>. The video draws the x86-64 family tree —
+  note how Intel and AMD ship completely different chips that all run the same x86-64 binaries:</p>
+
+  <div class="tree">
+    <div class="tree-root">ISA · x86-64</div>
+    <div class="tree-children">
+      <div class="branch">
+        <h5><span class="chip amd">AMD</span> AMD microarchitectures</h5>
+        <ul>
+          <li>K8 Hammer</li><li>K9</li><li>K10</li><li>Bobcat</li>
+          <li>Fusion</li><li>Jaguar</li><li>Puma</li><li>Bulldozer</li>
+          <li>Piledriver</li><li>Steamroller</li><li>Excavator</li><li>Zen+</li>
+          <li class="hot">Zen 2</li><li>Zen 3</li><li>Zen 3+</li><li>Zen 4</li><li>Zen 5</li>
+        </ul>
+      </div>
+      <div class="branch">
+        <h5><span class="chip intel">Intel</span> Intel microarchitectures</h5>
+        <ul>
+          <li>Core</li><li>Nehalem</li><li>Sandy Bridge</li><li>Skylake</li>
+          <li>Kaby Lake</li><li>Amber Lake</li><li>Whiskey Lake</li><li class="hot">Coffee Lake</li>
+          <li>Comet Lake</li><li>Cooper Lake</li><li>Ice Lake</li><li>Rocket Lake</li>
+          <li>Tiger Lake</li><li>Alder Lake</li><li>Raptor Lake</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <p class="muted">Every box above is a distinct microarchitecture — yet a single x86-64 binary runs on all of them. That’s ISA compatibility in action.</p>
+
+  <div class="callout co-warn" data-label="⚠ Cross-ISA = NOT compatible">
+    <p>That <em>same</em> x86-64 binary will <strong>not</strong> run on an ARM chip (e.g. Apple’s M-series). The bits mean
+    different things to a different ISA. To run there, the program must be <strong>recompiled (or rewritten) for ARM</strong>.</p>
+  </div>
+
+  <h3>“New architecture!” usually means new microarchitecture</h3>
+  <p><span class="ts">▶ 11:30</span> When Intel/AMD/Apple announce “a brand-new architecture,” they almost always mean a
+  <strong>new microarchitecture for an existing ISA</strong>. Shipping a genuinely new ISA every year would be commercial
+  suicide — every existing program would need recompiling or rewriting.</p>
+
+  <div class="callout co-add" data-label="📚 Real-world example: Apple’s silicon switch (2020–2023)">
+    <p>In June 2020, Apple announced it would move the Mac from Intel’s <strong>x86-64</strong> to its own
+    <strong>ARM-based</strong> Apple silicon — completing the switch by mid-2023. Because the ISA changed, every app had to be
+    recompiled for ARM. Apple bridged the gap with:</p>
+    <ul>
+      <li><strong>Universal 2</strong> binaries — contain both x86-64 and ARM64 code.</li>
+      <li><strong>Rosetta 2</strong> — translates x86-64 instructions to ARM64 on the fly so old apps keep working.</li>
+    </ul>
+    <p class="muted">A textbook case of the video’s thesis: same high-level source, different ISA, mandatory recompile.</p>
+  </div>
+</section>
+
+<!-- ===================== 8. BONUS: RISC vs CISC + ASSEMBLY ===================== -->
+<section id="bonus">
+  <div class="sec-head"><span class="sec-num">08</span><h2 id="heading-09">Deep Dive: RISC vs CISC, Made Tangible</h2></div>
+  <p class="muted"><em>The video names x86-64, ARM, and RISC-V but doesn’t dwell on <strong>why</strong> they differ.
+  This section adds the missing vocabulary developers need.</em></p>
+
+  <p>ISAs are loosely grouped into two design philosophies. The split that matters most in practice:</p>
+  <div class="tbl-wrap">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead><tr><th></th><th>RISC <span class="muted">(ARM, RISC-V, MIPS, PowerPC…)</span></th><th>CISC <span class="muted">(x86, VAX, PDP-11…)</span></th></tr></thead>
+      <tbody>
+        <tr><td><b>Memory access</b></td><td><b>Load/store</b> — only <code>load</code>/<code>store</code> touch memory; ALU ops use registers only</td><td>Memory operands allowed inside most instructions</td></tr>
+        <tr><td><b>Instruction length</b></td><td>Fixed (e.g. 32 bits)</td><td>Variable (x86: 1–15 bytes)</td></tr>
+        <tr><td><b>Instruction count</b></td><td>Few, simple, often single-cycle</td><td>Many, complex, often multi-cycle</td></tr>
+        <tr><td><b>Registers</b></td><td>Many (ARM64: 31 GPRs)</td><td>Fewer (x86-64: 16 GPRs)</td></tr>
+        <tr><td><b>Addressing modes</b></td><td>Few</td><td>Many</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <h3>The difference you can <em>see</em>: one line of C, two very different programs</h3>
+  <p>The video closes on the high-level statement <code>count = count + 1;</code> being identical across architectures.
+  Here’s what a compiler actually emits for it — and it reveals the load/store rule in action.</p>
+
+  <div class="grid2">
+    <div>
+      <div class="code-wrap">
+        <div class="code-head"><span class="lang">x86-64</span><span class="label">· CISC · register-memory · 1 instruction</span><button class="copy" hidden type="button">copy</button></div>
+        <pre><code><span class="c-com">; count = count + 1;   (count is a global int)</span>
+<span class="c-com">; x86-64 lets ALU ops address memory directly:</span>
+    <span class="c-instr">inc</span> <span class="c-reg">DWORD PTR</span> [<span class="c-reg">rip</span> + <span class="c-fn">count</span>]
+
+<span class="c-com">; one instruction: read, add 1, write — all implicit</span></code></pre>
+      </div>
+      <p class="muted">The CISC ISA folds “load → modify → store” into a single instruction with a memory operand.</p>
+    </div>
+    <div>
+      <div class="code-wrap">
+        <div class="code-head"><span class="lang">ARM64 / AArch64</span><span class="label">· RISC · load/store · 5 instructions</span><button class="copy" hidden type="button">copy</button></div>
+        <pre><code><span class="c-com">; count = count + 1;   (count is a global int)</span>
+<span class="c-com">; ARM64 ALU ops CANNOT touch memory.</span>
+    <span class="c-instr">adrp</span>  <span class="c-reg">x0</span>, <span class="c-fn">count</span>            <span class="c-com">; page address of count</span>
+    <span class="c-instr">add</span>   <span class="c-reg">x0</span>, <span class="c-reg">x0</span>, <span class="c-dim">:lo12:</span><span class="c-fn">count</span>  <span class="c-com">; full address</span>
+    <span class="c-instr">ldr</span>   <span class="c-reg">w1</span>, [<span class="c-reg">x0</span>]            <span class="c-com">; load  → register</span>
+    <span class="c-instr">add</span>   <span class="c-reg">w1</span>, <span class="c-reg">w1</span>, <span class="c-num">#1</span>         <span class="c-com">; modify (register only)</span>
+    <span class="c-instr">str</span>   <span class="c-reg">w1</span>, [<span class="c-reg">x0</span>]            <span class="c-com">; store ← register</span></code></pre>
+      </div>
+      <p class="muted">The RISC ISA forbids memory operands in arithmetic — so the compiler emits explicit load/modify/store steps.</p>
+    </div>
+  </div>
+
+  <div class="callout co-key" data-label="🔑 The load/store rule, in plain English">
+    <p>On a load/store ISA (ARM, RISC-V), <strong>only <code>load</code> and <code>store</code> instructions may touch memory.</strong>
+    Everything else works on registers. On x86-64, most instructions can read/write memory as part of the operation.
+    Same C line, very different machine code — because the <em>ISA</em> differs, not just the microarchitecture.</p>
+  </div>
+
+  <div class="callout co-add" data-label="🎓 Plot twist: does RISC vs CISC still matter?">
+    <p>A well-cited 2013 study (<em>Power Struggles</em>, HPCA) measured real ARM and x86 hardware and concluded the
+    <strong>ISA being RISC or CISC is “largely irrelevant”</strong> to modern performance and energy — what dominates is the
+    <strong>microarchitecture</strong> (pipelines, caches, predictors). Modern x86 chips even decode CISC instructions into
+    internal RISC-like “micro-ops.” This is exactly the video’s deeper point: <em>the ISA decides compatibility; the
+    microarchitecture decides speed.</em></p>
+  </div>
+</section>
+
+<!-- ===================== 9. HISTORY ===================== -->
+<section id="history">
+  <div class="sec-head"><span class="sec-num">09</span><h2 id="heading-10">Why Everyone Dreaded “Porting” in the 1980s</h2></div>
+  <p><span class="ts">▶ 11:58</span> The video closes its historical loop with a clip about how painful it was to move software
+  between machines when <strong>every computer had a different architecture</strong> — including absurdly varied <strong>word sizes</strong>.</p>
+
+  <h4>The word-size chaos of the era</h4>
+  <div class="tbl-wrap">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead><tr><th>Machine</th><th>Year</th><th>Word size</th></tr></thead>
+      <tbody>
+        <tr><td>DEC PDP-8</td><td>1965</td><td><b>12-bit</b></td></tr>
+        <tr><td>IBM System/360</td><td>1964</td><td>32-bit</td></tr>
+        <tr><td>DEC PDP-6 / PDP-10</td><td>1964 / 1966</td><td><b>36-bit</b> <span class="muted">(not a power of two!)</span></td></tr>
+        <tr><td>CDC 6600</td><td>1963</td><td><b>60-bit</b></td></tr>
+        <tr><td>DEC PDP-11</td><td>1970</td><td>16-bit</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-item"><span class="yr">1960s–70s</span><div class="ev">Each vendor’s machine had its own ISA, word length, and quirks. Software written in <strong>assembly</strong> for one box was useless on another — the OS literally “had to be rewritten for each computer architecture.”</div></div>
+    <div class="tl-item"><span class="yr">1972</span><div class="ev">Dennis Ritchie creates <strong>C</strong> at Bell Labs (for Unix on the 16-bit PDP-11). A high-level language could be <strong>recompiled</strong> per ISA instead of hand-rewritten in assembly — the first big escape hatch from architecture lock-in.</div></div>
+    <div class="tl-item"><span class="yr">1980s</span><div class="ev">Porting is still painful (C wasn’t perfectly portable; word sizes &amp; signedness bit everyone), but high-level languages + compilers make it <em>survivable</em>. The industry converges toward a few dominant ISAs.</div></div>
+    <div class="tl-item"><span class="yr">Today</span><div class="ev">A handful of ISAs (x86-64, ARM, RISC-V) dominate. You almost never hand-write assembly; compilers target each ISA for you. <strong>“Architecture” for a programmer now almost always means the ISA</strong> — because that’s the layer that decides whether your compiled program will run.</div></div>
+  </div>
+
+  <div class="callout co-info" data-label="💡 The conclusion the video is building to">
+    <p>Because the <strong>ISA</strong> is the layer software interacts with — it determines how programs must be
+    written, compiled, and executed — when programmers say “architecture,” they <strong>almost always mean the ISA</strong>.
+    The microarchitecture is an engineering concern hidden beneath it.</p>
+  </div>
+</section>
+
+<!-- ===================== 10. TAKEAWAYS ===================== -->
+<section id="takeaways">
+  <div class="sec-head"><span class="sec-num">10</span><h2 id="heading-11">The Mental Model, Compressed</h2></div>
+  <div class="takeaways">
+    <div class="tk"><div><strong>“Architecture” is ambiguous on purpose</strong> — terms like ALU/CPU define <em>what</em>, not <em>how</em>, leaving freedom that designers fill differently.</div></div>
+    <div class="tk"><div><strong>Split it in two:</strong> <span>ISA</span> = the public contract software depends on; <span>Microarchitecture</span> = the internal wiring that fulfils it.</div></div>
+    <div class="tk"><div><strong>One ISA → many microarchitectures.</strong> Three ALU designs can be unrelated inside yet produce identical outputs — different micro, same ISA, fully compatible.</div></div>
+    <div class="tk"><div><strong>Compatibility follows the ISA, not the silicon.</strong> An x86-64 binary runs on any Intel/AMD microarchitecture; it does <em>not</em> run on ARM.</div></div>
+    <div class="tk"><div><strong>“New architecture” ≠ new ISA.</strong> Vendor launches are usually new microarchitectures — preserving the ISA keeps existing software working.</div></div>
+    <div class="tk"><div><strong>For programmers, “architecture” ≈ ISA.</strong> It’s the layer that decides how your code is compiled and whether it will run.</div></div>
+    <div class="tk"><div><strong>RISC vs CISC is a real distinction</strong> (load/store, fixed vs variable length), but modern performance is dominated by microarchitecture, not the ISA label.</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card isa">
+      <span class="tag">Quick recall · ISA</span>
+      <ul>
+        <li>The <strong>language</strong> &amp; rules</li>
+        <li>Decides <strong>compatibility</strong></li>
+        <li>Examples: x86-64, ARM, RISC-V</li>
+        <li>Changes rarely (breaks software)</li>
+      </ul>
+    </div>
+    <div class="card micro">
+      <span class="tag">Quick recall · Microarchitecture</span>
+      <ul>
+        <li>The <strong>wiring</strong> &amp; implementation</li>
+        <li>Decides <strong>speed/efficiency</strong></li>
+        <li>Examples: Zen 5, Raptor Lake, Apple M4</li>
+        <li>Changes every generation</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 11. QUIZ ===================== -->
+<section id="quiz">
+  <div class="sec-head"><span class="sec-num">11</span><h2 id="heading-12">Check Your Recall</h2></div>
+  <p class="muted">Try to answer first, then reveal. (These test the ideas, not trivia.)</p>
+
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q1.</span>You compile a program for x86-64. Will it run natively on an Apple M4 chip? Why or why not?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal"><b>No.</b> The M4 implements the <b>ARM</b> ISA, not x86-64. The same bit patterns mean different things under a different ISA, so the binary won’t run — it must be recompiled (or translated, e.g. via Rosetta 2).</div>
+  </div>
+
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q2.</span>Two CPUs have completely different internal circuitry but run the same binaries. Which layer is identical, and which differs?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal"><b>Identical ISA; different microarchitecture.</b> Same public contract → same binaries; the internal wiring (pipelines, caches, execution units) is the designer’s private choice.</div>
+  </div>
+
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q3.</span>A vendor announces “a brand-new CPU architecture!” What is it most likely to actually be?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal">Almost certainly a <b>new microarchitecture implementing an existing ISA</b> (e.g. a new Zen or Lake core). A genuinely new ISA would force everyone to recompile or rewrite their software.</div>
+  </div>
+
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q4.</span>Why does <code>count = count + 1;</code> compile to one instruction on x86-64 but several on ARM64?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal">x86-64 (CISC) lets arithmetic instructions use <b>memory operands</b> (<code>inc DWORD PTR [count]</code>). ARM64 (RISC) is <b>load/store</b>: only <code>ldr</code>/<code>str</code> touch memory, so the compiler must explicitly load → add → store.</div>
+  </div>
+
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q5.</span>What single sentence captures the relationship between ISA and microarchitecture?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal"><b>The ISA defines the rules the hardware must obey; the microarchitecture is one specific way of obeying them.</b> One ISA can have many microarchitectures.</div>
+  </div>
+</section>
+
+<!-- ===================== 12. GLOSSARY ===================== -->
+<section id="glossary">
+  <div class="sec-head"><span class="sec-num">12</span><h2 id="heading-13">Glossary</h2></div>
+  <input class="gloss-search" id="glossSearch" type="text" placeholder="🔎 Filter terms (e.g. opcode, RISC, load/store)…">
+  <div class="glossary" id="glossList">
+    <div class="gterm"><div class="t">ALU <span class="ab">Arithmetic Logic Unit</span></div><div class="d">A combinational circuit that performs arithmetic and bitwise operations on integer binary inputs, selected by an opcode. The video’s running model for “architecture.”</div></div>
+    <div class="gterm"><div class="t">ISA <span class="ab">Instruction Set Architecture</span></div><div class="d">The programmer-visible contract between software and a processor: the instructions, their binary encodings, registers, data types, and addressing modes.</div></div>
+    <div class="gterm"><div class="t">Microarchitecture <span class="ab">a.k.a. computer organization</span></div><div class="d">The internal circuitry and organisation that implements a given ISA. One ISA can have many microarchitectures (e.g. Zen 5, Raptor Lake).</div></div>
+    <div class="gterm"><div class="t">Opcode</div><div class="d">A small bundle of bits (part of an instruction) that selects which operation a circuit (like an ALU) performs.</div></div>
+    <div class="gterm"><div class="t">Binary decoder</div><div class="d">A circuit that turns <em>n</em> input bits into <em>2ⁿ</em> output lines, exactly one of which is active. Used to route an opcode to the correct operation.</div></div>
+    <div class="gterm"><div class="t">Implementation</div><div class="d">One specific way of realising a component or solving a problem. In software = an algorithm; in hardware = an architecture/microarchitecture.</div></div>
+    <div class="gterm"><div class="t">Compatibility</div><div class="d">Two pieces of hardware are compatible if the same inputs (instructions/bits) produce the same outputs — i.e. they share the same ISA.</div></div>
+    <div class="gterm"><div class="t">x86-64 <span class="ab">a.k.a. AMD64</span></div><div class="d">The dominant CISC ISA for desktop/laptop/server CPUs; implemented by Intel and AMD microarchitectures.</div></div>
+    <div class="gterm"><div class="t">ARM / ARM64 / AArch64</div><div class="d">A RISC ISA family used in phones, tablets, Apple Silicon, and increasingly servers. Apple M-series chips implement ARM64.</div></div>
+    <div class="gterm"><div class="t">RISC-V</div><div class="d">An open, royalty-free RISC ISA used in research, embedded systems, and custom silicon.</div></div>
+    <div class="gterm"><div class="t">RISC <span class="ab">Reduced Instruction Set Computer</span></div><div class="d">An ISA philosophy: simple, fixed-length, single-cycle instructions; load/store memory model; many registers. (ARM, RISC-V, MIPS.)</div></div>
+    <div class="gterm"><div class="t">CISC <span class="ab">Complex Instruction Set Computer</span></div><div class="d">An ISA philosophy: richer, variable-length instructions that can operate directly on memory; fewer registers. (x86, VAX, PDP-11.)</div></div>
+    <div class="gterm"><div class="t">Load/store architecture</div><div class="d">An ISA where only load and store instructions access memory; all arithmetic works on registers. Characteristic of RISC ISAs.</div></div>
+    <div class="gterm"><div class="t">Register</div><div class="d">A small, fast storage location inside the CPU. The ISA defines how many exist, their names, widths, and uses.</div></div>
+    <div class="gterm"><div class="t">Word size</div><div class="d">The native unit of data a processor handles. Historically chaotic (12, 36, 60-bit…), now mostly standardised at 32/64-bit.</div></div>
+    <div class="gterm"><div class="t">Compile</div><div class="d">Translate source code into the binary instructions of a specific ISA. Recompiling is required when targeting a different ISA.</div></div>
+    <div class="gterm"><div class="t">Rosetta 2</div><div class="d">Apple’s translation layer that runs x86-64 binaries on ARM64 Apple Silicon by translating instructions at runtime.</div></div>
+  </div>
+</section>
+
+<footer>
+  <div class="fl">
+    <p>This study guide is a derivative educational summary of <strong>“The Most Ambiguous Concept in Computer Science”</strong>
+    by <strong>Core Dumped</strong>. All video concepts, diagrams, and examples are credited to that work;
+    additional context (RISC/CISC, assembly, Apple Silicon, history) was added for clarity and cross-referenced against primary sources.</p>
+    <p>Built as a single, self-contained HTML file · no external dependencies · print-friendly.</p>
+  </div>
+</footer></div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>

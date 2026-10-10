@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Trace the pursuit of lower latency through the Disruptor, Aeron, replicated state machines, consensus, and the sequencer architecture."><meta name="theme-color" content="#111513">
+<title>Latency: The Race to Zero… Are We There Yet? — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.infoq.com/presentations/latency-race-zero/">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#performance-and-distributed-systems">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#heading-01"><span>01</span><span>Original talk</span></a><a href="#heading-02"><span>02</span><span>TL;DR — the whole talk in 12 lines</span></a><a href="#heading-03"><span>03</span><span>Why latency matters — and what &quot;latency&quot; means here</span></a><a href="#heading-04"><span>04</span><span>The Past — latency reduction is an old sport</span></a><a href="#heading-05"><span>05</span><span>The Present — why hardware can&#x27;t help anymore</span></a><a href="#heading-06"><span>06</span><span>2010 — the LMAX Disruptor: separation of concerns</span></a><a href="#heading-07"><span>07</span><span>2014 — Aeron: transport latency numbers, decoded</span></a><a href="#heading-08"><span>08</span><span>The theory backbone — replicated state machines &amp; the log</span></a><a href="#heading-09"><span>09</span><span>Fault tolerance — quorum, Raft, and Aeron Cluster</span></a><a href="#heading-10"><span>10</span><span>The system this gives you — and its 3 problems</span></a><a href="#heading-11"><span>11</span><span>The Future — the Sequencer architecture</span></a><a href="#heading-12"><span>12</span><span>Q&amp;A highlights 40:40</span></a><a href="#heading-13"><span>13</span><span>Cheat sheet — the latency ladder (P50, echo roundtrip)</span></a><a href="#heading-14"><span>14</span><span>Glossary</span></a><a href="#heading-15"><span>15</span><span>Resources</span></a></nav><p class="sidebar-note">Read at your own pace.<br>Keep the original talk close.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">Performance and distributed systems / Study guide</span>
+<h1>Latency: The Race to Zero… Are We There Yet?</h1><p class="guide-description">A structured, screenshot-annotated summary of Amir Langer's 50-minute talk on low-latency systems — from Roman roads and the Pony Express, through the LMAX Disruptor and Aeron, to replicated state machines, Raft consensus and the future <em>sequencer</em> architecture.</p>
+<div class="guide-meta"><span>By <strong>Amir Langer</strong></span><span>QCon London</span><span>50 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.infoq.com/presentations/latency-race-zero/">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#performance-and-distributed-systems">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 15 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#heading-01"><span>01</span><span>Original talk</span></a><a href="#heading-02"><span>02</span><span>TL;DR — the whole talk in 12 lines</span></a><a href="#heading-03"><span>03</span><span>Why latency matters — and what &quot;latency&quot; means here</span></a><a href="#heading-04"><span>04</span><span>The Past — latency reduction is an old sport</span></a><a href="#heading-05"><span>05</span><span>The Present — why hardware can&#x27;t help anymore</span></a><a href="#heading-06"><span>06</span><span>2010 — the LMAX Disruptor: separation of concerns</span></a><a href="#heading-07"><span>07</span><span>2014 — Aeron: transport latency numbers, decoded</span></a><a href="#heading-08"><span>08</span><span>The theory backbone — replicated state machines &amp; the log</span></a><a href="#heading-09"><span>09</span><span>Fault tolerance — quorum, Raft, and Aeron Cluster</span></a><a href="#heading-10"><span>10</span><span>The system this gives you — and its 3 problems</span></a><a href="#heading-11"><span>11</span><span>The Future — the Sequencer architecture</span></a><a href="#heading-12"><span>12</span><span>Q&amp;A highlights 40:40</span></a><a href="#heading-13"><span>13</span><span>Cheat sheet — the latency ladder (P50, echo roundtrip)</span></a><a href="#heading-14"><span>14</span><span>Glossary</span></a><a href="#heading-15"><span>15</span><span>Resources</span></a></nav></details>
+<div class="guide-content">
+
+<!-- ============ VIDEO ============ -->
+<section id="video"><h2 id="heading-01">Original talk</h2><p><a href="https://www.infoq.com/presentations/latency-race-zero/">Watch Amir Langer's talk on InfoQ</a>. Timestamp labels throughout this guide help you find the corresponding moments in the recording.</p><p class="src">Recorded at QCon London and published by InfoQ.</p></section>
+
+<!-- ============ TLDR ============ -->
+<section class="card tldr" id="tldr">
+  <div class="sec-head"><span class="sec-num">★</span><h2 id="heading-02">TL;DR — the whole talk in 12 lines</h2></div>
+  <ul>
+    <li><strong>Latency is money</strong> in fintech: the fastest market makers quote the tightest spreads. What matters is <em class="term">your order's latency</em>, not the system's average — and predictable (tail) latency beats a good mean.</li>
+    <li><strong>History repeats</strong>: relay systems (Roman <em>cursus publicus</em>, Pony Express) cut latency by splitting the journey into stages. The Pony Express cut Missouri→California from 3–5 <em>weeks</em> to 10 <em>days</em>… and went bankrupt 18 months later when the telegraph arrived.</li>
+    <li><strong>Hardware no longer saves us</strong>: CPUs have more cache layers and shared memory, cloud adds abstraction layers — throughput keeps rising but latency doesn't. <em>Communication between components is now the bottleneck.</em></li>
+    <li><strong>The Disruptor's real win (2010)</strong> was not the ring buffer — it was <em class="term">separation of concerns</em>: journaling, decoding and business logic each get their own thread, never waiting on each other.</li>
+    <li><strong>Aeron (2014)</strong>: efficient reliable UDP unicast/multicast + IPC messaging. Echo benchmark: ~31 µs in cloud (Java ≈ C!), ~12.6 µs with DPDK kernel bypass, ~6.6 µs on-prem with ef_vi, ~0.6 µs over IPC shared memory.</li>
+    <li><strong>Better than IPC? A function call</strong> — a virtual call is tens of nanoseconds; an inlined call is "really zero". The dream: a distributed system where you choose the communication channel per link, down to function calls when components co-locate.</li>
+    <li><strong>The academic backbone</strong>: replicated state machines (deterministic: events in → state → events out) + a <em class="term">totally ordered log</em> (Virtual Synchrony, 1987) give you replication, checkpoints, built-in time, and "fastest wins" delivery for free.</li>
+    <li><strong>Fault tolerance needs quorum consensus</strong> (Paxos → Raft). Aeron Cluster implements Raft; its strong leader gives predictable latency. Consensus round-trip: ~84 µs cloud Java, ~15.7 µs P50 on-prem ef_vi, P999 &lt; 29 µs.</li>
+    <li><strong>But that cluster design has 3 problems</strong>: fan-out (1 order → many output events over one egress), scale (limited by that egress), recovery (upgrading a state machine disturbs the cluster).</li>
+    <li><strong>The sequencer fix</strong> (Island ECN, 1996 → NASDAQ): the cluster decides <em>only the log</em> — ordering + timestamps. State machines move into the applications. Output events never cross the wire → no fan-out, cheap recovery, elastic scale.</li>
+    <li><strong>Conclusion</strong>: a virtually synchronous distributed system with state machine composition — where a "message" between co-located machines can literally be a function call — is how we get closer to zero.</li>
+  </ul>
+  <div class="pill-row">
+    <span class="pill">Past · relay systems</span><span class="pill">Present · Disruptor + Aeron</span><span class="pill">Theory · RSM + log</span><span class="pill">Fault tolerance · Raft</span><span class="pill">Future · Sequencer</span>
+  </div>
+</section>
+
+<!-- ============ 1 WHY ============ -->
+<section class="card" id="why">
+  <div class="sec-head"><span class="sec-num">01</span><h2 id="heading-03">Why latency matters — and what "latency" means here</h2></div>
+
+  <h3>It's directly linked to profit <span class="ts" data-t="90">01:30</span></h3>
+  <p>In fintech, latency translates straight into money. At Amir's previous company the market makers with the <strong>lowest latency quoted the smallest spreads</strong> — they could afford to, because they could get in faster and move their prices faster than everyone else when the market changed.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/02_latency_matters_fx.png" alt="Four FX trading panels with bid/ask prices" loading="lazy">
+    <figcaption><b>"Latency matters"</b> — live-style FX price panels (EUR/USD, USD/JPY, EUR/JPY, AUD/USD). Whoever refreshes these prices first wins the spread. <span class="ts" data-t="90">01:30</span></figcaption>
+  </figure>
+
+  <h3>Average latency is the wrong metric</h3>
+  <p>"If I send an order to a trading system, I really don't care what the <em>average</em> latency of that system is. I only care about the latency of <strong>my order</strong>." That's why this talk always reports <em class="term">percentiles</em> (P50 / P99 / P999) — see every table below.</p>
+  <div class="callout talk">Low latency also matters in <strong>recovery</strong>: while a system recovers it is unresponsive, and "unresponsive is unavailable". Minimizing recovery time is a latency problem too.</div>
+
+  <h3>What "latency" means in this talk <span class="ts" data-t="150">02:30</span></h3>
+  <p>The <strong>time to complete one operation end-to-end</strong> in a mission-critical distributed system (e.g. a trading system). Such a system must also be scalable, resilient, and must never lose a message — and <em>most of that time is spent communicating between components</em>, not computing.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/03_latency_definition_system.png" alt="Trading system: orders flow through Pre-Trade Risk, Matching Engine, Market Data Aggregate, with Assets and Markets reference data" loading="lazy">
+    <figcaption>The running example: an order flows through <b>Pre-Trade Risk → Matching Engine → Market Data Aggregate</b>, querying <b>Assets</b> and <b>Markets</b> reference data on the way. Latency = the whole journey. <span class="ts" data-t="150">02:30</span></figcaption>
+  </figure>
+
+  <h3>Agenda &amp; speaker <span class="ts" data-t="185">03:05</span></h3>
+  <div class="grid2">
+    <figure class="shot">
+      <img src="assets/screenshots/04_agenda.png" alt="Agenda timeline: Past, Present, Future" loading="lazy">
+      <figcaption><b>Agenda</b>: the talk walks a timeline — Past / Present / Future. <span class="ts" data-t="185">03:05</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/05_bio_timeline.png" alt="Amir Langer career timeline" loading="lazy">
+      <figcaption><b>Amir Langer</b>: joined fintech in 2007 at <b>Tradefair → LMAX</b> (first developer, famous for the open-source Disruptor); now at <b>Adaptive</b>, home of Aeron, working with Martin Thompson on the future <b>Aeron Sequencer</b>. <span class="ts" data-t="240">04:00</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 2 PAST ============ -->
+<section class="card" id="past">
+  <div class="sec-head"><span class="sec-num">02</span><h2 id="heading-04">The Past — latency reduction is an old sport</h2></div>
+  <p>The talk opens with three "famous examples from the past where latency was reduced", each with a lesson for software people.</p>
+
+  <h3>🏛️ Roman Empire: <em>cursus publicus</em> <span class="ts" data-t="300">05:00</span></h3>
+  <p>Rome's famous roads were only part of it: a whole system of horses, wagons, riders and <strong>relay stations</strong> along the way, where officials could swap the horse, the wagon or the rider. Official messages and goods moved at far lower latency than private traffic. Speed was "good for the Empire" since Augustus, ~2,000 years ago.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/06_cursus_publicus.png" alt="Cursus publicus slide with Roman relief and route map" loading="lazy">
+    <figcaption><b>Cursus publicus</b> — the Roman relay network on the talk's historical timeline. <span class="ts" data-t="300">05:00</span></figcaption>
+  </figure>
+
+  <h3>⚡ The electrical telegraph (1830s–40s) <span class="ts" data-t="320">05:20</span></h3>
+  <p>An invention directly born from latency: <strong>Samuel Morse was away on a business trip when his wife died unexpectedly; the news didn't reach him in time.</strong> Devastated, he set out to build something so future generations would get the message in time.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/07_telegraph_1837.png" alt="Telegraph instrument on the timeline, marked 1837" loading="lazy">
+    <figcaption>The telegraph on the talk's timeline, marked <b>1837</b>. <span class="ts" data-t="320">05:20</span></figcaption>
+  </figure>
+
+  <h3>🐴 Pony Express (1860–61) — a great success that went bankrupt <span class="ts" data-t="362">06:02</span></h3>
+  <p>A relay of horses <em>and riders</em> with stations along the route cut message delivery from Missouri to California from <strong>3–5 weeks to 10 days</strong>. Two things make it interesting:</p>
+  <ol>
+    <li><strong>Nothing was invented</strong> — relay staging was known for more than a thousand years (Rome!).</li>
+    <li>The company <strong>went bankrupt in 1861, just 18 months after launch</strong> — because the telegraph reached the US west coast, and a fundamentally better technology wiped out the incremental one.</li>
+  </ol>
+  <figure class="shot">
+    <img src="assets/screenshots/08_pony_express.png" alt="Pony Express stamp and route map, April 3 1860 to October 24 1861" loading="lazy">
+    <figcaption><b>Pony Express route map: April 3, 1860 – October 24, 1861</b> — the end date is exactly when the transcontinental telegraph made it obsolete. <span class="ts" data-t="362">06:02</span></figcaption>
+  </figure>
+  <div class="callout talk">Lesson for engineers: pure incremental optimization (better horses, more stations) loses to a technology that changes the game (electrons instead of horses). Keep that in mind when we get to kernel-bypass messaging and sequencers.</div>
+</section>
+
+<!-- ============ 3 PRESENT ============ -->
+<section class="card" id="present">
+  <div class="sec-head"><span class="sec-num">03</span><h2 id="heading-05">The Present — why hardware can't help anymore</h2></div>
+
+  <p>Until about two decades ago, the software industry had a trivially easy latency solution: <strong>buy new hardware</strong>. That free lunch is over. "The world is changing!" is the section title on the slides — and the changes all point the same way:</p>
+
+  <blockquote>
+    “The most amazing achievement of the computer software industry is its continuing cancellation of the steady and staggering gains made by the computer hardware industry.”
+    <span class="who">— Henry Petroski, quoted on the slide <span class="ts" data-t="455">07:35</span></span>
+  </blockquote>
+  <figure class="shot">
+    <img src="assets/screenshots/09_petroski_quote.png" alt="Henry Petroski quote slide" loading="lazy">
+    <figcaption><span class="ts" data-t="455">07:35</span></figcaption>
+  </figure>
+
+  <div class="grid2">
+    <figure class="shot">
+      <img src="assets/screenshots/10_modern_processors.png" alt="AMD EPYC 9004 series processor block diagrams" loading="lazy">
+      <figcaption><b>Modern processor designs</b> — the slide shows AMD EPYC 9004 ("Genoa") block diagrams: up to 12 Zen 4 CPU dies, 96 cores, shared L3 + 3D V-Cache, I/O die with 12 memory controllers, PCIe Gen 5, Infinity Fabric. Far more complex — and <strong>more cache layers mean higher latency</strong>, even as throughput keeps rising. <span class="ts" data-t="490">08:10</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/11_shared_memory.png" alt="CPU package photo" loading="lazy">
+      <figcaption><b>Shared memory</b> — modern CPUs give cores lots of shared memory, but "it's not enough that it's there" — your software must deliberately take advantage of it (this is exactly what Aeron IPC does, see §5). <span class="ts" data-t="501">08:21</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/12_cloud.png" alt="Cloud illustration" loading="lazy">
+      <figcaption><b>The cloud</b> — it hides a lot of complexity, but nothing is free: you traverse <strong>more layers of abstraction</strong>, and you often don't know what hardware is underneath. <span class="ts" data-t="530">08:50</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/13_oltp_paper.png" alt="OLTP Through the Looking Glass 16 Years Later paper" loading="lazy">
+      <figcaption><b>Distributed systems scale</b> — the slide shows the paper <i>"OLTP Through the Looking Glass, 16 Years Later: Communication is the New Bottleneck"</i> (Zhou, Leis, Yu, Stonebraker). A decade ago you could still argue about transaction locks or CPU clocks; today <strong>communication is the real latency problem</strong>. <span class="ts" data-t="550">09:10</span></figcaption>
+    </figure>
+  </div>
+  <figure class="shot">
+    <img src="assets/screenshots/14_distributed_scale.png" alt="Globe of interconnected nodes" loading="lazy">
+    <figcaption>If your system architecture is a globe of tangled nodes and you must fight through layers of abstraction — that's the problem to fix. <span class="ts" data-t="560">09:20</span></figcaption>
+  </figure>
+
+  <h3>What developers naively do about it <span class="ts" data-t="600">10:00</span></h3>
+  <div class="grid2">
+    <figure class="shot">
+      <img src="assets/screenshots/15_volume_knob.png" alt="Volume knob that goes to 11" loading="lazy">
+      <figcaption><b>Turn it up to 11</b> — out of memory? More memory. High latency? More threads, more CPUs… then "hope and pray" the framework and OS magically find the optimal way to run your system. <strong>It doesn't work.</strong> <span class="ts" data-t="600">10:00</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/16_rocket.png" alt="Hand-drawn sketch of an animal strapped to a rocket" loading="lazy">
+      <figcaption><b>The "best" way to reduce latency</b> — ignore every other quality attribute and strap yourself to a rocket. Sending messages is trivially fast <em>if you don't care about losing any</em>. For mission-critical systems, that's not acceptable either. <span class="ts" data-t="680">11:20</span></figcaption>
+    </figure>
+  </div>
+  <p>So the real question, which the rest of the talk answers <span class="ts" data-t="700">11:40</span>:</p>
+  <blockquote>Can we design a low-latency distributed system <strong>without compromising</strong> scalability, resilience and predictability — and what are the trade-offs?</blockquote>
+</section>
+
+<!-- ============ 4 DISRUPTOR ============ -->
+<section class="card" id="disruptor">
+  <div class="sec-head"><span class="sec-num">04</span><h2 id="heading-06">2010 — the LMAX Disruptor: separation of concerns</h2></div>
+
+  <p>In 2010 LMAX open-sourced the <a href="https://github.com/LMAX-Exchange/disruptor" target="_blank" rel="noopener">Disruptor</a>, a very efficient way of passing objects between threads in Java — "a very efficient queue, really". It used every trick in the book:</p>
+  <ul>
+    <li><strong>No memory allocation</strong> on the hot path (events are pre-allocated in the ring).</li>
+    <li>Exact understanding of <strong>memory barriers</strong> and what the system does with them.</li>
+    <li>A <strong>ring buffer</strong> at the heart — "something hardware designs knew from the 1970s. Again, nothing was invented here."</li>
+  </ul>
+  <figure class="shot">
+    <img src="assets/screenshots/18_disruptor.png" alt="Hand-drawn Disruptor ring buffer diagram with SequenceBarrier and Stage 2 EventProcessor" loading="lazy">
+    <figcaption><b>The Disruptor on the whiteboard</b>: a <b>RingBuffer</b> (slots 11–18 shown), a <b>SequenceBarrier</b> where a consumer <code class="inline">waitFor(17)</code> and then <code class="inline">get(17)/get(18)</code> events, processed by <b>Stage 2 (EventProcessor)</b>. <span class="ts" data-t="790">13:10</span></figcaption>
+  </figure>
+
+  <div class="callout talk">
+    The tricks helped, but <strong>the one big thing</strong> that gave the huge latency boost was <em class="term">separation of concerns</em> — a way to separate the work streams of the system: <strong>journaling</strong> of an incoming message was decoupled from <strong>decoding</strong> it, which was decoupled from the <strong>business logic</strong>. Each thread does exactly one thing, is never interrupted, and never waits for anything. That's where the real latency improvement came from.
+  </div>
+
+  <h3>The Disruptor in code (official getting-started example)</h3>
+  <p class="code-cap">From the official Disruptor user guide (Apache 2.0). This is what "a very efficient queue between threads" looks like in practice — note the pre-allocated events and the power-of-2 ring size.</p>
+<pre><code><span class="cm">// Event objects are pre-allocated by the factory — no allocation on the hot path</span>
+<span class="kw">public class</span> <span class="ty">LongEvent</span> {
+    <span class="kw">private</span> <span class="ty">long</span> value;
+    <span class="kw">public void</span> set(<span class="ty">long</span> value) { <span class="kw">this</span>.value = value; }
+}
+
+<span class="ty">int</span> bufferSize = <span class="nm">1024</span>;  <span class="cm">// must be a power of 2</span>
+
+<span class="ty">Disruptor</span>&lt;<span class="ty">LongEvent</span>&gt; disruptor =
+    <span class="kw">new</span> <span class="ty">Disruptor</span>&lt;&gt;(<span class="ty">LongEvent</span>::<span class="kw">new</span>, bufferSize, <span class="ty">DaemonThreadFactory</span>.INSTANCE,
+        <span class="ty">ProducerType</span>.SINGLE, <span class="kw">new</span> <span class="ty">BlockingWaitStrategy</span>());
+
+disruptor.handleEventsWith((event, sequence, endOfBatch) -&gt;
+    System.out.println(<span class="st">"Event: "</span> + event));   <span class="cm">// the business-logic stage</span>
+disruptor.start();
+
+<span class="ty">RingBuffer</span>&lt;<span class="ty">LongEvent</span>&gt; ringBuffer = disruptor.getRingBuffer();
+<span class="ty">ByteBuffer</span> bb = <span class="ty">ByteBuffer</span>.allocate(<span class="nm">8</span>);
+<span class="kw">for</span> (<span class="ty">long</span> l = <span class="nm">0</span>; <span class="kw">true</span>; l++) {
+    bb.putLong(<span class="nm">0</span>, l);
+    ringBuffer.publishEvent((event, sequence, buffer) -&gt; event.set(buffer.getLong(<span class="nm">0</span>)), bb);
+}</code></pre>
+
+  <div class="callout extra">
+    <strong>Real-world impact:</strong> the Disruptor came out of the LMAX exchange's retail trading platform, which processed <strong>6 million TPS</strong> on a single thread (as reported in the famous 2011 Disruptor paper &amp; InfoQ article "Disruptor: High performance alternative to bounded queues…"). It later influenced parts of the Log4j2 async logger and other frameworks. Paper: <a href="https://lmax-exchange.github.io/disruptor/files/Disruptor-1.0.pdf" target="_blank" rel="noopener">Disruptor-1.0.pdf</a>.
+  </div>
+</section>
+
+<!-- ============ 5 AERON ============ -->
+<section class="card" id="aeron">
+  <div class="sec-head"><span class="sec-num">05</span><h2 id="heading-07">2014 — Aeron: transport latency numbers, decoded</h2></div>
+
+  <p>In 2014 <strong>Martin Thompson and Todd Montgomery</strong> open-sourced <a href="https://github.com/real-logic/aeron" target="_blank" rel="noopener">Aeron</a>: an efficient, reliable, low-latency message transport for <strong>UDP unicast, UDP multicast and IPC</strong> (inter-process communication via shared memory) between processes.</p>
+  <div class="grid2">
+    <figure class="shot">
+      <img src="assets/screenshots/19_aeron_2014.png" alt="Aeron 2014 timeline slide" loading="lazy">
+      <figcaption><b>Aeron</b> lands on the timeline, 2014. <span class="ts" data-t="855">14:15</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/20_echo_diagram.png" alt="Echo test: Source sends to Target which echoes back" loading="lazy">
+      <figcaption><b>The echo benchmark</b>: send a message <b>Source → Target</b>, the Target sends it straight back; measure the <strong>roundtrip</strong> at a fixed rate of <strong>100k messages/sec</strong>. <span class="ts" data-t="895">14:55</span></figcaption>
+    </figure>
+  </div>
+  <p>"Cloud" below means GCP (other providers differ, "but the actual numbers don't matter so much — it's more the difference"). The speaker's own lab hardware is called <em>on-prem / PerfLab</em>.</p>
+
+  <h3>Aeron Transport — "echo" roundtrip latency @ 100k msg/sec <span class="ts" data-t="1090">18:10</span></h3>
+  <div class="tablewrap">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead><tr><th>Configuration</th><th>P50 <small>(µs)</small></th><th>P99 <small>(µs)</small></th><th>P999 <small>(µs)</small></th></tr></thead>
+      <tbody>
+        <tr><td>Cloud · Java</td><td>31.47</td><td>46.49</td><td>53.22</td></tr>
+        <tr><td>Cloud · C</td><td>31.42</td><td>46.43</td><td>52.35</td></tr>
+        <tr><td>Cloud · C + <strong>DPDK</strong></td><td>12.62</td><td>15.38</td><td>20.02</td></tr>
+        <tr><td>On-prem (PerfLab) · C</td><td>16.40</td><td>18.03</td><td>21.26</td></tr>
+        <tr class="best"><td>On-prem · C + <strong>ef_vi</strong></td><td>6.59</td><td>7.44</td><td>7.74</td></tr>
+        <tr class="best"><td>IPC · Java (shared memory)</td><td>0.61</td><td>0.89</td><td>1.09</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <figure class="shot">
+    <img src="assets/screenshots/21_transport_table.png" alt="Slide with the Aeron latency table" loading="lazy">
+    <figcaption>The same table as shown in the talk. <span class="ts" data-t="1090">18:10</span></figcaption>
+  </figure>
+
+  <h3>How to read this table — the four takeaways</h3>
+  <ol>
+    <li><strong>Java ≈ C.</strong> "What do you think — higher or lower? It's both: about the same." The JIT does the heavy lifting; Java is not slow if you keep allocation off the hot path (see Q&amp;A §10). <span class="ts" data-t="1000">16:40</span></li>
+    <li><strong>Kernel bypass is huge in the cloud.</strong> <em class="term">DPDK</em> lets Aeron skip the whole OS network stack — "bypass all those layers of abstraction, including the operating system, including the sockets" — and write Ethernet packets straight to the NIC: <strong>31 µs → 12.6 µs</strong>.</li>
+    <li><strong>Own hardware beats cloud, and ef_vi beats DPDK on it.</strong> On the PerfLab rig, Aeron integrates with <em class="term">ef_vi</em> (Solarflare/Xilinx Onload's kernel-bypass layer) to reach <strong>single-digit microseconds</strong>.</li>
+    <li><strong>IPC ≈ 0.6 µs</strong> — but both processes must be on the same host to share the memory. That's the trade-off.</li>
+  </ol>
+
+  <div class="callout extra">
+    <strong>What are DPDK and ef_vi?</strong> <a href="https://www.dpdk.org" target="_blank" rel="noopener">DPDK</a> (Data Plane Development Kit) is a set of userspace <em>poll-mode</em> NIC drivers: your process owns the NIC and no kernel interrupt/socket layer is crossed. <em>ef_vi</em> is the low-level kernel-bypass interface shipped with Solarflare/Xilinx (<a href="https://github.com/Xilinx-CNS/onload" target="_blank" rel="noopener">OpenOnload</a>) — more NIC-specific, but even leaner. Downside (from the Q&amp;A): they're tightly bound to specific NICs; swap your hardware and you may need a different integration, or have no support at all.
+  </div>
+
+  <h3>Better than IPC? A function call. <span class="ts" data-t="1130">18:50</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/22_better_than_ipc.png" alt="Can we do better? What is better than IPC? What are the tradeoffs?" loading="lazy">
+    <figcaption>IPC is still "sending a message": encode it, put it on shared memory, decode it on the other side. If you accept being in the <strong>same process</strong>, the channel becomes a <strong>function call</strong>. <span class="ts" data-t="1130">18:50</span></figcaption>
+  </figure>
+  <ul>
+    <li>A <strong>virtual function call</strong>: tens of <em>nanoseconds</em> (i.e. ~0.02–0.05 µs — still ~20× faster than IPC's 0.6 µs).</li>
+    <li>A call the <strong>compiler inlines</strong>: "this really is zero".</li>
+  </ul>
+  <div class="callout talk">So the goal becomes: <strong>design a distributed system with separation of concerns, where <em>we</em> control the communication channels</strong> — send over the network when we must, but use a function call whenever two components are worth co-locating. That idea returns in §6 and §9.</div>
+  <figure class="shot">
+    <img src="assets/screenshots/23_trading_system.png" alt="Trading system diagram revisited: who talks to whom" loading="lazy">
+    <figcaption>The trading system again — now the question is: which of these arrows really needs to be a network hop, and which could be a function call inside one process? <span class="ts" data-t="1166">19:26</span></figcaption>
+  </figure>
+
+  <h3>Aeron in code (official BasicPublisher / BasicSubscriber samples)</h3>
+  <p class="code-cap">From the official <code class="inline">aeron-samples</code> in the Aeron repository (Apache 2.0), lightly abridged. A channel + stream ID identify a message stream; <code class="inline">aeron:udp?endpoint=…</code> for network, <code class="inline">aeron:ipc</code> for shared-memory IPC.</p>
+<pre><code><span class="cm">// --- Publisher (BasicPublisher.java) ---</span>
+<span class="kw">try</span> (<span class="ty">Aeron</span> aeron = <span class="ty">Aeron</span>.connect(ctx);
+     <span class="ty">Publication</span> publication = aeron.addPublication(CHANNEL, STREAM_ID))
+{
+    <span class="kw">final</span> <span class="ty">UnsafeBuffer</span> buffer = <span class="kw">new</span> <span class="ty">UnsafeBuffer</span>(<span class="ty">BufferUtil</span>.allocateDirectAligned(<span class="nm">256</span>, <span class="nm">64</span>));
+
+    <span class="kw">final</span> <span class="ty">int</span> length = buffer.putStringWithoutLengthAscii(<span class="nm">0</span>, <span class="st">"Hello World! "</span> + i);
+    <span class="kw">final long</span> position = publication.offer(buffer, <span class="nm">0</span>, length);
+
+    <span class="kw">if</span> (position &gt; <span class="nm">0</span>)                 { <span class="cm">/* sent */</span> }
+    <span class="kw">else if</span> (position == <span class="ty">Publication</span>.BACK_PRESSURED) { <span class="cm">/* retry / slow down */</span> }
+    <span class="kw">else if</span> (position == <span class="ty">Publication</span>.NOT_CONNECTED) { <span class="cm">/* no subscriber yet */</span> }
+}
+
+<span class="cm">// --- Subscriber (BasicSubscriber.java) ---</span>
+<span class="kw">try</span> (<span class="ty">Aeron</span> aeron = <span class="ty">Aeron</span>.connect(ctx);
+     <span class="ty">Subscription</span> subscription = aeron.addSubscription(CHANNEL, STREAM_ID))
+{
+    <span class="kw">final</span> <span class="ty">FragmentHandler</span> fragmentHandler = <span class="ty">SamplesUtil</span>.printAsciiMessage(STREAM_ID);
+    <span class="ty">SamplesUtil</span>.subscriberLoop(fragmentHandler, FRAGMENT_COUNT_LIMIT, running).accept(subscription);
+}</code></pre>
+</section>
+
+<!-- ============ 6 THEORY ============ -->
+<section class="card" id="theory">
+  <div class="sec-head"><span class="sec-num">06</span><h2 id="heading-08">The theory backbone — replicated state machines &amp; the log</h2></div>
+  <p>"Nothing is invented here" — to build the system above, Amir goes back to decades of distributed-systems research:</p>
+
+  <div class="grid2">
+    <figure class="shot">
+      <img src="assets/screenshots/24_research_timeline.png" alt="Timeline: Virtual Synchrony 1987, Viewstamped Replication 1988, Paxos 1989-1998-2001, Raft 2013" loading="lazy">
+      <figcaption><b>An incomplete list</b>: Virtual Synchrony 1987, Viewstamped Replication 1988, Paxos (attempted 1989, published 1998, simplified 2001), Raft 2013. <span class="ts" data-t="1210">20:10</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/25_state_machine.png" alt="State machine: events in, state, events out" loading="lazy">
+      <figcaption><b>The basic computation unit</b> — a <em>replicated state machine</em>: input events in → deterministic state change → output events out. <span class="ts" data-t="1291">21:31</span></figcaption>
+    </figure>
+  </div>
+
+  <h3>The replicated state machine (RSM)</h3>
+  <p>Deceptively simple, and that's its power:</p>
+  <ul>
+    <li><strong>Events in</strong> → the machine <strong>deterministically</strong> modifies its <strong>state</strong> → <strong>events out</strong>.</li>
+    <li>It knows only events; it is fully <strong>asynchronous</strong> — no calls, no waiting.</li>
+    <li><strong>Determinism is the contract.</strong> Example from the talk: model a <em>matching engine</em> — orders come in, the state is the <strong>order book</strong>, execution reports go out.</li>
+  </ul>
+
+  <h3>Virtual Synchrony ingredient 1: the totally ordered log <span class="ts" data-t="1395">23:15</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/26_vs_log.png" alt="Totally ordered log: seq 1 t 17, seq 2 t 17, seq 3 t 19, seq 4 t 23" loading="lazy">
+    <figcaption>Every message gets a <b>sequence number</b> and a <b>timestamp</b>. <span class="ts" data-t="1395">23:15</span></figcaption>
+  </figure>
+  <ul>
+    <li><strong>Replication for free:</strong> feed the same totally-ordered sequence of messages to several deterministic state machines, and they all compute exactly the same state — that <em>is</em> replication.</li>
+    <li><strong>Checkpoints:</strong> a state machine can announce "I've processed message 2, not yet 3" — every component knows exactly where every other component is.</li>
+    <li><strong>Time for free:</strong> the timestamps in the log <em>are</em> the system's clock — no extra clock synchronization, no clock-drift worries.</li>
+  </ul>
+
+  <h3>Ingredient 2: logical groups <span class="ts" data-t="1500">25:00</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/27_logical_groups.png" alt="Dashed groups containing replicas" loading="lazy">
+    <figcaption>State machines are organized into <b>logical groups</b>; <b>group membership itself is replicated in the log</b>, so at any point in the log everyone knows who is in, who joined, who left. <span class="ts" data-t="1500">25:00</span></figcaption>
+  </figure>
+  <p>Put together: <strong>all replicas in a group have exactly the same state at the same checkpoint.</strong> From a latency standpoint, that buys you four things:</p>
+
+  <div class="grid2">
+    <figure class="shot">
+      <img src="assets/screenshots/28_replication_backup.png" alt="One replica serves queries or backup while others process" loading="lazy">
+      <figcaption><b>Divide background work</b>: one instance does <b>backups</b>, another serves <b>queries</b> — while the rest keep processing. <span class="ts" data-t="1550">25:50</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/29_replication_ha.png" alt="Active and stand-by replicas" loading="lazy">
+      <figcaption><b>High availability</b>: one member is <b>Active</b> and publishes output events; the <b>Stand-By</b> members consume the same log and are ready to take over instantly if the active dies. <span class="ts" data-t="1600">26:40</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/30_fastest_wins.png" alt="Multiple actives publish, duplicates crossed out" loading="lazy">
+      <figcaption><b>Fastest wins</b>: with several <b>active</b> members, every replica emits the same output event (determinism!) — the first copy to arrive is delivered, duplicates are discarded. Costs extra bandwidth, buys the fastest possible delivery. <span class="ts" data-t="1650">27:30</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/31_separation_via_log.png" alt="Two groups communicating via one shared log" loading="lazy">
+      <figcaption><b>Separation of concerns between machines</b>: groups communicate only via the log — forcing a clean, explicit protocol between them. <span class="ts" data-t="1700">28:20</span></figcaption>
+    </figure>
+  </div>
+  <ul>
+    <li>…and with multiple actives, <strong>mean-time-to-recovery of an instance is effectively zero</strong>: when a crashed instance comes back, the others already produced its messages.</li>
+  </ul>
+
+  <h3>State machine composition — the function-call trick <span class="ts" data-t="1742">29:02</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/32_composition.png" alt="Composition: Pipeline of two state machines, and a View with a query" loading="lazy">
+    <figcaption>Two ways to compose state machines inside one member of a group. <b>Pipeline</b>: machine A's output events feed machine B directly. <b>View / Query</b>: both consume the log, so when they're at the <b>same checkpoint</b> A can safely <b>query</b> B — a direct call, no message needed. <span class="ts" data-t="1742">29:02</span></figcaption>
+  </figure>
+  <ol>
+    <li><strong>Dependency composition:</strong> two state machines consume the same log; at the same checkpoint it is <em>safe</em> for one to query the other synchronously (e.g. Matching Engine asks the Markets reference-data machine "get market").</li>
+    <li><strong>Pipeline composition:</strong> machine A's output events are machine B's input events (e.g. Matching Engine → Market Data Aggregate).</li>
+  </ol>
+  <div class="callout talk">This is the answer to "better than IPC": compose state machines <strong>inside one process</strong>, and their communication is a <strong>function call</strong> — while the system still behaves like one distributed, replicated whole.</div>
+  <p>The second separation: <strong>business logic is decoupled from infrastructure</strong>. State machines don't care how the log is persisted or distributed — they only see events in, events out, and their state.</p>
+</section>
+
+<!-- ============ 7 CLUSTER ============ -->
+<section class="card" id="cluster">
+  <div class="sec-head"><span class="sec-num">07</span><h2 id="heading-09">Fault tolerance — quorum, Raft, and Aeron Cluster</h2></div>
+
+  <p>A log on one machine is a single point of failure. Distributed-systems research's answer: run the log on a <strong>quorum</strong> of 3/5/7 nodes running a <em class="term">consensus protocol</em>.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/33_fault_tolerance_cluster.png" alt="Cluster of three nodes replicating the log" loading="lazy">
+    <figcaption>A <b>cluster</b> of 3 nodes agreeing on the log. Consensus has "a history of being considered very slow" — many past systems avoided it (primary/secondary, one-message-in-flight tricks and their mitigation pain) — but it can be implemented fast. <span class="ts" data-t="1866">31:06</span></figcaption>
+  </figure>
+
+  <p><strong>Why Raft?</strong> The Aeron open-source cluster implements the <a href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener">Raft</a> consensus protocol (Ongaro &amp; Ousterhout, 2013 — designed to be understandable, "a raft from the island of Paxos"). Raft has a <em class="term">strong leader</em>: the leader isn't rotated around; it's strong until it dies. <strong>That gives more predictable latency.</strong></p>
+
+  <h3>Aeron Cluster — "echo" through consensus <span class="ts" data-t="1950">32:30</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/34_cluster_echo.png" alt="Echo client sending into the cluster which reaches consensus before replying" loading="lazy">
+    <figcaption>Same echo test, but the message must now be <b>appended to the consensus log</b> (RAFT agreed by a majority of the 3 nodes) before the response returns. <span class="ts" data-t="1950">32:30</span></figcaption>
+  </figure>
+
+  <div class="tablewrap">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+      <thead><tr><th>Configuration <small>(cluster = 3 nodes, 100k msg/sec)</small></th><th>P50 <small>(µs)</small></th><th>P99 <small>(µs)</small></th><th>P999 <small>(µs)</small></th></tr></thead>
+      <tbody>
+        <tr><td>Cloud · Java</td><td>84.22</td><td>105.41</td><td>144.64</td></tr>
+        <tr><td>Cloud · C</td><td>86.97</td><td>108.86</td><td>245.12</td></tr>
+        <tr><td>Cloud · C + DPDK</td><td>32.27</td><td>39.26</td><td>47.33</td></tr>
+        <tr><td>On-prem (PerfLab) · C</td><td>55.97</td><td>73.92</td><td>79.94</td></tr>
+        <tr class="best"><td>On-prem · C + ef_vi</td><td>15.72</td><td>18.61</td><td><strong>28.94</strong></td></tr>
+        <tr class="na"><td>IPC · Java</td><td colspan="3">DOES NOT MAKE SENSE</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <figure class="shot">
+    <img src="assets/screenshots/35_cluster_table.png" alt="Aeron Cluster latency table slide including the IPC row" loading="lazy">
+    <figcaption>As shown in the talk — the highlighted row confirms the on-stage claim: <b>P999 &lt; 29 µs</b> for "message in → consensus → response out" on the kernel-bypass lab rig. <span class="ts" data-t="2080">34:40</span></figcaption>
+  </figure>
+  <ul>
+    <li>The ratios mirror the transport table exactly ("the underlying transport is the same Aeron transport") — Java ≈ C, DPDK boosts both latency <em>and predictability</em>, ef_vi on-prem is best.</li>
+    <li><strong>Why no IPC row?</strong> The whole point of consensus is fault tolerance via independent machines. Everything on one host shares its fate — "we don't do consensus over IPC."</li>
+  </ul>
+</section>
+
+<!-- ============ 8 PROBLEMS ============ -->
+<section class="card" id="problems">
+  <div class="sec-head"><span class="sec-num">08</span><h2 id="heading-10">The system this gives you — and its 3 problems</h2></div>
+
+  <figure class="shot">
+    <img src="assets/screenshots/36_system_cluster.png" alt="Applications send in via ingress; cluster runs state machines; output events egress back to applications" loading="lazy">
+    <figcaption>Applications send messages in (<b>ingress</b>); the cluster agrees on the log, feeds it to the state machines inside each node; output events flow back out (<b>egress</b>) to the applications. Amir: "we have lots of customers running these kinds of systems." <span class="ts" data-t="2106">35:06</span></figcaption>
+  </figure>
+
+  <h3>Problem 1 — fan-out</h3>
+  <p>In fintech, one message in typically produces <strong>many</strong> messages out. All of those output events squeeze through the single <strong>egress channel</strong> — just managing that volume becomes the bottleneck.</p>
+  <h3>Problem 2 — scale</h3>
+  <p>Because everything condenses into the egress, you can't just add more state machines and more data; the egress caps the system.</p>
+  <h3>Problem 3 — recovery / upgrades</h3>
+  <p>Upgrading a state machine means taking a cluster node down — which costs the consensus protocol — or running hot standbys or other workarounds.</p>
+</section>
+
+<!-- ============ 9 SEQUENCER ============ -->
+<section class="card" id="sequencer">
+  <div class="sec-head"><span class="sec-num">09</span><h2 id="heading-11">The Future — the Sequencer architecture</h2></div>
+
+  <p>The sequencer pattern has been in fintech for decades: the first company to talk about it publicly was <strong>Island ECN in 1996</strong>, and their sequencer ended up as the sequencer in <strong>NASDAQ</strong>.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/37_island_ecn.png" alt="Island ECN 1996 on the timeline" loading="lazy">
+    <figcaption><b>Island ECN, 1996</b> — the origin of the pattern. <span class="ts" data-t="2241">37:21</span></figcaption>
+  </figure>
+  <div class="callout extra">
+    Island ECN was founded in 1996 (Josh Levine / Datek), one of the first electronic communication networks for US equities, and grew to handle a large share of NASDAQ volume; via Instinet/INET its technology — including its sequencer-based matching system — was absorbed into NASDAQ. (Background: <a href="https://en.wikipedia.org/wiki/Island_ECN" target="_blank" rel="noopener">Wikipedia — Island ECN</a>.)
+  </div>
+
+  <h3>The idea: the cluster decides only the log</h3>
+  <div class="grid2">
+    <figure class="shot">
+      <img src="assets/screenshots/38_sequencer_simple.png" alt="Applications with state machines exchange ingress and log with a Sequencer" loading="lazy">
+      <figcaption><b>One component that runs no business logic at all</b>: it only decides the order of the log and stamps timestamps. The <b>state machines move into the applications</b>. <span class="ts" data-t="2259">37:39</span></figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/screenshots/39_sequencer_cluster.png" alt="Fault-tolerant cluster of three sequencer nodes distributing the log to applications" loading="lazy">
+      <figcaption>For fault tolerance, the sequencer itself runs as a <b>3-node cluster</b> (Raft) — but inside it there are <b>only sequencers</b>, no business state machines. <span class="ts" data-t="2288">38:08</span></figcaption>
+    </figure>
+  </div>
+  <p>Why this solves all three problems of §8:</p>
+  <ul>
+    <li><strong>No fan-out problem:</strong> the cluster no longer emits output events — it publishes the <em>log</em>, "a condensed version of all the input events". Output events stay inside the applications where they're produced.</li>
+    <li><strong>Better scale:</strong> many groups of composed state machines can consume the same log — scale out on the consumer side.</li>
+    <li><strong>Cheap recovery:</strong> upgrading a state machine = restarting an <em>application</em>; it comes back and resumes consuming the log from its last checkpoint. The cluster never notices.</li>
+  </ul>
+
+  <h3>Putting it all together — a full trading system <span class="ts" data-t="2358">39:18</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/40_full_architecture.png" alt="Full architecture: Matching Engine, Market Data Aggregate, reference data applications fed by a sequencer cluster" loading="lazy">
+    <figcaption>The vision: applications host composed state machines — <b>Matching Engine</b>, <b>Market Data Aggregate</b>, <b>Assets / Markets reference data</b> — with dependencies satisfied <em>inside</em> a process (function calls: "get asset", "get market") while a <b>Sequencer 0/1/2</b> cluster orders inputs (<b>Orders</b>, reference-data updates) into one log distributed to everyone. <span class="ts" data-t="2358">39:18</span></figcaption>
+  </figure>
+
+  <h3>Conclusion <span class="ts" data-t="2411">40:11</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/41_conclusion.png" alt="Conclusion: Virtually Synchronous distributed system; State machine composition (function calls!)" loading="lazy">
+    <figcaption>The talk's answer to "are we there yet?": get closer to zero with a <b>virtually synchronous</b> distributed system and <b>state machine composition — function calls!</b> <span class="ts" data-t="2411">40:11</span></figcaption>
+  </figure>
+  <div class="callout warn">
+    <strong>Status check (from the Q&amp;A):</strong> the sequencer is a <em>future product</em> — "it doesn't exist yet, it's only on our laptops, or a very crude version". That's why no benchmark was shown: an echo test would look like the cluster numbers; the sequencer's power only shows in <em>real</em> distributed scenarios, which is the intention. It is being developed with Martin Thompson and others at Adaptive as <strong>Aeron Sequencer</strong>.
+  </div>
+</section>
+
+<!-- ============ 10 Q&A ============ -->
+<section class="card" id="qa">
+  <div class="sec-head"><span class="sec-num">10</span><h2 id="heading-12">Q&amp;A highlights <span class="ts" data-t="2440">40:40</span></h2></div>
+
+  <h3>Q: What are the downsides of kernel bypass (DPDK / ef_vi)?</h3>
+  <p>It's very low level and tightly tied to the network interface card. Replace your hardware and you may need a different integration — or that NIC may have no support at all.</p>
+
+  <h3>Q: Why use Java at all if IPC is ~10 µs but loading a class takes 50 µs?</h3>
+  <p>"Java is fast, really." The JIT's optimizations change the game — the fact that Java and C reach the same numbers in the tables proves it. Caveats: don't "allocate memory like mad" or the GC will destroy your predictable latency; pre-allocate, keep the hot path allocation-free. "This fight has ended — Java is not slow by any means."</p>
+
+  <h3>Q: If one component is slow, does the sequencer stall the whole system?</h3>
+  <p>Business dependencies you cannot remove — "if that's the business problem, that's the business problem." What you <em>can</em> remove is artificial coupling: decouple, separate concerns, work asynchronously with queues — send the message, do other work, react when the response arrives.</p>
+
+  <h3>Q: What from low-latency engineering should go mainstream / into the cloud?</h3>
+  <p>"The short answer is I don't know." Low-latency reliable message protocols could be pushed lower into cloud stacks, but the cloud has its own challenges (availability zones, unknown hardware underneath) — "doing low latency in the cloud is tough". Customers who care enough still buy their own hardware; maybe cloud providers will one day offer customized low-latency reliable messaging.</p>
+
+  <figure class="shot">
+    <img src="assets/screenshots/42_contact.png" alt="Closing slide with contact details" loading="lazy">
+    <figcaption>Closing slide: <b>amir.langer@aeron.io</b> · github.com/langera · @weareadaptive · info@aeron.io · <a href="https://github.com/aeron-io/aeron" target="_blank" rel="noopener">github.com/aeron-io/aeron</a> <span class="ts" data-t="2450">40:50</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============ CHEAT SHEET ============ -->
+<section class="card" id="cheatsheet">
+  <div class="sec-head"><span class="sec-num">≡</span><h2 id="heading-13">Cheat sheet — the latency ladder (P50, echo roundtrip)</h2></div>
+  <p>All numbers from the talk's two benchmark tables (§5 and §7). Bar lengths use a square-root scale so near-zero values stay visible.</p>
+  <div class="ladder">
+    <div class="row"><div class="lab">Inlined function call</div><div class="bar"><i></i></div><div class="val">≈ 0</div></div>
+    <div class="row"><div class="lab">Virtual function call</div><div class="bar"><i></i></div><div class="val">~0.0x µs</div></div>
+    <div class="row"><div class="lab">Aeron IPC · same host</div><div class="bar"><i></i></div><div class="val">0.61 µs</div></div>
+    <div class="row"><div class="lab">Aeron UDP · on-prem ef_vi</div><div class="bar"><i></i></div><div class="val">6.59 µs</div></div>
+    <div class="row"><div class="lab">Aeron UDP · on-prem C</div><div class="bar"><i></i></div><div class="val">16.40 µs</div></div>
+    <div class="row"><div class="lab">Aeron UDP · cloud + DPDK</div><div class="bar"><i></i></div><div class="val">12.62 µs</div></div>
+    <div class="row"><div class="lab">Aeron UDP · cloud Java/C</div><div class="bar"><i></i></div><div class="val">31.4 µs</div></div>
+    <div class="row"><div class="lab">Cluster consensus · cloud Java</div><div class="bar"><i></i></div><div class="val">84.2 µs</div></div>
+    <div class="row"><div class="lab">Cluster consensus · on-prem ef_vi</div><div class="bar"><i></i></div><div class="val">15.7 µs</div></div>
+  </div>
+  <div class="callout talk">The design goal of the sequencer architecture: move as many hops as possible <strong>down</strong> this ladder — network → IPC → function call — by choosing where components live, without giving up replication and fault tolerance.</div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section class="card" id="glossary">
+  <div class="sec-head"><span class="sec-num">A→Z</span><h2 id="heading-14">Glossary</h2></div>
+  <dl class="gloss">
+    <dt>P50 / P99 / P999</dt><dd>Median / 99th / 99.9th percentile latency. P999 means 1 in 1000 operations is slower. Tail percentiles are what "predictable latency" is judged by.</dd>
+    <dt>Kernel bypass</dt><dd>Networking where the application talks (almost) directly to the NIC, skipping the OS socket stack — via DPDK or ef_vi. Big latency win; couples you to specific hardware.</dd>
+    <dt>DPDK</dt><dd>Data Plane Development Kit — userspace poll-mode NIC drivers for packet processing.</dd>
+    <dt>ef_vi</dt><dd>Low-level kernel-bypass interface from Solarflare/Xilinx (the layer under OpenOnload); NIC-specific.</dd>
+    <dt>IPC</dt><dd>Inter-process communication — here: Aeron passing messages through shared memory between processes on the same host.</dd>
+    <dt>Disruptor</dt><dd>LMAX's open-source (2010) inter-thread messaging library: a pre-allocated ring buffer with sequence barriers; famous for separation-of-concerns design.</dd>
+    <dt>Aeron</dt><dd>Open-source (2014) efficient reliable UDP unicast/multicast + IPC message transport, by Martin Thompson &amp; Todd Montgomery.</dd>
+    <dt>Replicated state machine (RSM)</dt><dd>Deterministic unit: input events → state change → output events. Feed identical input sequences to replicas and they stay identical.</dd>
+    <dt>Totally ordered log</dt><dd>The single agreed sequence (seq + timestamp) of all input events — the backbone of Virtual Synchrony.</dd>
+    <dt>Checkpoint</dt><dd>A state machine's position in the log ("processed message N") — enables recovery, safe queries between co-located machines, and coordination.</dd>
+    <dt>Virtual Synchrony</dt><dd>Birman et al., 1987: the model combining a totally ordered log + logical groups with replicated membership.</dd>
+    <dt>Quorum / consensus</dt><dd>3/5/7 nodes agree on the log so it survives node failures (Paxos, Viewstamped Replication, Raft).</dd>
+    <dt>Raft</dt><dd>Understandable consensus protocol (Ongaro &amp; Ousterhout 2013) with a strong leader — the basis of Aeron Cluster. Strong leader ⇒ predictable latency.</dd>
+    <dt>Sequencer</dt><dd>Component that only orders and timestamps the log (no business logic); state machines live in the applications. Island ECN 1996 → NASDAQ; future "Aeron Sequencer".</dd>
+    <dt>MTTR</dt><dd>Mean time to recovery. With multiple active deterministic replicas it is ~0: survivors already produced the missing outputs.</dd>
+  </dl>
+</section>
+
+<!-- ============ RESOURCES ============ -->
+<section class="card" id="resources">
+  <div class="sec-head"><span class="sec-num">🔗</span><h2 id="heading-15">Resources</h2></div>
+  <ul>
+    <li><a href="https://www.infoq.com/presentations/latency-race-zero/" target="_blank" rel="noopener">Original talk page on InfoQ</a> (video + transcript; presentation by Amir Langer, QCon London, published by InfoQ).</li>
+    <li><strong>Aeron</strong> — <a href="https://github.com/aeron-io/aeron" target="_blank" rel="noopener">github.com/aeron-io/aeron</a> (transport, Archive, and the Raft-based Cluster used in the benchmarks).</li>
+    <li><strong>Disruptor</strong> — <a href="https://lmax-exchange.github.io/disruptor/" target="_blank" rel="noopener">user guide</a> · <a href="https://lmax-exchange.github.io/disruptor/files/Disruptor-1.0.pdf" target="_blank" rel="noopener">the 2010 paper (PDF)</a> · <a href="https://github.com/LMAX-Exchange/disruptor" target="_blank" rel="noopener">GitHub</a>.</li>
+    <li><strong>Consensus lineage</strong> — <a href="https://raft.github.io/raft.pdf" target="_blank" rel="noopener">Raft paper</a> · <a href="https://lamport.azurewebsites.net/pubs/paxos-simple.pdf" target="_blank" rel="noopener">Paxos Made Simple</a> · <a href="http://pmg.csail.mit.edu/papers/vr.pdf" target="_blank" rel="noopener">Viewstamped Replication</a>.</li>
+    <li><strong>Kernel bypass</strong> — <a href="https://www.dpdk.org" target="_blank" rel="noopener">dpdk.org</a> · <a href="https://github.com/Xilinx-CNS/onload" target="_blank" rel="noopener">OpenOnload (ef_vi)</a>.</li>
+    <li><strong>Communication bottleneck paper</strong> (shown on slide) — <em>OLTP Through the Looking Glass, 16 Years Later: Communication is the New Bottleneck</em>, Zhou, Leis, Yu &amp; Stonebraker.</li>
+    <li><strong>Island ECN history</strong> — <a href="https://en.wikipedia.org/wiki/Island_ECN" target="_blank" rel="noopener">Wikipedia</a>.</li>
+  </ul>
+  <p class="src">Code samples on this page are quoted from the official Disruptor user guide and the official Aeron <code class="inline">aeron-samples</code> (both Apache 2.0). Benchmarked numbers are transcribed from the talk's slides; "Beyond the talk" boxes contain added context not stated in the talk. See the original InfoQ talk page for source material.</p>
+</section>
+
+
+<footer>
+  Study guide generated from the recorded talk “Latency: the Race to Zero… Are We There Yet?” by Amir Langer (QCon London / InfoQ).<br>
+  All screenshots are stills from the local video file in this folder, used for educational purposes.
+</footer></div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>

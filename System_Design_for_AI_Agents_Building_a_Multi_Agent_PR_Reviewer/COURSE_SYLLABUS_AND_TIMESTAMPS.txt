@@ -1,0 +1,68 @@
+📚 COURSE SYLLABUS & TIMESTAMPS:
+
+1. Course Overview & System Design Philosophy
+00:00 - Introduction & The Flaws of Basic LLM/RAG Reviewers
+01:17 - Core Philosophy: Selectivity, Human Reviewer Fatigue & Evidence
+06:33 - The 5-Move System Design Framework
+07:26 - Move 1: Mapping the Mess & Micro-Decisions
+10:37 - Move 2: Defining Precise Triggers and Outputs
+14:24 - Move 3: Assigning Components (LLM, RAG, Webhooks, Deterministic ML)
+16:19 - Move 4: Autonomy Levels & The Cost/Consequence of Error
+17:37 - Move 5: Anticipating Failure Modes (Hallucination, Drift, Timeouts, Poisoning)
+25:10 - Human-in-the-Loop (HITL) Checkpoints & Autonomy Reduction
+30:00 - Cognitive Design vs. System Architecture Trade-offs
+
+2. First Principles & Cognitive Architecture
+33:03 - First Principles: Why Does an AI PR Reviewer Exist?
+37:21 - Reclaiming Senior Engineer Attention via Selectivity
+41:48 - Modeling How Senior Reviewers Think (Context, Mindsets & Skepticism)
+46:03 - The 4 Specialist Mindsets (Security, Quality, Testing, Documentation)
+47:03 - Mapping the PR Lifecycle & Structured Output Format
+51:51 - Industry Approaches: Linters vs. Single Prompt vs. Fan-Out/Fan-In
+55:09 - The Grounding Problem: Full Repos vs. Context Retrieval
+57:24 - Memory Classification: Semantic, Episodic & Procedural Memory
+1:00:51 - Auditing, Observability & The Need for an Event Spine
+1:04:20 - When NOT to Trust AI: Confidence Thresholds & Escalation Gates
+1:08:06 - End-to-End First Principles Flow Summary
+
+3. Data Engineering & Storage Layer
+1:11:33 - Defining the 3 Core Data Shapes (Memory, Truth, Time)
+1:15:12 - Why Separate Databases Cause Failure Overload
+1:17:20 - Unified PostGIS / PostgreSQL Engine with Timescale (Tiger Cloud)
+1:18:04 - PGVector, PGVector-Scale & DiskANN for Efficient Code Embeddings
+1:21:08 - Hypertables & Continuous Aggregates for Trace/Time-Series Logs
+1:23:46 - Cost Economics, Token Tracking & Spend Caps
+1:25:07 - Provisioning Tiger Cloud, Schemas & Connection Configuration
+
+4. Core System Architecture & Component Design
+1:28:37 - Webhook Ingress Architecture (FastAPI & Signature Verification)
+1:30:41 - Idempotency Keys, HMAC Signatures & Security Boundaries
+1:31:46 - Redis + ARQ Queuing to Acknowledge GitHub Within 10 Seconds
+1:35:40 - Stateless Ingress vs. Backend Worker Architecture
+1:37:14 - Orchestration Engine: LangGraph vs. Temporal Decision
+1:41:05 - Designing a Framework-Agnostic Workflow Engine
+1:42:24 - Retrieval Layer Design: Embeddings, Code Chunks & Top-K Merging
+1:45:24 - Observability & OpenTelemetry Event Architecture
+1:46:21 - Complete End-to-End System Architecture Breakdown
+1:48:22 - 13 System Implementation Phases (ADRs, Sandboxing, Routing, CI/CD)
+
+5. Hands-on Implementation with Genesis Kit
+1:52:18 - Introducing Genesis Kit & AI-Native Engineering Loops
+1:53:52 - Agentic Software Kit, Obsidian Wiki & Skills Integration
+1:54:38 - CLI Setup: Model Routing (Opus vs. Sonnet vs. Haiku)
+2:01:44 - Initializing Genesis Spine & Project Scope
+2:03:14 - Understanding done.html, Implementation Notes & Context Graphs
+2:07:23 - The 5 Verification Gates & Milestone Demo Commands
+2:10:12 - Structuring Credentials, Redis URL & API Keys
+
+6. Building & Verifying Milestones (M1 to M3)
+2:22:15 - Deep Dive into Genesis Harness Files (plan.md, loops.md, current.md)
+2:33:40 - Kicking off Milestone 1 (M1: Webhook Ingress & Validation)
+2:37:23 - Running the Independent L4 Verifier & Debug Loops
+2:40:08 - Interactive Milestone Quiz: HMAC vs. Parsing Verification
+2:48:07 - Milestone 1 Wrap-up, Gaps & Milestone 2 Initialization
+2:50:21 - Milestone 2 (M2: Provisioning Tiger Data & Migration Scripts)
+2:54:39 - Applying Migrations: Append-Only Immutable Hypertable Logs
+2:58:34 - Independent Verification of M2 & Database Constraints
+3:01:46 - Interactive Milestone Quiz: Hypertables Triggers vs. Rules
+3:07:50 - Transitioning to Milestone 3 (M3: Observability Spine) & Next Steps

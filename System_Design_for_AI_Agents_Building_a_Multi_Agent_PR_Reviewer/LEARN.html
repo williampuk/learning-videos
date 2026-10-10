@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Design a production PR review agent from first principles, covering specialist agents, grounded retrieval, orchestration, and an observable data spine."><meta name="theme-color" content="#111513">
+<title>System Design for AI Agents: A Multi-Agent PR Reviewer — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.youtube.com/watch?v=iqRcGCah0Kw">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#ai-agents-and-system-design">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#why"><span>01</span><span>Why this guide exists</span></a><a href="#part1"><span>02</span><span>Part 0 · The Mindset</span></a><a href="#part2"><span>03</span><span>Part I · First Principles</span></a><a href="#part3"><span>04</span><span>Part II · Data Engineering &amp; Storage</span></a><a href="#part4"><span>05</span><span>Part III · Core System Architecture</span></a><a href="#part5"><span>06</span><span>Part IV · Build with Genesis Kit</span></a><a href="#code"><span>07</span><span>Code Examples from the Video</span></a><a href="#glossary"><span>08</span><span>Glossary</span></a><a href="#sources"><span>09</span><span>Sources</span></a></nav><p class="sidebar-note">Read at your own pace.<br>Keep the original talk close.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">AI agents and system design / Study guide</span>
+<h1>System Design for AI Agents: A Multi-Agent PR Reviewer</h1><p class="guide-description">
+      A study guide to the full <strong>3 h 10 m</strong> lecture by <strong>Ayush Singh (Antern)</strong>.
+      It collapses a production-grade system design — multi-agent fan-out, RAG retrieval, Tiger Cloud data spine,
+      LangGraph orchestration, and an AI-native engineering loop — into a single readable page.
+    </p>
+<div class="guide-meta"><span>By <strong>Ayush Singh</strong></span><span>Antern / freeCodeCamp</span><span>3 h 10 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.youtube.com/watch?v=iqRcGCah0Kw">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#ai-agents-and-system-design">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 9 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#why"><span>01</span><span>Why this guide exists</span></a><a href="#part1"><span>02</span><span>Part 0 · The Mindset</span></a><a href="#part2"><span>03</span><span>Part I · First Principles</span></a><a href="#part3"><span>04</span><span>Part II · Data Engineering &amp; Storage</span></a><a href="#part4"><span>05</span><span>Part III · Core System Architecture</span></a><a href="#part5"><span>06</span><span>Part IV · Build with Genesis Kit</span></a><a href="#code"><span>07</span><span>Code Examples from the Video</span></a><a href="#glossary"><span>08</span><span>Glossary</span></a><a href="#sources"><span>09</span><span>Sources</span></a></nav></details>
+<div class="guide-content">
+
+  <!-- ============== HERO ============== -->
+  
+
+  <section class="meta">
+    <strong>What you will get from this page</strong>
+    A complete walk-through of the course's reasoning, every diagram, all SQL/DDL and Python code examples,
+    and a build roadmap you can hand to a coding agent. You should be able to rebuild the system in
+    <strong>under an hour of reading</strong> instead of three hours of watching.
+  </section>
+
+  <!-- ============== WHY ============== -->
+  <h2 id="why" class="part-title">Why this guide exists</h2>
+  <p>
+    The course is excellent, but it is also dense, unscripted, and full of asides. Many viewers come away
+    remembering a few punchlines ("selectivity", "fan-out", "Tiger Cloud") but not the chain of reasoning that
+    got there. This page <em>rebuilds that chain</em> — every architectural decision is shown tied back to the
+    question it answers, every code example from the video is captured verbatim, and every diagram is preserved.
+  </p>
+
+  <p>Original framing from the speaker, kept verbatim:</p>
+  <blockquote class="principle">
+    <span class="lbl">Speaker's opening challenge</span>
+    "We will take the difference of your code, give it to OpenAI with a completion prompt, write
+    <em>tell me what's wrong with this code</em>, and hopefully expect good comments. We can also add RAG.
+    We can pull some relevant files. We can call that <em>production-ready</em>. If that's what you came here for,
+    please close this video — there are 400 tutorials that do exactly like that and none of them is the
+    production-ready agentic system."
+  </blockquote>
+
+  <h3 id="howtoread">How to read</h3>
+  <ul>
+    <li><strong>Time pills</strong> <span class="timepill">12:34</span> mark moments in the video. Clickable in your head — pause and skim if you want the original tone.</li>
+    <li><strong>"Carry forward"</strong> blocks capture the <em>single piece</em> the speaker says each section contributes to the final architecture. Read these as a running ledger of what the design is accumulating.</li>
+    <li><strong>"Why this matters"</strong> blocks re-explain the concept in everyday language for quick recall.</li>
+    <li>Diagrams and code samples are reproduced from the article and the live demo shown in the video.</li>
+  </ul>
+
+  <!-- ============== PART 0 ============== -->
+  <h2 id="part1" class="part-title">Part 0 · The Mindset</h2>
+  <p class="lede">Before any code-review-specific design, four reusable instruments. None of these are about PR review yet — they are the way of seeing the rest of the study uses.</p>
+
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t1700.jpg" alt="The Human-in-the-Loop Spectrum table from the companion article.">
+    <figcaption>The Human-in-the-Loop Spectrum table — one of the four mindset instruments (0.3).</figcaption>
+  </figure>
+
+  <h3 id="p0-template"><span class="sec-num">0.1</span>The 5-Move Universal Design Template</h3>
+  <p>After enough systems, intuition becomes a repeatable process. These five moves turn any messy workflow into an agentic design. They are applied to PR review throughout the rest of the course.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>#</th><th>Move</th><th>What you actually do</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Map the mess</td><td>Document what really happens today, not the process document nobody follows. Watch the human. Record triggers, steps, where the human <em>thinks</em>, and where it breaks.</td></tr>
+      <tr><td>2</td><td>Name the trigger &amp; output</td><td>"A claim email arrives at <code>claims@…</code>", not "claims come in." If you cannot state both in one sentence each, you have not looked closely enough.</td></tr>
+      <tr><td>3</td><td>Assign components</td><td>Trigger → tool/API. Reading/writing language → LLM. Score / class that must be identical every time → deterministic ML. Judgment with safety/legal stakes → human checkpoint.</td></tr>
+      <tr><td>4</td><td>Choose autonomy</td><td>Decide how much the system does alone vs defers. Driven by <em>consequence of error</em>, not by default (see 0.3).</td></tr>
+      <tr><td>5</td><td>Design for failure</td><td>Walk each component and break it on purpose. The system should degrade to <strong>slower-but-correct, never fast-but-wrong</strong>.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout warn">
+    <span class="lbl">Most common mistake</span>
+    Assigning an LLM to a step that should be deterministic. If the output must be the same every time given the
+    same input (a severity score, a routing class), it must be deterministic. If the output is language and some
+    variation is acceptable, it can be an LLM.
+  </div>
+
+  <h3 id="p0-failure"><span class="sec-num">0.2</span>The Failure-Modes Catalog</h3>
+  <p>Seven recurring ways agentic systems fail. The course runs every entry of this catalog against code review at L8.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Mode</th><th>What happens</th><th>Design against it with</th></tr></thead>
+    <tbody>
+      <tr><td>Hallucination in a critical path</td><td>Model states something plausible but false in a place that matters</td><td>Citation requirement, fact-check layer, human review for high stakes, "I don't know" permitted</td></tr>
+      <tr><td>Model drift</td><td>Accurate at deployment, degrades as the world changes</td><td>Monitoring dashboard, alert thresholds, periodic retraining, rules fallback</td></tr>
+      <tr><td>Tool / API timeout</td><td>An external system stalls and the pipeline hangs</td><td>Timeout-and-retry, graceful degradation on partial data, circuit breaker on a dead service</td></tr>
+      <tr><td>Feedback-loop poisoning</td><td>Bad feedback is stored and degrades future behavior</td><td>Minimum evidence threshold, audit for protected proxies, decay on old feedback, human reset</td></tr>
+      <tr><td>Orchestration deadlock</td><td>Two parallel steps wait on each other; a merge never receives an input</td><td>Timeouts on every step, health checks, idempotent operations, dead-letter queue</td></tr>
+      <tr><td>Human bottleneck</td><td>Auto-handling works, but the escalation queue grows faster than humans clear it</td><td>Escalation-rate monitoring, queue prioritization, honest capacity planning</td></tr>
+      <tr><td>"Almost-right" problem</td><td>Output 90 % correct, 10 % subtly wrong, reviewers drift into complacency</td><td>Rotate reviewers, flag low-confidence outputs, random audits, inject known-wrong inputs</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="p0-hitl"><span class="sec-num">0.3</span>The Human-in-the-Loop Spectrum</h3>
+  <p>Not every system needs the same level of human involvement. The right level is a <em>design choice</em>, not a default.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Level</th><th>Description</th><th>Where it fits</th></tr></thead>
+    <tbody>
+      <tr><td>Full automation</td><td>System handles everything; human samples periodically</td><td>Routine, low-stakes, reversible work</td></tr>
+      <tr><td>Human reviews output</td><td>System produces, human verifies before it goes out</td><td>Drafts with reputational stakes</td></tr>
+      <tr><td>Human handles exceptions</td><td>System auto-handles easy cases, human sees the hard ones</td><td>Anomalies, low-confidence cases, escalations</td></tr>
+      <tr><td>Human decides, system prepares</td><td>System gathers all context, human makes the call</td><td>High-consequence, irreversible decisions</td></tr>
+      <tr><td>Full human with AI assist</td><td>Human does the work, system helps at specific steps</td><td>Early-stage, low-trust, or creative work</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><strong>Three factors pick the level</strong>:</p>
+  <ul>
+    <li><strong>Consequence of error</strong> — a wrong style comment is annoying; a missed SQL injection is dangerous.</li>
+    <li><strong>Reversibility</strong> — an auto-posted review can be disputed and removed; a merged migration cannot be un-run easily.</li>
+    <li><strong>System maturity</strong> — new systems need more oversight; proven ones earn less.</li>
+  </ul>
+
+  <blockquote class="principle">
+    <span class="lbl">Rule of thumb (from the video)</span>
+    Start with more human involvement than you think you need. Reduce it as the system proves itself.
+    It is far easier to remove a checkpoint than to recover from removing it too early.
+  </blockquote>
+
+  <p>The PR-review system ends up at "<strong>Human handles exceptions</strong>" — see <a href="#L7">L7</a>.</p>
+
+  <h3 id="p0-20phase"><span class="sec-num">0.4</span>The 20-Phase Production Lens</h3>
+  <p>Beginners design the happy path: receive, reason, respond. Senior engineers add the <em>back half</em>: observe, secure, recover, govern, optimize, learn. This 20-phase lifecycle names every phase and is the same one the build plan in <a href="#roadmap">Part IV</a> follows.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>#</th><th>Phase</th><th>Concern</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>Cognitive Design</td><td>What thinking the system performs; autonomy; HITL boundaries</td></tr>
+      <tr><td>1</td><td>System Architecture</td><td>Boundaries, style, module graph, ADRs</td></tr>
+      <tr><td>2</td><td>Frontend</td><td>Dashboard shell, streaming, agent transparency</td></tr>
+      <tr><td>3</td><td>Backend &amp; API</td><td>FastAPI, webhook, idempotency, state</td></tr>
+      <tr><td>4</td><td>Workflow Orchestration</td><td>Topology, checkpointing, parallel fan-out</td></tr>
+      <tr><td>5</td><td>LLM &amp; Reasoning</td><td>Model routing, structured output, prompt registry</td></tr>
+      <tr><td>6</td><td>Memory Architecture</td><td>RAG, hybrid retrieval, the vector lane</td></tr>
+      <tr><td>7</td><td>Tooling &amp; Sandboxing</td><td>Tool registry, permissions, Docker isolation</td></tr>
+      <tr><td>8</td><td>Multi-Agent Systems</td><td>Roles, contracts, the aggregator</td></tr>
+      <tr><td>9</td><td>Evaluation</td><td>Golden datasets, LLM-as-judge, regression gates</td></tr>
+      <tr><td>10</td><td>Observability</td><td>Traces, token cost, alerts — the events spine</td></tr>
+      <tr><td>11</td><td>Security</td><td>Threat model, prompt injection, RBAC, Zero Trust</td></tr>
+      <tr><td>12</td><td>Reliability</td><td>Circuit breakers, idempotency, checkpointing</td></tr>
+      <tr><td>13</td><td>Infrastructure</td><td>Containers, queues, data-layer provisioning</td></tr>
+      <tr><td>14</td><td>Data Engineering</td><td>Ingestion pipelines, schema, encoding</td></tr>
+      <tr><td>15</td><td>Governance</td><td>Audit trails, explainability, residency</td></tr>
+      <tr><td>16</td><td>Economics</td><td>Token cost attribution, budget caps, routing efficiency</td></tr>
+      <tr><td>17</td><td>Developer Experience</td><td>Prompt playground, trace viewer, replay</td></tr>
+      <tr><td>18</td><td>CI/CD for AI</td><td>Prompt versioning, eval gates, canary releases</td></tr>
+      <tr><td>19</td><td>Human-in-the-Loop</td><td>Approval workflows, escalation, dispute</td></tr>
+      <tr><td>20</td><td>Continuous Learning</td><td>Feedback loops, drift detection</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout tip">
+    <span class="lbl">Carry forward</span>
+    Four reusable instruments — the template, the catalog, the HITL spectrum, the 20-phase lifecycle — none
+    specific to code review yet. They are the way of seeing.
+  </div>
+
+  <!-- ============== PART I ============== -->
+  <h2 id="part2" class="part-title">Part I · First Principles</h2>
+  <p class="lede">Why automated review exists, before how it works. The course climbs from one first principle to a complete reasoning model in ten levels.</p>
+
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t2050.jpg" alt="First Principles landing page from the companion article.">
+    <figcaption>First Principles landing — the level-zero question: "A developer opens a pull request. A webhook fires. What, exactly, should happen next — and why?"</figcaption>
+  </figure>
+
+  <h3 id="L0"><span class="sec-num">L0</span>Why This System Exists</h3>
+  <p>Imagine a team without automated review. Every PR waits on a senior engineer's attention. That attention is the scarce resource:</p>
+  <ul>
+    <li><strong>Slow</strong> — PRs queue for hours or days.</li>
+    <li><strong>Inconsistent</strong> — the same issue is caught on Monday and missed on Friday.</li>
+    <li><strong>Fatigued</strong> — the tenth review of the day is not the first.</li>
+  </ul>
+  <p>The cost is not "no review happens" — it is that the most expensive human time on the team is spent on work that is, in large part, mechanical pattern recognition.</p>
+
+  <blockquote class="principle">
+    <span class="lbl">L0 — The single sentence to remember</span>
+    An automated reviewer exists to solve exactly one problem: <strong>reclaiming senior-reviewer attention by
+    automating the mechanical part of review</strong>, so the human is spent only where judgment is genuinely required.
+  </blockquote>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    A selective, high-value posture. The system optimizes for surfacing findings <em>worth a senior's attention</em>
+    and deferring the rest — not for maximal output. <strong>Selectivity, not coverage, is the first principle.</strong>
+  </div>
+
+  <div class="callout idea">
+    <span class="lbl">Speaker's real-world story (≈ 28:00)</span>
+    At one of his previous companies, an outbound LinkedIn agent booked a dinner with a Dutch customer in
+    <strong>9 hours</strong>, instead of the assumed 2–3 days. The team's autonomy assumption was wrong;
+    the agent acted faster than human review could catch. Lesson: <em>a system fails because an assumption
+    fails</em> — register every assumption about your agent and stress-test it.
+  </div>
+
+  <h3 id="L1"><span class="sec-num">L1</span>How a Senior Reviews</h3>
+  <p>Before touching LLMs, prompts, or vector databases, watch one senior engineer reviewing a PR. They do four things that a naive single-prompt reviewer does not.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>What a senior does</th><th>What that means in our system</th></tr></thead>
+    <tbody>
+      <tr><td>Brings codebase context — "this function overrides a base class", "this pattern contradicts a past decision"</td><td>The agent needs <strong>retrieval</strong> (→ L4)</td></tr>
+      <tr><td>Reasons across separate concerns — security, correctness, tests, docs</td><td>The agent is <strong>not one reasoner but several</strong> (→ L3)</td></tr>
+      <tr><td>Stays skeptical — does not assume the diff is correct</td><td>Every finding needs a <strong>rationale</strong></td></tr>
+      <tr><td>Cites evidence — "this is wrong because line 40 can be null here"</td><td>Every finding needs <strong>confidence</strong> + line ref</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>The four specialist mindsets</h4>
+  <ul>
+    <li><strong>Security</strong> — "could this be exploited?" (injection, secrets, auth bypass, unsafe deserialization)</li>
+    <li><strong>Quality</strong> — "is the logic right?" (correctness, code smells, unnecessary complexity)</li>
+    <li><strong>Tests</strong> — "what's untested?" (missing cases, brittle assertions, coverage gaps)</li>
+    <li><strong>Docs</strong> — "will the next reader understand?" (docstrings, outdated comments, undocumented APIs)</li>
+  </ul>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    Four specialist concerns — security, quality, tests, docs — each a distinct pass with its own mindset.
+    This is the seed of the multi-agent design.
+  </div>
+
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t2900.jpg" alt="L1 / L2 transition in the article — the four specialist concerns.">
+    <figcaption>The carry-forward from L1: the system is not one reasoner but four — security, quality, tests, docs.</figcaption>
+  </figure>
+
+  <h3 id="L2"><span class="sec-num">L2</span>Map the Mess</h3>
+  <p>Apply the Part 0 template. The PR lifecycle today is:</p>
+  <p>
+    developer pushes commit → opens PR → waits → reviewer gets notification → context-switches → reads diff → maybe pulls &amp; runs → leaves comments → developer iterates
+  </p>
+  <p>The <em>waiting</em> and the <em>context-switching</em> are pure cost.</p>
+
+  <h4>Name the trigger and the output</h4>
+  <ul>
+    <li><strong>Trigger</strong>: GitHub emits a <code>pull_request</code> webhook when a PR is opened or updated.</li>
+    <li><strong>Output</strong>: a single structured review, posted back to that PR, with findings attached to specific files and lines.</li>
+  </ul>
+
+  <h4>The Finding contract</h4>
+  <p>"Structured" is doing strategic work. A review is a list of findings, each with a fixed shape:</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Field</th><th>Meaning</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td><code>agent_type</code></td><td>security / quality / tests / docs</td><td>Groups and attributes findings</td></tr>
+      <tr><td><code>severity</code> + <code>category</code></td><td>CRITICAL → INFO; e.g. "injection", "missing-test"</td><td>Ranks by consequence</td></tr>
+      <tr><td><code>file_path</code>, <code>line_start</code>, <code>line_end</code></td><td>Exact location in the diff</td><td>Posts inline on the PR, not as a vague summary</td></tr>
+      <tr><td><code>suggestion</code></td><td>The concrete fix</td><td>Actionable</td></tr>
+      <tr><td><code>confidence</code></td><td>How sure the agent is (0.0 – 1.0)</td><td>Drives the human-review gate</td></tr>
+      <tr><td><code>rationale</code></td><td>Why this is a problem</td><td>Makes the finding <em>auditable</em> and <em>disputable</em></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    A precise trigger (GitHub <code>pull_request</code> webhook) and a precise output (a structured review).
+    The <em>object on the arrows</em> is the Finding contract — usually more important than the boxes.
+  </div>
+
+  <h3 id="L3"><span class="sec-num">L3</span>Industry-Standard Thinking — Four Rungs</h3>
+  <p>Most people picture one arrow: diff in, LLM, comments out. That is not how a capable review system works. Walk the rungs the industry has climbed.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Rung</th><th>What it does</th><th>Why it falls short</th></tr></thead>
+    <tbody>
+      <tr><td>Linters</td><td>Pattern-match syntax and style rules</td><td>No semantics; cannot reason about intent, logic, or whether a test is meaningful</td></tr>
+      <tr><td>Static analysis</td><td>Data-flow and type analysis; finds some real bugs</td><td>High false-positive rate; no codebase-wide judgment; cannot read documentation intent</td></tr>
+      <tr><td>Single-LLM review</td><td>One prompt judges the whole diff</td><td>One mindset for four concerns; no grounding in the repo; hallucinates with confidence; no audit</td></tr>
+      <tr><td>Agentic fan-out</td><td>Specialist agents, each grounded, each skeptical, merged by an aggregator</td><td>The rung this design stands on — but it demands orchestration, retrieval, and a proof layer</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    Parallel specialists, not a single prompt. The four concerns from L1 run as four agents in parallel,
+    each doing one job deeply. This is the agentic fan-out, and it implies an orchestrator and an
+    aggregator we will name later.
+  </div>
+
+  <h3 id="L4"><span class="sec-num">L4</span>The Grounding Problem</h3>
+  <p>An LLM handed a diff in isolation knows what changed but not what it changed within. So under uncertainty it does what models do: it guesses, confidently. That is <strong>hallucination in a critical path</strong> — failure mode #1.</p>
+
+  <p>A senior reviewer does not have this problem because they know the repo. The design question: <em>what gives the agent that knowledge?</em></p>
+
+  <p>You cannot put the full repo in the prompt — it exhausts the context window and most of it is irrelevant. The answer: <strong>retrieval</strong>. For each diff, fetch only the most relevant slices of the codebase and put those in the prompt.</p>
+
+  <blockquote class="principle">
+    <span class="lbl">Why this matters</span>
+    An ungrounded reviewer is a confident stranger. A grounded one is a colleague who has read the code.
+    Retrieval is what turns the stranger into the colleague.
+  </blockquote>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    A retrieval layer (RAG). Each specialist queries for the codebase context relevant to the diff and reasons
+    over diff-plus-context, never the diff alone. Grounding is not optional.
+  </div>
+
+  <h3 id="L5"><span class="sec-num">L5</span>What Kinds of Memory Does Review Need?</h3>
+  <p>L4 said "retrieve context." But context is not one kind of thing — exactly as in cognitive science, each kind has a different shape and access pattern.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Kind</th><th>What it holds for review</th><th>Data shape it wants</th></tr></thead>
+    <tbody>
+      <tr><td>Semantic</td><td>The codebase itself — functions, classes, modules, ADRs, conventions, as meaning</td><td>Vector embeddings + similarity search</td></tr>
+      <tr><td>Episodic</td><td>Past reviews — what was flagged before, what was disputed, what was merged</td><td>Time-stamped relational rows</td></tr>
+      <tr><td>Procedural</td><td>How this team likes things done — conventions, ADRs, severity policy</td><td>Small, high-priority, almost always loaded</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    Three data shapes — not one undifferentiated bucket. The kinds drive the shapes; the shapes drive the stores
+    (Part II decides whether this means one or three actual databases).
+  </div>
+
+  <h3 id="L6"><span class="sec-num">L6</span>Trust and Proof</h3>
+  <p>Suppose the agent posts a finding: <em>"this endpoint is vulnerable to SQL injection, confidence 0.6."</em> A developer disputes it. Now what? If there is no record of <em>why</em> the finding was raised — which context was retrieved, which prompt version ran, what the model returned, what it cost — the system cannot defend itself, cannot be debugged, and cannot improve.</p>
+
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t3800.jpg" alt="L6 Trust and Proof from the article.">
+    <figcaption>The "trust and proof" principle: every action must be a recorded event.</figcaption>
+  </figure>
+
+  <blockquote class="principle">
+    <span class="lbl">L6 — The rule</span>
+    If the system cannot show its work, it has not done the work. The proof layer is not instrumentation
+    bolted on at the end — it is born here, as a first principle.
+  </blockquote>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    An <strong>events spine</strong>. Every action becomes a time-ordered event row — span, LLM call, tool call,
+    decision — carrying cost, latency, confidence, outcome. One stream feeds the trace viewer, the audit trail,
+    and the cost ledger. This is a fourth data need — <em>time-series</em> in shape.
+  </div>
+
+  <h3 id="L7"><span class="sec-num">L7</span>When Not to Trust It</h3>
+  <p>Apply the 0.3 HITL spectrum. The agent is not always right, and it knows roughly when it is unsure — that is what the <code>confidence</code> on each finding measures. The design decision is what to do with that knowledge.</p>
+
+  <h4>The confidence-weighted gate</h4>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Condition</th><th>Action</th><th>0.3 factor</th></tr></thead>
+    <tbody>
+      <tr><td>High confidence, no CRITICAL</td><td>Post automatically</td><td>Maturity earns autonomy</td></tr>
+      <tr><td>Confidence below threshold</td><td>Route to human approval queue</td><td>Uncertainty, defer judgment</td></tr>
+      <tr><td>Any CRITICAL finding</td><td>Escalate, page a human</td><td>Consequence of error too high</td></tr>
+      <tr><td>Developer disputes a posted finding</td><td>Route to dispute, record feedback</td><td>Reversibility, learning loop</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    A confidence-weighted HITL gate. The aggregator computes an overall confidence; below threshold or on any
+    CRITICAL finding, the review enters a human approval queue instead of posting.
+  </div>
+
+  <h3 id="L8"><span class="sec-num">L8</span>Failure Modes, Applied</h3>
+  <p>Run the 0.2 catalog directly against code review. Each general failure lands on a specific defense, and each defense is a component we have already carried or are about to add.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>General failure (0.2)</th><th>In code review it looks like</th><th>Defense</th></tr></thead>
+    <tbody>
+      <tr><td>Hallucination in critical path</td><td>A finding about code the agent never actually saw</td><td>Grounding (L4) + rationale + confidence (L2)</td></tr>
+      <tr><td>Tool / API timeout</td><td>The LLM provider or GitHub API stalls</td><td>Retries with backoff, circuit breakers</td></tr>
+      <tr><td>Orchestration deadlock</td><td>The aggregator waits forever on a hung agent</td><td>Timeouts on every node, dead-letter handling</td></tr>
+      <tr><td>"Almost-right" problem</td><td>A finding 90 % right but subtly misattributed</td><td>Dedup across agents, confidence threshold, HITL (L7)</td></tr>
+      <tr><td>Human bottleneck</td><td>The approval queue grows faster than reviewers clear it</td><td>Escalation-rate monitoring on the events spine (L6)</td></tr>
+      <tr><td>Feedback-loop poisoning</td><td>The agent "learns" a wrong preference from a few disputes</td><td>Minimum evidence threshold before acting on feedback</td></tr>
+      <tr><td>Idempotency gap</td><td>A retried webhook posts the same review twice</td><td>Idempotency key at ingress, dedup before posting</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    A reliability layer — retries, circuit breakers, timeouts, idempotency at ingress, and dedup at the
+    aggregator — each mapped to a specific failure mode, not added speculatively.
+  </div>
+
+  <h3 id="L9"><span class="sec-num">L9</span>The Mental Model</h3>
+  <p>Before we draw a single box, the assembled reasoning in prose.</p>
+  <blockquote>
+    A pull request triggers the work (L2). It is enqueued, not handled inline, because the trigger must be
+    acknowledged fast and the work decoupled from the ingress (L2, L8). An orchestrator fans the work out to
+    four specialists — security, quality, tests, docs (L1, L3) — running in parallel. Each specialist is grounded
+    by retrieval over the codebase (L4), because an ungrounded reviewer hallucinates. The codebase, the past
+    reviews, and the conventions are three kinds of memory, three data shapes (L5). Each specialist returns
+    structured findings with confidence and rationale (L2). An aggregator merges and deduplicates them, computes
+    an overall confidence, and applies the HITL gate (L7): post automatically when confident, route to humans
+    when not. Every action along the way is written to an events spine (L6) so the whole thing can be traced,
+    audited, and priced. And a reliability layer (L8) keeps each step degrading to slower-but-correct.
+  </blockquote>
+  <p>Now ask: how many databases does this need? We have memory, truth, and time. The naive answer is three durable stores. <strong>Part II interrogates that answer — and arrives at one.</strong></p>
+
+  <h4>The running ledger — what Part I has built</h4>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <tbody>
+      <tr><td>L0</td><td>A selective, high-value posture: reclaim scarce senior-reviewer attention</td></tr>
+      <tr><td>L1</td><td>The four specialist concerns: security, quality, tests, docs</td></tr>
+      <tr><td>L2</td><td>An ingress trigger and the Finding contract with confidence + rationale</td></tr>
+      <tr><td>L3</td><td>Parallel specialists, not a single prompt — agentic fan-out</td></tr>
+      <tr><td>L4</td><td>A retrieval layer: ground every specialist in the codebase</td></tr>
+      <tr><td>L5</td><td>Three data shapes: vector, relational, structured</td></tr>
+      <tr><td>L6</td><td>An events spine: every action a time-ordered row</td></tr>
+      <tr><td>L7</td><td>A confidence-weighted HITL gate routing low-confidence reviews to humans</td></tr>
+      <tr><td>L8</td><td>A reliability layer: retries, circuit breakers, idempotency, dedup</td></tr>
+      <tr><td>L9</td><td>The assembled mental model — and the open question: how many databases?</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- ============== PART II ============== -->
+  <h2 id="part3" class="part-title">Part II · Data Engineering &amp; Storage</h2>
+  <p class="lede">Why one database, not three. This is the heart of the data design. The agent needs code memory, durable review truth, and a time-ordered trail of what every agent did.</p>
+
+  <h3 id="shapes"><span class="sec-num">2.1</span>Three Data Shapes, One Reflex</h3>
+  <p>Do not start by naming databases. Start by naming what the product has to remember.</p>
+
+  <ul>
+    <li><strong>Memory</strong> — chunks of code, past reviews, and conventions that help the agent understand a new diff.</li>
+    <li><strong>Truth</strong> — the review row, the findings, the GitHub review ID, any human decision.</li>
+    <li><strong>Time</strong> — every span, LLM call, tool call, cost, latency, decision in the order it happened.</li>
+  </ul>
+
+  <p>There is also one <em>reflex</em> that makes the system feel simple: <strong>read before action, write after action.</strong> Before the agent speaks, fetch relevant code memory. After the agent acts, write the review truth and the event trail.</p>
+
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t4500.jpg" alt="Three data shapes table from the article.">
+    <figcaption>The reflexive answer — one store per shape — is what Part II is going to question.</figcaption>
+  </figure>
+
+  <h4>The reflexive answer: one store per shape</h4>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Data shape</th><th>Reflexive store</th><th>What it holds</th></tr></thead>
+    <tbody>
+      <tr><td>Memory</td><td>Qdrant</td><td>Embedded code chunks for semantic retrieval</td></tr>
+      <tr><td>Truth</td><td>Postgres</td><td>Reviews, findings, HITL rows, GitHub IDs</td></tr>
+      <tr><td>Time</td><td>Time-series DB</td><td>Spans, LLM calls, tool calls, cost, latency</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>That sounds clean until you ask one product question:</p>
+  <blockquote class="principle">
+    <span class="lbl">The question that breaks the reflex</span>
+    "For this PR, what code did we retrieve, what review did we produce, and which model calls made it expensive?"
+  </blockquote>
+  <p>With three stores, the app has to query three systems and stitch the answer together in Python. That is the cost: more connection pools, more backups, more failure modes, and no simple joins.</p>
+
+  <h3 id="onestore"><span class="sec-num">2.2</span>One Store, Not Three</h3>
+  <p>The key sentence is: <strong>Tiger Cloud is Postgres with the missing powers added.</strong> It gives us a managed Postgres-compatible database, then adds the extensions this agent needs for AI memory and time-series events.</p>
+
+  <p>Plain Postgres already handles the truth lane well. To absorb the other lanes, it needs three additions.</p>
+
+  <h4>1 · Vector search for memory</h4>
+  <p>Every file gets turned into a small fingerprint made of numbers — an <strong>embedding</strong>. Files that mean similar things get similar fingerprints. <code>pgvector</code> lets Postgres store that list of numbers in a real column (<code>code_chunks.embedding</code>).</p>
+
+  <pre><code>repo              path                 content                         embedding
+acme/shop         billing/stripe.py    def charge_customer(...)        [0.12, -0.04, 0.88, ...]
+acme/shop         auth/session.py      def refresh_session(...)        [-0.31,  0.55,  0.09, ...]
+acme/shop         tests/payments.py    test_duplicate_charge(...)      [0.10, -0.02,  0.81, ...]</code></pre>
+
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t4800.jpg" alt="pgvector and DiskANN explained in the article.">
+    <figcaption>pgvector stores the embeddings; pgvectorscale and DiskANN make the search fast at scale.</figcaption>
+  </figure>
+
+  <h4>2 · pgvectorscale and DiskANN</h4>
+  <p>If pgvector is the shelf that stores the number-lists, pgvectorscale is the fast librarian. DiskANN keeps more of the search structure on disk/SSD while still returning close neighbours quickly.</p>
+
+  <h4>3 · Time-series storage with hypertables</h4>
+  <p>A normal table stores all event rows together. A <strong>hypertable</strong> stores them as time chunks behind the scenes — Monday's rows, Tuesday's rows, today's rows in separate chunks internally.</p>
+
+  <pre><code>agent_events hypertable
+chunk: 2026-07-10
+  09:00:01  review_1  security   span.start
+  09:00:04  review_1  security   llm.call     cost=0.018
+  09:00:08  review_1  security   span.end
+chunk: 2026-07-11
+  10:14:22  review_2  quality    span.start
+  10:14:27  review_2  quality    llm.call     cost=0.011
+  10:14:31  review_2  quality    span.end</code></pre>
+
+  <h4>4 · Continuous aggregates for dashboards and budget checks</h4>
+  <p>A dashboard should not count raw events from scratch every time. A <strong>continuous aggregate</strong> is a summary table Tiger keeps updated for us.</p>
+
+  <pre><code>raw agent_events rows
+09:00 security llm.call cost=0.018 latency=1200
+09:01 quality  llm.call cost=0.011 latency=900
+09:01 tests    llm.call cost=0.007 latency=700
+
+continuous aggregate: agent_health_1m
+09:00 security calls=1 cost=0.018 p95_ms=1200
+09:01 quality  calls=1 cost=0.011 p95_ms=900
+09:01 tests    calls=1 cost=0.007 p95_ms=700</code></pre>
+
+  <p>The <strong>BudgetGuard</strong> reads the summary first. If today's spend is already above the limit, it blocks before the next LLM call happens.</p>
+
+  <div class="callout idea">
+    <span class="lbl">The collapse — one store instead of three</span>
+    <strong>Before</strong>: Qdrant (memory) + dedicated time-series store (events) + Postgres (truth).<br>
+    <strong>After</strong>: Tiger Cloud serves all three as internal lanes in one Postgres-compatible database.
+  </div>
+
+  <h4>Redis stays — judgment, not dogma</h4>
+  <p>The job queue is still Redis + ARQ. That is intentional. Queue data is short-lived and high-churn; it does not need vector search, time buckets, or dashboard rollups. "One database" here means one durable data spine, not forcing every workload into SQL.</p>
+
+  <h4>Credentials to keep in <code>.env</code></h4>
+  <pre><code># backend/.env
+TIGER_DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DB?sslmode=require
+OPENAI_API_KEY=sk-...
+GITHUB_APP_ID=...
+GITHUB_WEBHOOK_SECRET=...
+GITHUB_PRIVATE_KEY_PATH=...</code></pre>
+
+  <h3 id="lanes"><span class="sec-num">2.3</span>The Three Lanes in Real Schema</h3>
+  <p>"One database" does not mean one giant table. It means the same database holds different table shapes for different jobs.</p>
+
+  <h4>Lane 1 — Memory: <code>code_chunks</code></h4>
+  <p>This replaces the old Qdrant collection. The ingestion job chunks repository files, embeds each chunk, and writes it here. At review time, <code>backend/memory/tiger_client.py</code> searches this table to find code similar to the PR diff.</p>
+
+  <pre><code>CREATE TABLE IF NOT EXISTS code_chunks (
+    id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    repo         TEXT         NOT NULL,
+    path         TEXT         NOT NULL,
+    symbol       TEXT,                       -- function/class name (nullable)
+    chunk_index  INT          NOT NULL,      -- order within file
+    content      TEXT         NOT NULL,
+    embedding    VECTOR(256)  NOT NULL,      -- text-embedding-3-large, 256 dims
+    token_count  INT,
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS code_chunks_emb_idx
+    ON code_chunks USING diskann (embedding vector_cosine_ops);
+ALTER TABLE code_chunks
+    ADD COLUMN IF NOT EXISTS content_tsv TSVECTOR
+        GENERATED ALWAYS AS (to_tsvector('english', content)) STORED;
+CREATE INDEX IF NOT EXISTS code_chunks_fts_idx
+    ON code_chunks USING GIN (content_tsv);</code></pre>
+
+  <div class="callout tip">
+    <span class="lbl">Why two indexes?</span>
+    Vector search catches meaning; full-text search catches exact identifiers (function names, error codes,
+    config keys). The retrieval code uses both and merges the results.
+  </div>
+
+  <h4>Lane 2 — Time: <code>agent_events</code></h4>
+  <p>Every agent action becomes one append-only row: span starts, span ends, LLM calls, tool calls, decisions, escalations, cost, latency, and payload.</p>
+
+  <pre><code>CREATE TABLE IF NOT EXISTS agent_events (
+    ts            TIMESTAMPTZ  NOT NULL,
+    review_id     UUID         NOT NULL,
+    agent         TEXT         NOT NULL,  -- security|quality|tests|docs|aggregator
+    span_id       UUID         NOT NULL DEFAULT gen_random_uuid(),
+    parent_span   UUID,
+    event_type    TEXT         NOT NULL,  -- span.start|span.end|llm.call|tool.call
+                                          --   |decision|escalation
+    model         TEXT,
+    tokens_in     INT,
+    tokens_out    INT,
+    cost_usd      NUMERIC(10,6),
+    latency_ms    INT,
+    outcome       TEXT,        -- approved|request_changes|critical_block|escalated
+    confidence    NUMERIC(4,3),
+    payload       JSONB
+);
+SELECT create_hypertable(
+    'agent_events',
+    by_range('ts', INTERVAL '1 day'),
+    if_not_exists =&gt; TRUE
+);</code></pre>
+
+  <h4>Lane 3 — Rollups: dashboard-ready views</h4>
+  <pre><code>CREATE MATERIALIZED VIEW IF NOT EXISTS agent_health_1m
+WITH (timescaledb.continuous) AS
+SELECT
+    time_bucket('1 minute', ts)                          AS bucket,
+    agent,
+    count(*) FILTER (WHERE event_type = 'llm.call')      AS llm_calls,
+    sum(cost_usd)                                        AS cost_usd,
+    approx_percentile(0.95, percentile_agg(latency_ms))  AS p95_ms,
+    count(*) FILTER (WHERE outcome = 'rejected')::float
+        / NULLIF(count(*) FILTER (WHERE outcome IS NOT NULL), 0) AS rejection_rate
+FROM agent_events
+GROUP BY bucket, agent
+WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy(
+    'agent_health_1m',
+    start_offset      =&gt; INTERVAL '2 hours',
+    end_offset        =&gt; INTERVAL '1 minute',
+    schedule_interval =&gt; INTERVAL '1 minute',
+    if_not_exists     =&gt; TRUE
+);
+
+-- pr_cost_hourly: per-PR cost + token rollup, refreshed hourly
+CREATE MATERIALIZED VIEW IF NOT EXISTS pr_cost_hourly
+WITH (timescaledb.continuous) AS
+SELECT
+    time_bucket('1 hour', ts)   AS bucket,
+    review_id,
+    sum(cost_usd)               AS total_cost_usd,
+    count(DISTINCT agent)       AS agents_used,
+    max(confidence)             AS max_confidence
+FROM agent_events
+GROUP BY bucket, review_id
+WITH NO DATA;</code></pre>
+
+  <h4>The relational tables — same database, same transaction</h4>
+  <p>The truth lane is deliberately ordinary: <code>pr_review_records</code>, <code>finding_records</code>, <code>hitl_reviews</code>, <code>hitl_feedback</code>. Normal relational tables because the shape is normal relational data.</p>
+
+  <div class="callout">
+    <span class="lbl">Mental model</span>
+    Memory is <code>code_chunks</code>, truth is the review tables, time is <code>agent_events</code>. One PR
+    ties them together.
+  </div>
+
+  <h3 id="tigervs"><span class="sec-num">2.4</span>Why Tiger Cloud Beats the Split</h3>
+
+  <h4>Tiger Cloud vs plain Postgres</h4>
+  <p>Plain Postgres is enough for review rows and findings. It is not enough by itself for this whole agent. We also need fast vector search over code embeddings and efficient time-series queries over millions of agent events. Tiger Cloud keeps the Postgres programming model but adds TimescaleDB, pgvector, and pgvectorscale.</p>
+
+  <h4>Tiger Cloud vs Qdrant</h4>
+  <p>Qdrant is good at vector search. The problem is that vector search is not the only question this agent asks. A PR review needs vector similarity plus repo filters, freshness, exact identifier matching, review records, cost records, and audit history. Keeping vectors in Tiger means the retrieval result can live beside the metadata and the review trail.</p>
+
+  <h4>Why DiskANN matters</h4>
+  <p>Many vector indexes keep a lot of their search graph in memory. That gets expensive as the number of code chunks grows. DiskANN is designed to keep more of the index on SSD while still returning close neighbours quickly.</p>
+
+  <h4>Why hypertables matter</h4>
+  <p>Agent events are naturally time-ordered. The dashboard usually asks recent-time questions: last hour, last day, last week. A hypertable partitions the event stream by time, so recent queries touch recent chunks instead of treating the table like one endless pile.</p>
+
+  <h4>Why continuous aggregates matter</h4>
+  <p>The app should not calculate "daily spend" by scanning raw LLM calls every time someone opens the dashboard. Continuous aggregates keep summary tables warm: cost per agent, latency percentiles, token usage, per-PR cost.</p>
+
+  <h4>Alternatives considered and rejected (ADR-003)</h4>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Option</th><th>Rejected because</th></tr></thead>
+    <tbody>
+      <tr><td>Keep Qdrant + Postgres</td><td>Works, but splits memory from review truth and audit history</td></tr>
+      <tr><td>Plain Postgres only</td><td>Good for truth, weak for large vector memory and time-series rollups</td></tr>
+      <tr><td>Add ClickHouse for events</td><td>Powerful, but another durable store, connection, schema, and failure mode</td></tr>
+      <tr><td>Add Jaeger or Tempo for traces</td><td>Useful for infra tracing, but now the product audit trail is outside the product database</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Trade-offs accepted</h4>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Trade-off</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr><td>Tiger Cloud is a managed service</td><td>Accepted because it replaces multiple durable stores and keeps the system easier to operate</td></tr>
+      <tr><td>There are two access styles</td><td>SQLAlchemy for normal relational work; asyncpg for hot paths like event inserts and chunk upserts</td></tr>
+      <tr><td>Redis still exists</td><td>Accepted because Redis is a queue/cache, not the durable data spine</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout">
+    <span class="lbl">Carry forward</span>
+    A simpler single spine. Tiger Cloud wins because it keeps memory, truth, and time in one
+    Postgres-compatible store while still giving each lane the index or table shape it needs.
+  </div>
+
+  <!-- ============== PART III ============== -->
+  <h2 id="part4" class="part-title">Part III · Core System Architecture</h2>
+  <p class="lede">Now, and only now, the boxes. Every box below was earned in Parts I and II.</p>
+
+  <h3 id="ingress"><span class="sec-num">3.1</span>Ingress &amp; the Queue</h3>
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t5400.jpg" alt="Section 3.1 Ingress & the Queue from the article.">
+    <figcaption>Section 3.1 of the article — the ingress does exactly three things, then acknowledges fast.</figcaption>
+  </figure>
+
+  <p>From the ingress trigger and the decoupling we carried at L2 and L8: a GitHub webhook arrives, is validated, and is enqueued — never handled inline.</p>
+
+  <p>The ingress handler does exactly three things:</p>
+  <ol>
+    <li><strong>Verify the GitHub HMAC-SHA256 signature</strong> on the payload, rejecting forgeries before any work.</li>
+    <li><strong>Check the idempotency key</strong> (the <code>X-GitHub-Delivery</code> UUID) so a retried delivery is acknowledged and dropped rather than reviewed twice — the idempotency defense from L8.</li>
+    <li><strong>Enqueue the job to Redis + ARQ</strong> and return 200 immediately. GitHub expects a fast acknowledgment; the heavy work happens asynchronously in an ARQ worker.</li>
+  </ol>
+
+  <div class="diagram">
+<span class="lbl">PR lifecycle</span>
+<span class="box">GitHub PR</span>
+  <span class="arrow">→</span>
+<span class="box">INGRESS</span>
+  <span class="arrow">→</span>
+<span class="box">Redis / ARQ queue</span>
+  <span class="arrow">→</span>
+<span class="box">ORCHESTRATOR</span>
+  <span class="arrow">→</span>
+<span class="box">HITL?</span>
+  <span class="arrow">→</span>
+<span class="box">post_to_github</span>
+  <span class="arrow">→</span>
+<span class="box">200 OK</span>
+
+   ingress validates &amp; enqueues; ARQ worker drives the orchestrator;
+   the result returns through the confidence gate to GitHub.</div>
+
+  <div class="callout warn">
+    <span class="lbl">Where this breaks</span>
+    At 10 000 PRs per minute, queue depth outgrows the worker drain rate; a single ARQ worker becomes the
+    bottleneck. The modular-monolith answer (ADR-002): extract the webhook receiver as a stateless ingress
+    service and the orchestrator as a separate worker pool.
+  </div>
+
+  <h3 id="orch"><span class="sec-num">3.2</span>The Orchestrator</h3>
+  <p>From the parallel-specialists fan-out we carried at L3: the orchestrator is a graph, not a pipeline. Nodes run simultaneously; state is checkpointed between them.</p>
+
+  <p>The orchestration engine is <strong>LangGraph</strong>. It defines the workflow as a directed graph of nodes (functions or LLM calls) and edges (what runs next). Parallel fan-out is first-class via the <code>Send</code> API. A typed state object flows through the graph, and LangGraph checkpoints that state to Redis at each node boundary, so a worker crash mid-review resumes from the last completed node.</p>
+
+  <p>The graph lives in <code>backend/orchestrator/</code>:</p>
+  <ul>
+    <li><code>graph.py</code> wires the <code>StateGraph</code> and the Send fan-out.</li>
+    <li><code>state.py</code> defines the typed state.</li>
+    <li><code>nodes.py</code> holds the node functions (<code>build_context</code>, the four specialist nodes, <code>aggregate</code>).</li>
+    <li><code>langgraph_engine.py</code> implements the engine interface.</li>
+  </ul>
+
+  <p>The aggregator node is wired to run only after all four specialist nodes complete. The graph encodes that join — we do not orchestrate it by hand. This is the orchestration-deadlock defense from L8.</p>
+
+  <h3 id="langvstemp"><span class="sec-num">3.3</span>Trade-off: LangGraph vs Temporal</h3>
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t6000.jpg" alt="LangGraph vs Temporal comparison table from the article.">
+    <figcaption>ADR-001 — the orchestrator had two realistic candidates; the decision turns on a clear need and the discipline that keeps it reversible.</figcaption>
+  </figure>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Concern</th><th>LangGraph (chosen)</th><th>Temporal</th></tr></thead>
+    <tbody>
+      <tr><td>Where it runs</td><td>Inside our Python process — zero extra infrastructure</td><td>A separate server plus separate worker processes</td></tr>
+      <tr><td>Parallel fan-out</td><td>First-class via the Send API — exactly what four agents need</td><td>Supported, but heavier to express</td></tr>
+      <tr><td>Checkpointing</td><td>To the same Redis we already run for the queue</td><td>Durable, built-in, very strong guarantees</td></tr>
+      <tr><td>LLM integration</td><td>Tight tool-calling integration; fast local iteration</td><td>Generic; not LLM-specific</td></tr>
+      <tr><td>Maturity / scale</td><td>Newer; unproven at thousands of concurrent workflows</td><td>Battle-hardened (Uber, Netflix); excellent at scale</td></tr>
+      <tr><td>Operational cost</td><td>None beyond the app</td><td>Meaningful ops overhead before we understand workflow shapes</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>The decision (ADR-001)</h4>
+  <p>Use LangGraph for Phases 1–12. The discipline that makes this safe is a single abstract interface:</p>
+
+  <pre><code># backend/core/workflow_engine.py
+class WorkflowEngine(ABC):
+    @abstractmethod
+    def run(self, workflow_id, input): ...
+    @abstractmethod
+    def resume(self, workflow_id, state): ...
+    @abstractmethod
+    def get_state(self, workflow_id): ...</code></pre>
+
+  <p>All orchestrator code imports from <code>core.workflow_engine</code>, never from LangGraph directly. If scale demands Temporal at Phase 13+, write a Temporal implementation of the same interface and swap it in — nothing else in the codebase changes.</p>
+
+  <div class="callout idea">
+    <span class="lbl">Generalized principle</span>
+    Defer the expensive decision, keep the door open. Make the cheaper choice now, and pay for the heavy one
+    only when scale actually demands it.
+  </div>
+
+  <h3 id="specialists"><span class="sec-num">3.4</span>Specialists &amp; the Aggregator</h3>
+  <p>From the four concerns at L1 and the Finding contract from L2: four specialists run in parallel, each returning structured findings, merged by one aggregator.</p>
+
+  <p>The four specialists — security, quality, tests, docs — share a base shape in <code>backend/agents/base_agent.py</code> (BudgetGuard check, retrieval call, LLM call, event emission, error handling) and differ only in their domain prompt and post-processing. Each returns a list of <code>Finding</code> objects (defined in <code>agents/contracts.py</code>) matching the L2 contract.</p>
+
+  <p>Structured output is what makes the next step deterministic — the aggregator merges data, not prose.</p>
+
+  <div class="diagram">
+<span class="lbl">Fan-out via LangGraph Send API — all four specialists run simultaneously</span>
+                    <span class="box">ORCHESTRATOR (LangGraph)</span>
+                              <br>
+                              <span class="arrow">|</span> <span class="arrow">v</span> <span class="arrow">|</span> <span class="arrow">|</span> <span class="arrow">|</span>
+                  <span class="box">security</span> &nbsp; <span class="box">quality</span> &nbsp; <span class="box">tests</span> &nbsp; <span class="box">docs</span>
+                              <br>
+                              <span class="arrow">|</span> <span class="arrow">^</span> <span class="arrow">|</span> <span class="arrow">|</span> <span class="arrow">|</span>
+                          <span class="box">AGGREGATOR</span>
+                          <span class="lbl">merge + dedup · score + route · HITL confidence gate</span>
+                              <span class="arrow">→</span>
+                          <span class="box">GitHub</span>
+</div>
+
+  <p>The aggregator merges all four lists, deduplicates findings that multiple agents raised on the same file and line (keeping the highest-confidence one and noting the agreement), computes an <code>overall_confidence</code>, and applies the L7 HITL gate.</p>
+
+  <h3 id="retrieval"><span class="sec-num">3.5</span>The Retrieval Path</h3>
+  <p>From the grounding problem at L4 and the data shapes at L5: each specialist queries the vector lane for codebase context relevant to the diff. Retrieval is <strong>hybrid</strong> — vector and keyword in parallel.</p>
+
+  <p>The retrieval layer is <code>backend/memory/</code>:</p>
+  <ul>
+    <li><code>tiger_client.py</code> — the <code>TigerMemoryClient</code></li>
+    <li><code>embedder.py</code> — <code>text-embedding-3-large</code>, 256-dim</li>
+    <li><code>context_retriever.py</code> — hybrid merge</li>
+  </ul>
+
+  <div class="diagram">
+<span class="lbl">Retrieval path</span>
+<span class="box">PR diff</span>
+  <span class="arrow">→</span>
+<span class="box">Embed 256-dim</span>
+  <span class="arrow">→</span>
+<span class="box">DiskANN ANN search</span>
+        <span class="lbl">vector</span>
+  <span class="arrow">→</span>
+<span class="box">Hybrid merge · RRF · top-k</span>
+  <span class="arrow">→</span>
+<span class="box">Specialist agent prompt</span>
+   plus, in parallel:
+<span class="box">FTS keyword (GIN)</span>
+        <span class="lbl">keyword</span>
+   against code_chunks · Tiger Cloud</div>
+
+  <p>Pure vector search finds meaning but misses exact identifiers; pure keyword search finds exact strings but misses semantic relevance. The layer runs both: DiskANN ANN search over the 256-dim embeddings, and full-text search over the <code>content_tsv</code> GIN index. A hybrid merge fuses the two result sets by reciprocal rank and returns the top-k chunks into the specialist's prompt.</p>
+
+  <div class="callout warn">
+    <span class="lbl">Interrogating question</span>
+    What happens when embeddings go stale — a function is refactored but its chunk still describes the old
+    version? The <code>repo_file_index.last_indexed_at</code> drives incremental re-embedding;
+    <code>code_chunks_unique_idx</code> on <code>(repo, path, chunk_index)</code> lets the upsert overwrite stale chunks.
+  </div>
+
+  <h3 id="spine"><span class="sec-num">3.6</span>The Events Spine in Operation</h3>
+  <p>From the trust-and-proof principle at L6: every action is one row in <code>agent_events</code>, and three consumers read that one table.</p>
+
+  <div class="diagram">
+<span class="lbl">The agent_events hypertable serves three consumers from one table</span>
+                    <span class="box">agent_events</span>
+                    <span class="lbl">TimescaleDB hypertable · partitioned by 1 day</span>
+              <span class="arrow">↙</span>          <span class="arrow">↓</span>          <span class="arrow">↘</span>
+       <span class="box">Trace Viewer</span>  <span class="box">Audit Trail</span>  <span class="box">Cost Ledger</span>
+
+   carries: span.start/end · llm.call · tool.call · decision</div>
+
+  <p>The observability layer (<code>backend/observability/</code>) emits an event for every span, LLM call, tool call, and decision, carrying the <code>span_id</code>/<code>parent_span</code> chain, cost, latency, confidence, and outcome.</p>
+
+  <ul>
+    <li><strong>Trace viewer</strong> reconstructs any review with <code>SELECT ... WHERE review_id = $1 ORDER BY ts</code>.</li>
+    <li><strong>Audit trail</strong> is the same append-only table, immutable by construction.</li>
+    <li><strong>Cost ledger</strong> reads the continuous aggregates — and so does the BudgetGuard, which reads the day's running cost from <code>agent_health_1m</code> at the top of every agent run and hard-blocks before any LLM call if the daily cap is exceeded (ADR-004).</li>
+  </ul>
+
+  <p>Continuous aggregates also surface drift: a rising <code>rejection_rate</code> per agent is the calibration signal for continuous learning.</p>
+
+  <h3 id="fullsys"><span class="sec-num">3.7</span>The Full System</h3>
+  <p>Every carried piece, in one picture.</p>
+
+  <div class="diagram">
+<span class="lbl">GitHub → FastAPI ingress → Redis/ARQ → LangGraph (four parallel agents) → aggregator → HITL gate → GitHub</span>
+
+   <span class="box">GitHub PR</span>
+     <span class="arrow">→</span>
+   <span class="box">FASTAPI INGRESS</span>
+   <span class="lbl">HMAC · idempotency</span>
+     <span class="arrow">→</span>
+   <span class="box">Redis ARQ queue</span>
+     <span class="arrow">→</span>
+   <span class="box">ARQ WORKER (LangGraph)</span>
+     <span class="arrow">↙ ↓ ↘</span>
+   <span class="box">security</span>  <span class="box">quality</span>  <span class="box">tests</span>  <span class="box">docs</span>
+     <span class="arrow">↘ ↓ ↙</span>
+   <span class="box">AGGREGATOR</span>
+   <span class="lbl">merge · dedup · score · HITL gate · confidence</span>
+     <span class="arrow">→</span>
+   <span class="box">post_to_github</span>
+
+<span class="lbl">Tiger Cloud · TimescaleDB (one managed Postgres) underneath all of it:</span>
+<span class="box">pgvectorscale · DiskANN</span>   <span class="box">agent_events hypertable</span>   <span class="box">agent_health_1m · pr_cost_hourly</span>
+<span class="lbl">code_chunks</span>               <span class="lbl">partitioned by 1 day</span>       <span class="lbl">continuous aggregates</span>
+
+<span class="lbl">Next.js dashboard reads the aggregates · deployed on Railway</span></div>
+
+  <!-- ============== PART IV ============== -->
+  <h2 id="part5" class="part-title">Part IV · Build with Genesis Kit</h2>
+  <p class="lede">From design to code. The architecture is derived; now the build. The second half of the lecture is a live demo: how the speaker actually builds the system using the Genesis Kit harness and a coding agent.</p>
+
+  <h3 id="genesis"><span class="sec-num">4.1</span>What Genesis Kit is</h3>
+  <blockquote>
+    Turn any empty repo into a <strong>loop-ready</strong> repo — in any agent (Claude Code · Hermes · Codex · Cursor · …).
+    You stop prompting the agent turn-by-turn. You run a one-time <strong>genesis ritual</strong> that lays down a
+    per-project spine (knowledge graph, definition-of-done, sliced plan, durable state, loops), then a
+    <strong>BUILD loop</strong> drives the agent against it with anti-slop gates and a separate verifier.
+  </blockquote>
+
+  <p>This sits on top of two libraries you already have:</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Layer</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><strong>agentic-swe-kit</strong></td><td>The 20-phase <code>agentic-swe-master</code> orchestrator + 7 domain skills + concept wiki. "What's the correct engineering move." Installed globally.</td></tr>
+      <tr><td><strong>skills-directory</strong></td><td><code>detective</code>, <code>verify</code>, <code>scout</code>, <code>blueprint</code>, <code>council</code>, <code>ghost</code>, <code>foresight</code> — the composable verbs a loop calls.</td></tr>
+      <tr><td><strong>genesis-kit (this kit)</strong></td><td><code>genesis</code> and <code>explain-diff-html</code> skills. Installed by <code>install.sh</code>.</td></tr>
+      <tr><td><strong>Per-project spine</strong></td><td>The <code>.genesis/</code> directory the ritual creates fresh in each project, and the loops that run it.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>The spine, in one breath</h4>
+  <p><code>read STATE → G0 (already built?) → pick milestone → load skills → L1 BUILD (5 gates each iter) →
+  L2 DEBUG / L3 RESEARCH as needed → L4 VERIFY (separate model, fresh context, checks context-graph invariants) →
+  quiz-me (3 questions) → update implementation-notes + CURRENT → repeat until DONE.html milestone all-checked.</code></p>
+
+  <h4>The five anti-slop gates</h4>
+  <ol>
+    <li><strong>G1 Skill</strong> — did we load the right skills for this hop?</li>
+    <li><strong>G2 Progress</strong> — did this iteration measurably move the milestone forward?</li>
+    <li><strong>G3 Cost</strong> — are we in budget?</li>
+    <li><strong>G4 Quality</strong> — did the verifier compute a result, not narrate one?</li>
+    <li><strong>G5 Verify</strong> — did an independent checker run the demo command?</li>
+  </ol>
+
+  <div class="callout idea">
+    <span class="lbl">Design principles</span>
+    The agent forgets; the repo doesn't — state lives on disk in <code>.genesis/</code>.<br>
+    Maker ≠ checker — L4 VERIFY is always a separate context/model.<br>
+    Gates are computed, not narrated — run the command, paste the exit code.<br>
+    G0 before every milestone — never rebuild what the wiki/notes already say exists.<br>
+    Cheap driver, flagship only for hard hops.
+  </div>
+
+  <h4>The spine's files</h4>
+  <pre><code>&lt;project&gt;/.genesis/
+  genesis.md                  the ritual (G0–G6) — how to set this project up
+  LOOPS.md                    the 5 loops + 5 anti-slop gates + G0
+  DONE.html                   LOCKED: cognitive job + definition-of-done + plan
+  implementation-notes.html   rolling "what's LIVE right now" — restart point
+  PLAN.md                     machine-parseable milestone list
+  KICKOFF.md                  paste-to-resume prompt for a cold session
+  context-graph.json          nodes/edges/invariants — what breaks what
+  decisions/                  ADRs — one file per irreversible decision
+  checkpoints/CURRENT.md      where we are; per-milestone append-only logs
+  explanations/               L4 explain-diff HTML pages
+  wiki/                       project knowledge base
+  AGENT-ADAPTERS.md           how skills/loops/subagents map to each agent</code></pre>
+
+  <h4>Model routing during the build (verbatim from the demo)</h4>
+  <blockquote class="principle">
+    <span class="lbl">Speaker's model-routing prompt</span>
+    "Can you please make sure that you are not using Opus for everything — you're just using Opus as an
+    orchestrator or planner whenever required. Spawn Haiku or Sonnet 5 agents to do this task. Never spend a
+    lot of your tokens on this itself. Always spawn Haiku, always spawn Sonnet 5 to do this particular task
+    even for the coding agents."
+  </blockquote>
+
+  <p>The pattern:</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>Role</th><th>Model</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Driver (default loop agent)</td><td>Haiku / Sonnet</td><td>Cheap, mechanical work</td></tr>
+      <tr><td>Planner / orchestrator</td><td>Opus</td><td>Hard hops, architecture decisions</td></tr>
+      <tr><td>Independent L4 verifier</td><td>Sonnet or Opus, fresh context</td><td>Maker ≠ checker</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="roadmap"><span class="sec-num">4.2</span>The 13-Phase Build Roadmap (M1–M10)</h3>
+  <figure>
+    <img loading="lazy" decoding="async" src="assets/screenshots/t8000.jpg" alt="M1 to M10 milestone table from the live demo.">
+    <figcaption>The 13 milestones M1–M10 the speaker lays down in <code>PLAN.md</code> — each with an exact demo command.</figcaption>
+  </figure>
+
+  <p>Each milestone has one <em>exact demo command</em> that proves it works. If you can't write the demo command, the milestone is too vague — split it.</p>
+
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable comparison table"><table>
+    <thead><tr><th>#</th><th>Milestone</th><th>External dep</th><th>Demo command</th></tr></thead>
+    <tbody>
+      <tr><td>M1</td><td>Webhook ingress service (FastAPI, HMAC verify, idempotency, enqueue)</td><td>webhook secret</td><td><code>curl signed → 202; bad sig → 401; dup delivery-id → dropped</code></td></tr>
+      <tr><td>M2</td><td>Tiger infra + data spine (provision, extensions, agent_events hypertable, continuous aggregates, relational tables, migration)</td><td>Tiger Cloud</td><td><code>SELECT extname FROM pg_extension</code> shows timescaledb/vector/vectorscale; <code>\d agent_events</code> = hypertable</td></tr>
+      <tr><td>M3</td><td>Event spine wiring (every action → append-only agent_events)</td><td>—</td><td><code>send webhook → query agent_events → see span rows</code></td></tr>
+      <tr><td>M4</td><td>Orchestration (LangGraph fan-out to 4 nodes in parallel + Redis checkpoint/resume)</td><td>Redis</td><td><code>trigger run → 4 nodes parallel; kill worker → resumes from checkpoint</code></td></tr>
+      <tr><td>M5</td><td>Specialists + aggregator = one review (4 agents, Finding contract, dedup, confidence)</td><td>OpenAI</td><td><code>submit test PR diff → one merged deduped review JSON</code></td></tr>
+      <tr><td>M6</td><td>RAG retrieval (embed code_chunks, hybrid DiskANN+FTS)</td><td>Tiger + OpenAI</td><td><code>hybrid query → top-k results</code></td></tr>
+      <tr><td>M7</td><td>HITL gate + post to GitHub (high-post, low/CRITICAL → queue)</td><td>GitHub token</td><td><code>test PR → high posts review; low → approval queue</code></td></tr>
+      <tr><td>M8</td><td>Reliability + economics (retries/circuit-breaker/timeout, BudgetGuard)</td><td>—</td><td><code>fault-inject → breaker fires; over-budget → BudgetGuard blocks</code></td></tr>
+      <tr><td>M9</td><td>Minimal dashboard (tiny Next.js reading aggregates — kept deliberately small)</td><td>—</td><td><code>npm run dev → renders a past review + cost</code></td></tr>
+      <tr><td>M10</td><td>Evaluation (golden set + LLM-as-judge + regression gate)</td><td>OpenAI</td><td><code>run golden set → judge scores; worse prompt → gate blocks</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The speaker also walks through the dependency-direction invariant that is wired into the context graph:</p>
+  <pre><code>{
+  "comment": "nodes=modules, edges=cause/effect",
+  "generated": "2026-07-09T21:52:10.119Z",
+  "invariants": [
+    "INV1: Every GitHub webhook payload passes HMAC verification",
+    "INV2: Every webhook delivery is deduplicated by its X-GitHub-Delivery UUID",
+    "INV3: Every specialist Finding carries confidence + rationale",
+    "INV4: Every agent action is written as an append-only agent_events row",
+    "INV5: Every orchestrator node has a timeout + dead-letter",
+    "INV6: Dependency direction is inward-only",
+    "INV7: BudgetGuard checks cumulative daily cost before any LLM call"
+  ]
+}</code></pre>
+
+  <h3 id="milestones"><span class="sec-num">4.3</span>Walking through M1–M3 (live demo)</h3>
+
+  <h4>M1 — Webhook ingress (FastAPI)</h4>
+  <p>The user starts the BUILD loop for M1. The agent scaffolds <code>backend/webhook_receiver/</code>:</p>
+  <ul>
+    <li><code>validator.py</code> — HMAC signature check</li>
+    <li><code>parser.py</code> — payload → <code>PullRequestEvent</code></li>
+    <li><code>router.py</code> — enqueue</li>
+    <li><code>app.py</code> — FastAPI endpoint</li>
+  </ul>
+
+  <p>Demo command: <code>curl signed → 202; bad sig → 401; dup delivery-id → dropped</code>. A stub <code>job_router</code> is used for now (M1 only needs the ingress contract). The in-memory dedup will be replaced by the Redis-backed dedup in M4.</p>
+
+  <h4>M2 — Tiger infra + data spine</h4>
+  <p>The agent uses the <strong>Tiger Cloud MCP</strong> to provision a service, enables the <code>timescaledb</code>, <code>vector</code>, and <code>vectorscale</code> extensions, and applies the migration from <code>scripts/migrations/2026-06-tiger-init.sql</code> (the SQL shown in <a href="#lanes">2.3</a>). The schema includes:</p>
+  <ul>
+    <li><code>code_chunks</code> with DiskANN + FTS indexes (Lane 1)</li>
+    <li><code>agent_events</code> as a hypertable partitioned by 1 day (Lane 2)</li>
+    <li><code>agent_health_1m</code> and <code>pr_cost_hourly</code> continuous aggregates (Lane 3)</li>
+    <li>Relational truth tables (<code>pr_review_records</code>, <code>finding_records</code>, <code>hitl_reviews</code>, <code>hitl_feedback</code>)</li>
+  </ul>
+
+  <p>An interesting design quirk surfaces during M2 — and becomes a teaching moment:</p>
+  <div class="callout warn">
+    <span class="lbl">Edge case the verifier caught</span>
+    <strong>"If a caller runs <code>TRUNCATE agent_events</code> instead of <code>DELETE</code>, does the delete trigger fire?"</strong><br>
+    No — TRUNCATE is not implemented as a series of DELETEs. It is a distinct SQL command with its own
+    execution path; row-level <code>BEFORE/AFTER DELETE</code> triggers do not fire. To intercept TRUNCATE
+    you need separate <code>BEFORE TRUNCATE</code> / <code>AFTER TRUNCATE</code> triggers.
+  </div>
+
+  <p>Another surprise in M2 — change-impact question surfaced by the quiz-me gate:</p>
+  <div class="callout warn">
+    <span class="lbl">Change impact</span>
+    <code>code_chunks.embedding</code> is a hardcoded <code>VECTOR(256)</code>, but the embedding model is
+    configured at 1536 dimensions. Mismatch will break every insert. <em>Pick one dimension and reconcile
+    both schema and env.</em>
+  </div>
+
+  <h4>M3 — Event spine wiring</h4>
+  <p>Every action in M1 (and onward) emits an <code>agent_events</code> row:</p>
+  <ul>
+    <li><code>span.start</code>, <code>span.end</code> for each node</li>
+    <li><code>llm.call</code> with <code>tokens_in</code>, <code>tokens_out</code>, <code>cost_usd</code>, <code>latency_ms</code></li>
+    <li><code>tool.call</code> for GitHub / Tiger operations</li>
+    <li><code>decision</code> when the HITL gate routes a review</li>
+  </ul>
+
+  <p>Demo command: <code>send webhook → query agent_events → see span rows</code>.</p>
+
+  <p>From here, M4 swaps the in-memory <code>job_router</code> for Redis + ARQ, M5 fills in the four specialists, M6 wires hybrid retrieval, M7 turns on the HITL gate and posts to GitHub, and so on down to M10.</p>
+
+  <!-- ============== CODE ============== -->
+  <h2 id="code">Code Examples from the Video</h2>
+  <p class="lede">All SQL/Python snippets shown during the demo or referenced in the article. Reproduced so you can hand them to your coding agent.</p>
+
+  <h3 id="code-hmac">HMAC signature verification (ingress)</h3>
+  <pre><code># backend/webhook_receiver/validator.py
+import hmac, hashlib
+
+def verify_github_signature(secret: str, body: bytes, signature_header: str | None) -> bool:
+    """
+    GitHub sends the HMAC-SHA256 of the body in the X-Hub-Signature-256 header
+    as: sha256=&lt;hex&gt;. Verification MUST happen before parsing the JSON —
+    otherwise malformed-but-signed payloads leak information through error messages.
+    """
+    if not signature_header or not signature_header.startswith("sha256="):
+        return False
+    expected = "sha256=" + hmac.new(
+        secret.encode(), msg=body, digestmod=hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature_header)</code></pre>
+
+  <h3 id="code-app">FastAPI ingress endpoint</h3>
+  <pre><code># backend/webhook_receiver/app.py
+from fastapi import FastAPI, Request, Header, HTTPException, Response
+from .validator import verify_github_signature
+from .parser import parse_pull_request_event
+from .router import enqueue_review_job
+
+app = FastAPI()
+
+@app.post("/webhooks/github")
+async def github_webhook(
+    request: Request,
+    x_github_event: str = Header(...),
+    x_github_delivery: str = Header(...),
+    x_hub_signature_256: str | None = Header(default=None),
+):
+    body = await request.body()
+
+    # 1. verify BEFORE parsing (the ordering invariant)
+    if not verify_github_signature(WEBHOOK_SECRET, body, x_hub_signature_256):
+        raise HTTPException(status_code=401, detail="invalid signature")
+
+    # 2. only proceed for the events we care about
+    if x_github_event != "pull_request":
+        return Response(status_code=204)
+
+    # 3. parse the pull_request payload
+    event = parse_pull_request_event(body)
+
+    # 4. enqueue for the ARQ worker (idempotent on delivery-id)
+    enqueue_review_job(delivery_id=x_github_delivery, event=event)
+
+    # 5. acknowledge GitHub fast — heavy work happens in the worker
+    return Response(status_code=202)</code></pre>
+
+  <h3 id="code-arq">ARQ worker entry (orchestrator)</h3>
+  <pre><code># backend/job_queue/arq_worker.py
+from arq.connections import RedisSettings
+from backend.orchestrator.langgraph_engine import LangGraphEngine
+from backend.observability.events import emit_agent_event
+
+async def run_review_job(ctx, *, delivery_id, event):
+    review_id = event["pull_request"]["id"]
+    emit_agent_event(
+        review_id=review_id, agent="orchestrator", event_type="span.start"
+    )
+    try:
+        engine = LangGraphEngine()
+        result = await engine.run(
+            workflow_id=f"review-{review_id}",
+            input={"pr_diff": event["pull_request"], "delivery_id": delivery_id},
+        )
+        emit_agent_event(
+            review_id=review_id, agent="orchestrator",
+            event_type="span.end", outcome=result["overall_outcome"],
+            confidence=result["overall_confidence"],
+        )
+    except Exception as exc:
+        emit_agent_event(
+            review_id=review_id, agent="orchestrator",
+            event_type="span.end", outcome="error", payload={"err": str(exc)},
+        )
+        raise
+
+class WorkerSettings:
+    functions = [run_review_job]
+    redis_settings = RedisSettings.from_dsn(os.environ["REDIS_URL"])</code></pre>
+
+  <h3 id="code-agents">Specialist base + Finding contract</h3>
+  <pre><code># backend/agents/contracts.py
+from pydantic import BaseModel, Field
+from typing import Literal
+
+Severity = Literal["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+AgentType = Literal["security", "quality", "tests", "docs"]
+
+class Finding(BaseModel):
+    agent_type: AgentType
+    severity: Severity
+    category: str
+    file_path: str
+    line_start: int
+    line_end: int
+    summary: str
+    suggestion: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    rationale: str
+
+class SpecialistOutput(BaseModel):
+    agent: AgentType
+    findings: list[Finding]</code></pre>
+
+  <pre><code># backend/agents/base_agent.py
+from .contracts import Finding
+from backend.memory.context_retriever import retrieve_context
+from backend.observability.events import emit_agent_event
+from backend.economics.budget import BudgetGuard
+
+class BaseAgent:
+    def __init__(self, agent_type: str, prompt_template: str, llm):
+        self.agent_type = agent_type
+        self.prompt_template = prompt_template
+        self.llm = llm
+
+    async def run(self, *, review_id: str, pr_diff: dict) -> list[Finding]:
+        # 1. BudgetGuard first — block before any LLM call
+        BudgetGuard().check_or_raise()
+
+        # 2. Retrieve grounding context
+        context_chunks = await retrieve_context(pr_diff, top_k=8)
+
+        # 3. Build prompt + call LLM (structured output)
+        prompt = self.prompt_template.format(
+            context="\n\n".join(context_chunks),
+            diff=pr_diff["diff_text"],
+        )
+        emit_agent_event(
+            review_id=review_id, agent=self.agent_type,
+            event_type="llm.call",
+        )
+        raw = await self.llm.structured(prompt, schema=list[Finding])
+
+        # 4. Post-process (severity clamping, path resolution, ...)
+        return [self._normalise(f) for f in raw]</code></pre>
+
+  <h3 id="code-retrieve">Hybrid retrieval (DiskANN + FTS)</h3>
+  <pre><code># backend/memory/context_retriever.py
+import asyncpg
+
+async def retrieve_context(pr_diff: dict, top_k: int = 8) -> list[str]:
+    pool = await asyncpg.create_pool(dsn=os.environ["TIGER_DATABASE_URL"])
+    diff_text = pr_diff["diff_text"]
+    diff_embedding = await embed(diff_text)        # 256-dim
+
+    async with pool.acquire() as conn:
+        ann_rows = await conn.fetch("""
+            SELECT path, content
+            FROM code_chunks
+            ORDER BY embedding &lt;=&gt; $1::vector
+            LIMIT $2
+        """, diff_embedding, top_k)
+
+        fts_rows = await conn.fetch("""
+            SELECT path, content
+            FROM code_chunks
+            WHERE content_tsv @@ plainto_tsquery('english', $1)
+            ORDER BY ts_rank(content_tsv, plainto_tsquery('english', $1)) DESC
+            LIMIT $2
+        """, diff_text, top_k)
+
+    # Reciprocal Rank Fusion
+    return reciprocal_rank_fusion(ann_rows, fts_rows, top_k=top_k)</code></pre>
+
+  <h3 id="code-budget">BudgetGuard (pre-LLM-call block)</h3>
+  <pre><code># backend/economics/budget.py
+import asyncpg
+
+class BudgetGuard:
+    def __init__(self, daily_cap_usd: float = 25.0):
+        self.daily_cap_usd = daily_cap_usd
+
+    def check_or_raise(self):
+        today_spend = self._read_today_spend()
+        if today_spend &gt;= self.daily_cap_usd:
+            raise BudgetExceeded(
+                f"daily cap ${self.daily_cap_usd} reached "
+                f"(spent ${today_spend:.2f})"
+            )
+
+    def _read_today_spend(self) -> float:
+        # The continuous aggregate is updated every minute — read the summary, not raw rows.
+        with sync_conn() as c:
+            return c.execute("""
+                SELECT COALESCE(SUM(cost_usd), 0)
+                FROM agent_health_1m
+                WHERE bucket &gt; date_trunc('day', now())
+            """).scalar()</code></pre>
+
+  <h3 id="code-migration">Tiger migration (excerpt — Lane 2 + Lane 3)</h3>
+  <pre><code># scripts/migrations/2026-06-tiger-init.sql
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS vectorscale;
+
+-- Lane 2: time
+CREATE TABLE IF NOT EXISTS agent_events (
+    ts            TIMESTAMPTZ  NOT NULL,
+    review_id     UUID         NOT NULL,
+    agent         TEXT         NOT NULL,
+    span_id       UUID         NOT NULL DEFAULT gen_random_uuid(),
+    parent_span   UUID,
+    event_type    TEXT         NOT NULL,
+    model         TEXT,
+    tokens_in     INT,
+    tokens_out    INT,
+    cost_usd      NUMERIC(10,6),
+    latency_ms    INT,
+    outcome       TEXT,
+    confidence    NUMERIC(4,3),
+    payload       JSONB
+);
+SELECT create_hypertable('agent_events', by_range('ts', INTERVAL '1 day'), if_not_exists =&gt; TRUE);
+
+-- Hard invariant: agent_events is append-only and immutable.
+CREATE OR REPLACE FUNCTION agent_events_immutable() RETURNS trigger AS $$
+BEGIN
+    RAISE EXCEPTION 'agent_events is append-only';
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER agent_events_no_update
+    BEFORE UPDATE OR DELETE ON agent_events
+    FOR EACH ROW EXECUTE FUNCTION agent_events_immutable();
+
+-- Lane 3: rollups
+CREATE MATERIALIZED VIEW IF NOT EXISTS agent_health_1m
+WITH (timescaledb.continuous) AS
+SELECT
+    time_bucket('1 minute', ts)                          AS bucket,
+    agent,
+    count(*) FILTER (WHERE event_type = 'llm.call')      AS llm_calls,
+    sum(cost_usd)                                        AS cost_usd,
+    approx_percentile(0.95, percentile_agg(latency_ms))  AS p95_ms
+FROM agent_events
+GROUP BY bucket, agent
+WITH NO DATA;</code></pre>
+
+  <h3 id="code-aggregator">Aggregator with confidence gate</h3>
+  <pre><code># backend/orchestrator/nodes.py (excerpt)
+from statistics import mean
+from backend.integrations.github_client import post_review
+
+CONFIDENCE_THRESHOLD = 0.6
+
+def aggregate_and_route(state: dict) -> dict:
+    findings = [f for out in state["specialist_outputs"] for f in out.findings]
+
+    # 1. dedup: same file + same line → keep highest confidence
+    findings = dedup_by_location(findings)
+    state["merged_findings"] = findings
+
+    # 2. overall confidence
+    confidence = mean(f.confidence for f in findings) if findings else 0.0
+    state["overall_confidence"] = confidence
+
+    # 3. HITL gate
+    has_critical = any(f.severity == "CRITICAL" for f in findings)
+    if confidence &lt; CONFIDENCE_THRESHOLD or has_critical:
+        state["route"] = "hitl"
+        return state
+
+    # 4. auto-post
+    state["route"] = "post"
+    post_review(pr=state["pr"], findings=findings, confidence=confidence)
+    return state</code></pre>
+
+  <!-- ============== GLOSSARY ============== -->
+  <h2 id="glossary">Glossary</h2>
+  <dl class="glossary">
+    <dt>Agentic fan-out / fan-in</dt>
+    <dd>Pattern where one orchestrator dispatches many specialist workers in parallel, then merges their outputs. The unit of work is split, not the team.</dd>
+
+    <dt>ARQ</dt>
+    <dd>Lightweight async job queue for Python on top of Redis. Used here so the webhook endpoint can acknowledge GitHub within 10–12 seconds while the heavy LLM work happens in a worker.</dd>
+
+    <dt>Continuous aggregate</dt>
+    <dd>TimescaleDB feature that pre-computes and incrementally refreshes summary tables (e.g. <code>agent_health_1m</code>) so dashboards never scan raw events.</dd>
+
+    <dt>DiskANN</dt>
+    <dd>Vector-index algorithm that keeps most of its search graph on disk/SSD instead of RAM. Enables Postgres-scale vector search without an exploding memory bill.</dd>
+
+    <dt>Episodic memory</dt>
+    <dd>Time-ordered history of past events (past reviews, disputes, escalations) — relational shape.</dd>
+
+    <dt>Fan-out (LangGraph)</dt>
+    <dd>Use of the <code>Send</code> API to dispatch multiple state branches in parallel and join them later in an aggregator node.</dd>
+
+    <dt>Genesis Kit</dt>
+    <dd>Open-source harness that turns an empty repo into a "loop-ready" repo. Lays down a <code>.genesis/</code> spine, then drives a coding agent against milestones with anti-slop gates.</dd>
+
+    <dt>HMAC-SHA256</dt>
+    <dd>Cryptographic signature GitHub sends in <code>X-Hub-Signature-256</code>. The receiver recomputes it with a shared secret and rejects anything that doesn't match — the first defense of the ingress.</dd>
+
+    <dt>Hypertable</dt>
+    <dd>A Postgres table partitioned by time, transparently. Recent queries touch recent chunks; old chunks can be compressed or retained separately.</dd>
+
+    <dt>Idempotency key</dt>
+    <dd>Unique per-delivery identifier (here <code>X-GitHub-Delivery</code>) that lets a webhook handler drop retried deliveries without doing the work twice.</dd>
+
+    <dt>LangGraph</dt>
+    <dd>Python library for building stateful, multi-actor LLM applications as directed graphs. Built-in <code>Send</code> fan-out and Redis-based checkpointing are the two features the system leans on.</dd>
+
+    <dt>Procedural memory</dt>
+    <dd>Small, structured rules — team conventions, severity policy, ADR pointers. Almost always loaded.</dd>
+
+    <dt>Semantic memory</dt>
+    <dd>Meaning-shaped knowledge of the codebase. Stored as vector embeddings and retrieved by similarity.</dd>
+
+    <dt>Tiger Cloud</dt>
+    <dd>Managed Postgres-compatible database with TimescaleDB, pgvector, and pgvectorscale pre-installed. Used here as the single durable spine for memory, truth, and time.</dd>
+  </dl>
+
+  <!-- ============== SOURCES ============== -->
+  <h2 id="sources">Sources</h2>
+  <ul>
+    <li><strong>Original lecture</strong>: <em>System Design for AI Agents — Building a Multi-Agent PR Reviewer</em>, Ayush Singh (Antern), YouTube ID <code>iqRcGCah0Kw</code>, 3 h 10 m.</li>
+    <li><strong>Companion article</strong>: <a href="https://antern.co/blogs/production-grade-ai-pr-review-agent/"><em>Designing an AI Pull-Request Review Agent</em></a> (original article).</li>
+    <li><strong>Genesis Kit</strong>: open-source harness — see <a href="https://github.com/ayush488-glitch/genesis-kit">Genesis Kit on GitHub</a>.</li>
+    <li><strong>Original recording and captions</strong>: <a href="https://www.youtube.com/watch?v=iqRcGCah0Kw">watch the lecture on YouTube</a>.</li>
+    <li><strong>Syllabus &amp; timestamps</strong>: <a href="COURSE_SYLLABUS_AND_TIMESTAMPS.txt"><code>COURSE_SYLLABUS_AND_TIMESTAMPS.txt</code></a>.</li>
+  </ul>
+
+  <p>All SQL, Python and JSON snippets shown on this page come directly from the lecture and the companion article. Diagrams are redrawn from the article's prose. Screenshots are extracted from the lecture video at the indicated timestamps.</p>
+
+  <footer>
+    Study guide generated from the 3-hour lecture. Read top to bottom for the reasoning; skim the tables and
+    callouts for recall. Hand the code blocks in the <a href="#code">Code Examples</a> section to a coding agent
+    with the Genesis Kit installed, and you can rebuild the system end-to-end.
+  </footer>
+
+  </div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>

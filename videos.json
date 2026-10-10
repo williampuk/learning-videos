@@ -1,0 +1,44 @@
+[
+  {
+    "id": "ddd-example", "topic": "Domain-driven design", "group": "domain-driven-design", "tone": "green",
+    "folder": "Domain_Driven_Design_A_Complete_Example_Eberhard_Wolff_EN", "page": "index.html",
+    "title": "Domain-Driven Design: A Complete Example", "speaker": "Eberhard Wolff", "venue": "JCON Europe", "duration": "47 min",
+    "description": "Follow one e-commerce example from Event Storming and bounded contexts to core domains, team boundaries, and tactical design.",
+    "tags": ["Event Storming", "Bounded contexts", "Team Topologies"], "source": "https://www.youtube.com/watch?v=f91ubquN3Tc"
+  },
+  {
+    "id": "tactical-ddd", "topic": "Domain-driven design", "group": "domain-driven-design", "tone": "green",
+    "folder": "Tactical_Domain_Driven_Design_with_Java_and_Spring_by_Oliver_Drotbohm", "page": "index.html",
+    "title": "Tactical Domain-Driven Design with Java and Spring", "speaker": "Oliver Drotbohm", "venue": "Devoxx Belgium", "duration": "2 h 42 min",
+    "description": "Make design visible in Java code. Explore aggregates, jMolecules, architecture rules, and event-driven modules with Spring Modulith.",
+    "tags": ["Java", "jMolecules", "Spring Modulith"], "source": "https://www.youtube.com/watch?v=k3o1nSh3g2Q"
+  },
+  {
+    "id": "java-concurrency", "topic": "Java and concurrency", "group": "java-and-concurrency", "tone": "blue",
+    "folder": "Virtual_Threads_Structured_Concurrency_and_Scoped_Values_Putting_it_all_together_Spring_IO", "page": "index.html",
+    "title": "Virtual Threads, Structured Concurrency & Scoped Values", "speaker": "Balkrishna Rawool", "venue": "Spring I/O", "duration": "47 min",
+    "description": "Build a readable concurrent loan application with Project Loom. Follow the live demos, task trees, context propagation, and failure scenarios.",
+    "tags": ["Project Loom", "Virtual threads", "Spring Boot"], "source": "https://www.youtube.com/watch?v=kz_R6-fdSZc"
+  },
+  {
+    "id": "latency", "topic": "Performance and distributed systems", "group": "performance-and-distributed-systems", "tone": "amber",
+    "folder": "Latency_the_race_to_zero", "page": "index.html",
+    "title": "Latency: The Race to Zero… Are We There Yet?", "speaker": "Amir Langer", "venue": "QCon London", "duration": "50 min",
+    "description": "Trace the pursuit of lower latency through the Disruptor, Aeron, replicated state machines, consensus, and the sequencer architecture.",
+    "tags": ["Aeron", "Disruptor", "Distributed systems"], "source": "https://www.infoq.com/presentations/latency-race-zero/"
+  },
+  {
+    "id": "computer-architecture", "topic": "Computer architecture", "group": "computer-architecture", "tone": "coral",
+    "folder": "The_Most_Ambiguous_Concept_in_Computer_Science", "page": "index.html",
+    "title": "The Most Ambiguous Concept in Computer Science", "speaker": "Core Dumped", "venue": "Computer science explained", "duration": "13 min",
+    "description": "Untangle instruction set architecture from microarchitecture, with ALU diagrams, assembly examples, and a quick check of what you remember.",
+    "tags": ["ISA", "Microarchitecture", "RISC / CISC"], "source": "https://www.youtube.com/watch?v=eNtADpJ2EC4"
+  },
+  {
+    "id": "ai-pr-reviewer", "topic": "AI agents and system design", "group": "ai-agents-and-system-design", "tone": "violet",
+    "folder": "System_Design_for_AI_Agents_Building_a_Multi_Agent_PR_Reviewer", "page": "LEARN.html",
+    "title": "System Design for AI Agents: A Multi-Agent PR Reviewer", "speaker": "Ayush Singh", "venue": "Antern / freeCodeCamp", "duration": "3 h 10 min",
+    "description": "Design a production PR review agent from first principles, covering specialist agents, grounded retrieval, orchestration, and an observable data spine.",
+    "tags": ["AI agents", "RAG", "System design"], "source": "https://www.youtube.com/watch?v=iqRcGCah0Kw"
+  }
+]

@@ -1,0 +1,33 @@
+# Coding Harnesses
+.omo
+.playwright-cli
+.codegraph
+.mimosa
+
+# Resources that should not be committed
+/dist/
+__pycache__/
+*.pyc
+.work/
+/resources/
+# Downloaded course tooling; the public guide links to the upstream repository.
+/System_Design_for_AI_Agents_Building_a_Multi_Agent_PR_Reviewer/genesis-kit/
+*.mp4
+*.m4v
+*.mkv
+*.mov
+*.webm
+*.avi
+tmp
+NoteGPT_*
+*transcript*.txt
+*Transcript*.txt
+*.srt
+*.vtt
+# Legacy working screenshot locations; published images belong in <video>/assets/.
+/screenshots/
+/*/screenshots/
+
+# Cookies
+.env
+.cookies
