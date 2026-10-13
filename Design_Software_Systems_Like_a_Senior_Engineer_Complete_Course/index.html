@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Study guide for Design Software Systems Like a Senior Engineer (freeCodeCamp, Hayk Simonyan): the five-step interview framework, capacity math, and full designs for Spotify-like streaming, Booking-like reservations, and WhatsApp-like messaging."><meta name="theme-color" content="#111513">
+<title>Design Software Systems Like a Senior Engineer — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.youtube.com/watch?v=soTfFFIQQ8U">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#ai-agents-and-system-design">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#heading-01"><span>01</span><span>Original course</span></a><a href="#heading-02"><span>02</span><span>TL;DR — the whole course in 12 lines</span></a><a href="#heading-03"><span>03</span><span>The interview game — formats and the five dimensions</span></a><a href="#heading-04"><span>04</span><span>The five-step framework</span></a><a href="#heading-05"><span>05</span><span>Interview dos and don&#x27;ts</span></a><a href="#heading-06"><span>06</span><span>System #1 — music streaming (Spotify-like)</span></a><a href="#heading-07"><span>07</span><span>System #2 — hotel reservations (Booking-like)</span></a><a href="#heading-08"><span>08</span><span>System #3 — messaging (WhatsApp-like)</span></a><a href="#heading-09"><span>09</span><span>How to actually get better</span></a><a href="#heading-10"><span>10</span><span>Cheat sheet</span></a><a href="#heading-11"><span>11</span><span>Glossary</span></a><a href="#heading-12"><span>12</span><span>Check your recall</span></a><a href="#heading-13"><span>13</span><span>Sources and notes</span></a></nav><p class="sidebar-note">Three full system designs.<br>Take them one chapter at a time.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">AI agents and system design / Study guide</span>
+<h1>Design Software Systems Like a Senior Engineer</h1><p class="guide-description">Hayk Simonyan&#x27;s three-hour freeCodeCamp course on system design interviews: a repeatable <em>five-step framework</em>, the five dimensions interviewers actually score, and three complete designs — a Spotify-like music platform, a Booking.com-like hotel reservation system, and a WhatsApp-like messenger — each taken from vague requirements to scaled, failure-proofed architecture.</p>
+<div class="guide-meta"><span>Course by <strong>Hayk Simonyan</strong> (@hayk.simonyan)</span><span>Published by freeCodeCamp.org</span><span>3 h 16 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.youtube.com/watch?v=soTfFFIQQ8U">Watch the original <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#ai-agents-and-system-design">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 13 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#heading-01"><span>01</span><span>Original course</span></a><a href="#heading-02"><span>02</span><span>TL;DR — the whole course in 12 lines</span></a><a href="#heading-03"><span>03</span><span>The interview game — formats and the five dimensions</span></a><a href="#heading-04"><span>04</span><span>The five-step framework</span></a><a href="#heading-05"><span>05</span><span>Interview dos and don&#x27;ts</span></a><a href="#heading-06"><span>06</span><span>System #1 — music streaming (Spotify-like)</span></a><a href="#heading-07"><span>07</span><span>System #2 — hotel reservations (Booking-like)</span></a><a href="#heading-08"><span>08</span><span>System #3 — messaging (WhatsApp-like)</span></a><a href="#heading-09"><span>09</span><span>How to actually get better</span></a><a href="#heading-10"><span>10</span><span>Cheat sheet</span></a><a href="#heading-11"><span>11</span><span>Glossary</span></a><a href="#heading-12"><span>12</span><span>Check your recall</span></a><a href="#heading-13"><span>13</span><span>Sources and notes</span></a></nav></details>
+<div class="guide-content">
+
+<!-- ============ 01 ORIGINAL ============ -->
+<section id="video"><h2 id="heading-01">Original course</h2><p><a href="https://www.youtube.com/watch?v=soTfFFIQQ8U">Design Software Systems Like a Senior Engineer – Complete Course</a> — published by <a href="https://www.youtube.com/@freecodecamp">freeCodeCamp.org</a> (October 2026), course developed by <a href="https://www.youtube.com/@hayk.simonyan">Hayk Simonyan</a>. Timestamp labels throughout this guide (e.g. <span class="ts">0:57:31</span>) refer to the recording; each system chapter opens with a link that opens YouTube at the matching moment.</p>
+<p class="src">Chapter timestamps below follow the official chapter list in the video description, cross-checked against the transcript and the on-screen slides. All diagrams in this guide are screenshots of the course&#x27;s own whiteboard and slide frames.</p></section>
+
+<!-- ============ 02 TLDR ============ -->
+<section class="card tldr" id="tldr">
+  <div class="sec-head"><span class="sec-num">★</span><h2 id="heading-02">TL;DR — the whole course in 12 lines</h2></div>
+  <ul>
+    <li><strong>System design is evaluated on five dimensions, not one.</strong> Communication, structured thinking, technical judgment, practical depth, and time management — the architecture you draw is only the technical-judgment slice <span class="ts">0:04:24</span></li>
+    <li><strong>Requirements are vague on purpose.</strong> Unlike a coding round, there is no single right answer; the interview tests <em>how you think</em>, and it is your job to lock in the scope <span class="ts">0:03:50</span></li>
+    <li><strong>Five steps, sixty minutes:</strong> clarify requirements (~10 min) → data + APIs (~20 min) → architecture (~15 min) → scale &amp; edge cases (~10 min) → wrap-up with trade-offs (~5 min) <span class="ts">0:09:14</span></li>
+    <li><strong>Treat the interviewer as a colleague</strong>, not an examiner: check in after each phase, propose multiple approaches, and justify every choice — choosing SQL <em>silently</em> reads as not knowing why <span class="ts">0:19:15</span></li>
+    <li><strong>Estimate before you design.</strong> Spotify-like: 30M songs × 3 MB ≈ 90 TB — audio dominates everything. Booking-like: 1.1B room-nights/year ÷ 2 nights ≈ 17 bookings/s vs ~1,000 reads/s — a read-heavy system with a consistency-critical write path <span class="ts">0:26:30</span></li>
+    <li><strong>Start simple, scale deliberately:</strong> CDN edges, stateless API servers, leader/follower reads, then sharding — only when the numbers demand it <span class="ts">0:44:37</span></li>
+    <li><strong>The double-booking bug is the heart of the reservations design:</strong> <code class="inline">READ COMMITTED</code> isolation leaves a check-then-act gap; <code class="inline">SELECT … FOR UPDATE</code> row locks close it without serializing the whole database <span class="ts">1:33:05</span></li>
+    <li><strong>PostgreSQL stays the source of truth; Elasticsearch is a search index</strong> kept eventually consistent via change data capture (WAL → Debezium → Kafka → index updater) <span class="ts">1:40:41</span></li>
+    <li><strong>Chat is a stateful problem:</strong> persistent WebSockets beat polling and long polling; a message queue decouples the instant <em>&#x201C;sent&#x201D;</em> ack from durable storage <span class="ts">2:03:41</span></li>
+    <li><strong>Never funnel media through chat servers</strong> — pre-signed URLs let clients upload straight to blob storage and download from a CDN, or 100 uploaders can crush a 100,000-connection server <span class="ts">2:28:38</span></li>
+    <li><strong>Design the failures, not just the happy path:</strong> Redis dies → fall back to the inbox table; Kafka dies → buffer locally, replay later; batch writes give 100× throughput <span class="ts">2:59:54</span></li>
+    <li><strong>The senior pyramid:</strong> planning (requirements, capacity, architecture) is the wide base, tech selection sits above it, and coding is the small tip — AI already does the tip faster and cheaper <span class="ts">0:48:40</span></li>
+  </ul>
+  <div class="pill-row"><span class="pill">Five-step framework</span><span class="pill">Capacity math</span><span class="pill">Signed URLs</span><span class="pill">Idempotency keys</span><span class="pill">SELECT FOR UPDATE</span><span class="pill">CDC</span><span class="pill">WebSockets</span><span class="pill">Pre-signed media</span><span class="pill">Batching + DLQ</span><span class="pill">Signal protocol</span><span class="pill">Feature flags</span></div>
+</section>
+
+<!-- ============ 03 INTERVIEW GAME ============ -->
+<section class="card" id="interview-game">
+  <div class="sec-head"><span class="sec-num">01</span><h2 id="heading-03">The interview game — formats and the five dimensions</h2></div>
+  <a class="watch-link" href="https://www.youtube.com/watch?v=soTfFFIQQ8U&amp;t=136s" target="_blank" rel="noopener">▶ Watch from 0:02:16</a>
+
+  <h3>Why this round exists <span class="ts">0:00:00</span></h3>
+  <p>Most engineering roles today expect system design knowledge — for the job itself, and especially for interviews. For senior and staff positions it is often one of the deciding factors. The speaker argues it is increasingly required for mid-level too: when everyone uses AI to write code, companies want to know whether you understand <strong>the bigger picture</strong> — how components talk to each other, how to design from scratch, and how to discuss trade-offs.</p>
+
+  <h3>Four interview formats <span class="ts">0:02:16</span></h3>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Interview formats table"><table>
+    <thead><tr><th>Format</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Whiteboard design</strong> (most common)</td><td>A 45–60 minute session where you design a full system or feature from scratch.</td></tr>
+      <tr><td><strong>Bottleneck discussion</strong></td><td>The company&#x27;s existing infrastructure has problems; can you spot bottlenecks and suggest solutions, given basic system design knowledge?</td></tr>
+      <tr><td><strong>Past-project walkthrough</strong></td><td>Questions about your previous work to check whether you actually understand the architecture of what you built.</td></tr>
+      <tr><td><strong>Conceptual questions</strong></td><td>Depth checks on system design concepts themselves.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Even if you know all the concepts, you need a framework to navigate a 45–60 minute discussion — that is what chapter 04 covers.</p>
+
+  <h3>Why it feels harder than coding rounds <span class="ts">0:03:50</span></h3>
+  <p>A live-coding round has clear inputs and outputs: you know the argument types, the expected return, and you can run the tests. System design is the opposite: <strong>requirements are vague</strong> — clarifying them is your job — and <strong>there is no single right answer</strong>. The interview tests how you think, not whether you found <em>the</em> solution.</p>
+
+  <h3>The five dimensions you are actually scored on <span class="ts">0:04:24</span></h3>
+  <p>Most candidates prepare by memorizing a couple of architectures. But architecture is only one of <strong>five</strong> things interviewers score:</p>
+  <figure class="shot">
+    <img src="assets/screenshots/01-evaluation-dimensions.jpg" alt="Slide titled &ldquo;What You're Actually Being Evaluated On&rdquo; listing five numbered rows: Communication &mdash; ask clarifying questions, involve the interviewer; Structured Thinking &mdash; break down vague problems systematically; Technical Judgment &mdash; explain your choices and their trade-offs; Practical Depth &mdash; think about failure modes, not just the happy path; Time Management &mdash; cover breadth and depth without getting lost" loading="lazy">
+    <figcaption>The five scoring dimensions, exactly as the course frames them. Each one translates directly to day-to-day work — if you can&#x27;t manage time in an interview, you won&#x27;t manage it on a project either. <span class="ts">0:05:20</span></figcaption>
+  </figure>
+  <ol>
+    <li><strong>Communication and collaboration.</strong> Do you ask clarifying questions and validate assumptions as you go, or silently assume and build? The interviewer is previewing what you&#x27;d do when a manager hands you a vague ticket.</li>
+    <li><strong>Structured thinking.</strong> Can you break a vague problem into outlined steps, or do you jump between random decisions and revisit earlier phases?</li>
+    <li><strong>Technical judgment.</strong> When you pick a database, a cache, or a queue, can you explain <em>why that one</em> — chosen from requirements, not habit or name recognition?</li>
+    <li><strong>Practical depth.</strong> Two candidates can share theoretical knowledge; the one who has shipped production systems thinks about failure modes and scale unprompted. This is where interviewers separate builders from readers.</li>
+    <li><strong>Time management.</strong> 45–60 minutes is short. Don&#x27;t burn it all on high-level design; ask the interviewer early where they want depth, and track your own progress through the phases.</li>
+  </ol>
+</section>
+
+<!-- ============ 04 FRAMEWORK ============ -->
+<section class="card" id="framework">
+  <div class="sec-head"><span class="sec-num">02</span><h2 id="heading-04">The five-step framework</h2></div>
+  <a class="watch-link" href="https://www.youtube.com/watch?v=soTfFFIQQ8U&amp;t=554s" target="_blank" rel="noopener">▶ Watch from 0:09:14</a>
+  <p>A repeatable structure for any whiteboarding system design interview, calibrated for a 60-minute session (the more common length, because there is a lot to cover):</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Five-step framework table"><table>
+    <thead><tr><th>Step</th><th>Budget</th><th>What you produce</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1. Clarify requirements</strong></td><td>~10 min</td><td>Functional and non-functional requirements; explicit in/out of scope.</td></tr>
+      <tr><td><strong>2. Data + APIs</strong> <em>or</em> <strong>architecture first</strong></td><td>~20 min</td><td>Entities, keys, indexes; API contracts; the database choice and its trade-offs.</td></tr>
+      <tr><td><strong>3. High-level architecture</strong></td><td>~15 min</td><td>Components, data flows for reads and writes, consistency choices.</td></tr>
+      <tr><td><strong>4. Scale &amp; edge cases</strong></td><td>~10 min</td><td>Bottlenecks, single points of failure, fallbacks, redundancy, monitoring.</td></tr>
+      <tr><td><strong>5. Wrap up</strong></td><td>~5 min</td><td>Key decisions, sacrifices, and how you&#x27;d extend the system at 10×.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Steps 2 and 3 can go in either order — data-first if mapping entities helps you see the system, architecture-first if imagining the user flow is easier. The speaker personally starts with high-level design but sometimes switches. Whichever you pick, say so and move deliberately.</p>
+
+  <h3>Step 1 — Clarify requirements <span class="ts">0:10:49</span></h3>
+  <p>The most common candidate mistake is designing anything before the scope is locked. Two buckets:</p>
+  <ul>
+    <li><strong>Functional:</strong> the main use cases, what is explicitly <em>out of scope</em>, who the users are, and what platform you&#x27;re building. You can never design all of Spotify in 60 minutes — real versions take multiple teams months or years — so pick the core use cases and name what you&#x27;re leaving out.</li>
+    <li><strong>Non-functional:</strong> the constraints — daily/monthly active users, read-to-write ratio, latency targets, acceptable downtime (availability).</li>
+  </ul>
+  <p>End the phase with a check-in: <em>&#x201C;Does this scope and these requirements make sense before I move to high-level design?&#x201D;</em> If the interviewer gives you a hint, you missed something — fix it now, not after drawing the architecture.</p>
+
+  <h3>Step 2 — Data model and API layer <span class="ts">0:13:52</span></h3>
+  <ul>
+    <li><strong>Entities and relationships:</strong> for YouTube it would be videos and users; map primary keys, foreign keys, and key indexes, and how big each record gets.</li>
+    <li><strong>Consistency split:</strong> call out which data needs strong consistency and where eventual is acceptable.</li>
+    <li><strong>API contracts:</strong> main endpoints with request/response formats; mention pagination, error handling, rate limiting, versioning, and REST best practices.</li>
+    <li><strong>Database choice:</strong> PostgreSQL, MongoDB, whatever — explain <em>why given the requirements</em>, and name the alternatives you rejected.</li>
+  </ul>
+
+  <h3>Step 3 — High-level architecture <span class="ts">0:15:21</span></h3>
+  <p>If nothing comes to mind, start with the four components present in almost every system: <strong>API servers</strong> accepting requests, a <strong>load balancer</strong> distributing traffic, a <strong>database</strong> for persistence, and optionally a <strong>cache</strong> for hot data. Then map the user journey end to end: front end → API gateway/load balancer → stateless API servers (maybe message queues decoupling services) → database — and walk the read and write paths out loud.</p>
+  <p>If you use caching, name the TTL and the invalidation mechanism. And for different components, reason about the <strong>CAP triangle</strong> <span class="ts">0:15:21</span> — some parts of your system may be CP, others AP, and explaining that per component shows you understand the trade you&#x27;re making. <em>(The auto-transcript renders this as &#x201C;CP theorem&#x201D;; the concept is Brewer&#x27;s CAP theorem — consistency, availability, partition tolerance — see the <a href="https://www.infoq.com/articles/cap-twelve-years-later-how-the-rules-have-changed/">author&#x27;s retrospective</a>.)</em></p>
+
+  <h3>Step 4 — Bottlenecks, scale, and reliability <span class="ts">0:16:51</span></h3>
+  <p>&#x201C;One of the clearest signals that separates a mid-level candidate from a senior one&#x201D;: show you can think about what breaks under load, not just the happy path.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/02-reliability-checklist.jpg" alt="Slide with four checklist items: Single Points of Failure &mdash; find them and propose solutions; Fallbacks and Failures &mdash; cache failure fallbacks, stale data over errors, partition handling; Redundancy &mdash; multi-AZ replicas, auto-scaling, distributed cache with replication; Monitoring &mdash; API latency at p50/p95/p99, error rates, queue depth, structured logs with request IDs. A footnote reads: Check in: &ldquo;Are there specific failure scenarios you'd like me to dig into?&rdquo;" loading="lazy">
+    <figcaption>The reliability checklist for step 4, including the monitoring items most candidates forget — p50/p95/p99 latency, error rates, queue depth, and structured logs with request IDs — plus the step-closing check-in question. <span class="ts">0:18:08</span></figcaption>
+  </figure>
+
+  <h3>Step 5 — Trade-offs and extensions <span class="ts">0:18:24</span></h3>
+  <p>Usually an open-ended prompt: what could be improved? Summarize the key decisions, what you prioritized, and <strong>what you sacrificed — always with the why</strong>. Then propose extensions: if load grew 10×, what changes? You cannot produce a perfect design in 60 minutes and you&#x27;re not expected to; the goal is to show you know how it would evolve.</p>
+</section>
+
+<!-- ============ 05 DOS AND DONTS ============ -->
+<section class="card" id="dos-donts">
+  <div class="sec-head"><span class="sec-num">03</span><h2 id="heading-05">Interview dos and don&#x27;ts</h2></div>
+  <a class="watch-link" href="https://www.youtube.com/watch?v=soTfFFIQQ8U&amp;t=1155s" target="_blank" rel="noopener">▶ Watch from 0:19:15</a>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Dos and don'ts table"><table>
+    <thead><tr><th>Don&#x27;t</th><th>Do instead</th></tr></thead>
+    <tbody>
+      <tr><td>Jump straight into a solution</td><td>Clarify scope first — designing before understanding is an immediate red flag.</td></tr>
+      <tr><td>Silently draw diagrams, <em>or</em> fill every silence with talk</td><td>Treat the interviewer as a colleague working the problem with you; invite their opinion after each major decision.</td></tr>
+      <tr><td>Pick SQL (or anything) without saying why</td><td>Name the alternative and the trade-off even when the choice is obvious — if you don&#x27;t explain, the interviewer assumes you don&#x27;t know. Payment system → consistency matters → SQL over NoSQL, <em>say that out loud</em>.</td></tr>
+      <tr><td>Move on without checking in</td><td>After each phase: &#x201C;Did I cover what you were looking for here? Anything I missed?&#x201D;</td></tr>
+      <tr><td>Run out of time mid-design</td><td>Track the clock per phase; ask early where the interviewer wants depth.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout talk">&#x201C;This is a conversation between two engineers — not a monologue where you talk all the time, and not a take-home assessment where you work in silence.&#x201D; <span class="ts">0:22:30</span></div>
+</section>
+
+<!-- ============ 06 SPOTIFY ============ -->
+<section class="card" id="spotify">
+  <div class="sec-head"><span class="sec-num">04</span><h2 id="heading-06">System #1 — music streaming (Spotify-like)</h2></div>
+  <a class="watch-link" href="https://www.youtube.com/watch?v=soTfFFIQQ8U&amp;t=1435s" target="_blank" rel="noopener">▶ Watch from 0:23:55</a>
+  <p>A classic mid-level problem because it touches audio delivery, metadata management, object storage, and everything in between. The course runs it in seven steps: requirements → capacity → architecture → read/write flows → API → storage → scale.</p>
+
+  <h3>Requirements and scope <span class="ts">0:24:44</span></h3>
+  <ul>
+    <li><strong>Scale given:</strong> ~500,000 users, ~30 million songs.</li>
+    <li><strong>Core use cases:</strong> artists upload songs; users search and play songs; users create and manage playlists; user profiles; basic monitoring/observability (health checks, error tracking, performance metrics).</li>
+    <li><strong>Audio formats:</strong> OGG and AAC — compressed without noticeable quality loss. Bitrates: 64 kbps for data-saving mobile, 128 kbps standard, 320 kbps premium. Average file at standard quality: <strong>3 MB</strong>. <em>(These are the course&#x27;s teaching numbers — real libraries vary; OGG/AAC are lossy formats per <a href="https://xiph.org/vorbis/doc/">Xiph.org&#x27;s Vorbis documentation</a> and the MPEG AAC standard.)</em></li>
+  </ul>
+
+  <h3>Capacity planning <span class="ts">0:26:30</span></h3>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Capacity estimates table"><table>
+    <thead><tr><th>Quantity</th><th>Estimate</th><th>Reasoning from the course</th></tr></thead>
+    <tbody>
+      <tr><td>Song storage (raw)</td><td><strong>90 TB</strong></td><td>30M songs × 3 MB. Multiply by 2–3× for cross-region replicas and artist re-uploads (versioning overhead).</td></tr>
+      <tr><td>Song metadata</td><td><strong>~3 GB</strong></td><td>~100 bytes/song (title, artist refs, duration, file URLs) × 30M — negligible next to audio.</td></tr>
+      <tr><td>User metadata</td><td><strong>~0.5 GB</strong></td><td>~1 KB/profile × 500K users.</td></tr>
+      <tr><td>Daily bandwidth</td><td><strong>egress-heavy</strong></td><td>~3.5 min average listen; 3–4 MB per stream at 128–160 kbps; 10–15 streams/user/day → significant <em>egress</em> costs (cloud fees for data leaving the network).</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout extra" data-label="Key insight"><strong>Audio dominates both storage and bandwidth; metadata is a rounding error.</strong> That single conclusion drives every storage decision that follows.</div>
+
+  <h3>High-level architecture <span class="ts">0:29:24</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/03-spotify-architecture.jpg" alt="Whiteboard diagram: Mobile App &rarr; HTTP Requests &rarr; Load Balancer &rarr; Web/API layer with API Server 1, 2, 3; API servers issue Metadata Queries to a SQL Database and Generate Signed URLs for Blob Storage holding audio files" loading="lazy">
+    <figcaption>The starting architecture: a mobile/web app makes HTTP calls through a load balancer (round-robin or least-connections, with health checks) to stateless REST API servers. Metadata lives in SQL; audio lives in blob storage, handed out via <strong>signed URLs</strong> — one-time URLs that expire, so streams aren&#x27;t permanently addressable. <span class="ts">0:29:55</span></figcaption>
+  </figure>
+  <p>Why blob storage (e.g. Amazon S3) for audio: the files are the bulk of the system; object storage offers virtually unlimited scalability, built-in durability, and cost effectiveness for large files. Why SQL for metadata: the relationships (playlists ↔ songs ↔ artists) demand joins.</p>
+
+  <h3>Read flow — playing a song <span class="ts">0:31:24</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/04-spotify-read-flow.jpg" alt="Sequence diagram: User hits play button; Mobile App sends GET /songs/{id} through Load Balancer to API Server; API Server validates JWT token; queries song metadata from SQL Database and returns song details; generates signed URL; returns metadata + signed URL to the app" loading="lazy">
+    <figcaption>The playback read path, steps 1–6: play → <code class="inline">GET /songs/{id}</code> → load balancer routes → JWT validation → SQL metadata lookup → signed URL generation → metadata + URL returned to the app. <span class="ts">0:31:40</span></figcaption>
+  </figure>
+  <ol>
+    <li>User hits play; the app issues <code class="inline">GET /songs/{id}</code>.</li>
+    <li>Load balancer routes to an API server, which validates the JWT.</li>
+    <li>The server queries song metadata from SQL, generates a signed URL for the audio, and returns both.</li>
+    <li>The app issues <strong>range requests</strong> for audio chunks directly to blob storage with the signed URL, and playback streams.</li>
+    <li>Analytics fire separately: <code class="inline">POST /songs/{id}/play</code> records the play event. Invalid JWT → authentication error and none of the above happens.</li>
+  </ol>
+
+  <h3>Write flow — artist uploads a song <span class="ts">0:32:55</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/05-spotify-write-flow.jpg" alt="Sequence diagram: Artist starts audio upload; Mobile App sends POST /songs/upload (multipart) with audio file and metadata through Load Balancer to API Server; server validates file format and size; alt block: invalid file is rejected (unsupported format or size), valid file is stored in /pending/{upload_id}/ then audio metadata (duration, bitrate) is extracted" loading="lazy">
+    <figcaption>The upload write path with its validation fork: format/size checks reject bad payloads; valid files land in a <code class="inline">/pending/{upload_id}/</code> staging prefix before metadata extraction. <span class="ts">0:33:05</span></figcaption>
+  </figure>
+  <p>After validation: store the audio in blob storage, extract technical metadata (duration, bitrate) to complement the form metadata (title, artist), insert the song row into SQL, optionally organize the object under an artist/album prefix, and <strong>invalidate CDN caches</strong> so users see new uploads immediately. The CDN caches artist pages, album metadata, and song details close to users; invalidation clears stale copies. Finally the app receives the success response.</p>
+
+  <h3>API design <span class="ts">0:35:23</span></h3>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Spotify-like API table"><table>
+    <thead><tr><th>Purpose</th><th>Endpoint</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Search</td><td><code class="inline">GET /search?q=&amp;type=song&amp;limit=20&amp;offset=0</code></td><td>Pagination via <code class="inline">limit</code>/<code class="inline">offset</code>; optional type filter.</td></tr>
+      <tr><td>Trending</td><td><code class="inline">GET /songs/trending?genre=&amp;limit=</code></td><td>Optional genre filter.</td></tr>
+      <tr><td>Artist catalog</td><td><code class="inline">GET /artists/{id}/songs?limit=</code></td><td>Songs belonging to one artist.</td></tr>
+      <tr><td>Song detail</td><td><code class="inline">GET /songs/{id}</code></td><td>Metadata + streaming (signed) URL.</td></tr>
+      <tr><td>Direct streaming</td><td><code class="inline">GET /songs/{id}/stream</code></td><td>Alternative to signed URLs.</td></tr>
+      <tr><td>Playlist detail</td><td><code class="inline">GET /playlists/{id}?include_songs=true</code></td><td>Optionally embed the song list.</td></tr>
+      <tr><td>Create playlist</td><td><code class="inline">POST /playlists</code></td><td>Body: name, public/private.</td></tr>
+      <tr><td>Add songs</td><td><code class="inline">PUT /playlists/{id}/songs</code></td><td>Body: song IDs + insertion position.</td></tr>
+      <tr><td>Remove song</td><td><code class="inline">DELETE /playlists/{id}/songs/{song_id}</code></td><td>Sub-resource delete.</td></tr>
+      <tr><td>Like a song</td><td><code class="inline">POST /songs/{id}/like</code></td><td>Maintains the user&#x27;s favorites.</td></tr>
+      <tr><td>My playlists</td><td><code class="inline">GET /users/me/playlists?limit=50</code></td><td>Limit for large collections.</td></tr>
+      <tr><td>Liked songs</td><td><code class="inline">GET /users/me/liked-songs?limit=&amp;offset=</code></td><td>Use plural nouns consistently — REST naming hygiene.</td></tr>
+      <tr><td>Follow artist</td><td><code class="inline">POST /users/me/follow</code></td><td>Body: artist ID; powers new-release notifications.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Storage and schema <span class="ts">0:39:40</span></h3>
+  <p><strong>Blob storage layout:</strong> audio files are immutable — to change one you re-upload and remove the old object. Organize with a hierarchical prefix (an illusion object stores support, but useful):</p>
+  <div class="codeblock"><div class="code-head">Object key layout (as shown on the slide)</div>
+<pre><code>/artist/{artistId}/album/{albumId}/{songId}.ogg</code></pre></div>
+  <p><strong>Relational schema</strong> (PostgreSQL or MySQL):</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Spotify-like schema table"><table>
+    <thead><tr><th>Table</th><th>Key columns</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code class="inline">users</code></td><td>id (PK), email, password_hash, created_at, last_login, subscription_type, country</td><td>Listeners; subscription drives audio quality.</td></tr>
+      <tr><td><code class="inline">playlists</code></td><td>id (PK), owner_id (FK → users), name, created_at</td><td>One user owns many playlists.</td></tr>
+      <tr><td><code class="inline">playlist_items</code></td><td>playlist_id (FK), song_id (FK), position, added_at</td><td>Join table: which songs, in what order.</td></tr>
+      <tr><td><code class="inline">songs</code></td><td>id (PK), title, duration, file_url, …</td><td>Metadata; <code class="inline">file_url</code> points into blob storage.</td></tr>
+      <tr><td><code class="inline">artists</code></td><td>id (PK), name, country, …</td><td>Kept separate from users.</td></tr>
+      <tr><td><code class="inline">artist_songs</code></td><td>song_id (FK), artist_id (FK)</td><td>Join table: song ↔ artist.</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Why SQL:</strong> the workload is join-heavy (playlists↔songs, songs↔artists) and supports complex queries like &#x201C;all songs by artists a user follows.&#x201D; <strong>Indexes to add as data grows:</strong> <code class="inline">songs.title</code> (search with typos/partial matches), <code class="inline">artists.name</code>, and <code class="inline">playlist_items.song_id</code> (fast &#x201C;songs in playlist&#x201D; and &#x201C;which playlists contain this song&#x201D;).</p>
+
+  <h3>Scaling to 50M users and 200M songs <span class="ts">0:44:37</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/06-spotify-scale.jpg" alt="Slide &ldquo;7. Scalability (50M Users, 200M Songs)&rdquo; with the math: song metadata 100 bytes &times; 200M &asymp; 20 GB; user metadata 1 KB &times; 50M &asymp; 50 GB; audio storage 3 MB &times; 200M &asymp; 600 TB before replicas and regional copies; below it a diagram of CDN edges for North America and Europe, load balancers, API servers, a database tier with a leader for writes, followers for reads, and shards 1 and 2" loading="lazy">
+    <figcaption>Re-run the numbers at 10×: metadata grows to tens of gigabytes — trivial. Audio grows to ~600 TB before replicas — still the whole problem. The scaled architecture adds regional CDN edges, regional load balancers, more stateless API servers, and a leader/follower database tier with shards. <span class="ts">0:44:40</span></figcaption>
+  </figure>
+  <ol>
+    <li><strong>CDN edges per region</strong> (North America, Europe, South America…) with an <strong>LRU eviction</strong> policy — least-recently-accessed content drops when the cache fills; misses fetch from origin.</li>
+    <li><strong>Regional load balancers</strong> mapping requests to API servers.</li>
+    <li><strong>Stateless API servers</strong> scale horizontally by pure replication — the design rule is to keep them truly stateless (no user sessions stored on-server) so scaling is trivial.</li>
+    <li><strong>Database reads scale first:</strong> one leader handles writes; follower replicas serve reads and stay in sync.</li>
+    <li><strong>Then shard:</strong> split by geography (US users, European users) and partition songs by artist-ID ranges — related data stays together, giving horizontal scalability.</li>
+    <li><strong>Replicate blob storage per region:</strong> European uploads land in the European bucket; signed URLs still gate every stream.</li>
+  </ol>
+  <div class="callout extra" data-label="The meta-lesson"><strong>Start simple; don&#x27;t over-engineer for the current user count.</strong> Add each layer when the numbers require it — and many things (reliability hardening, deeper monitoring) can always be improved next.</div>
+
+  <h3>The pyramid that separates seniors from mid-level <span class="ts">0:48:40</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/07-senior-pyramid.jpg" alt="Pyramid diagram with three layers: the wide green base labeled Planning (understanding requirements, estimating capacity, choosing your architecture); a blue middle layer labeled Tech stack selection (picking the right db, caching layers, storage solutions); and a small purple tip labeled Code" loading="lazy">
+    <figcaption>The design pyramid: planning is the biggest part of the job, tech selection is next, and coding — the part AI models now do faster, better, and cheaper — is the smallest. Developers stuck at mid-level have the pyramid upside-down: they start coding with no plan. <span class="ts">0:48:55</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============ 07 BOOKING ============ -->
+<section class="card" id="booking">
+  <div class="sec-head"><span class="sec-num">05</span><h2 id="heading-07">System #2 — hotel reservations (Booking.com-like)</h2></div>
+  <a class="watch-link" href="https://www.youtube.com/watch?v=soTfFFIQQ8U&amp;t=3052s" target="_blank" rel="noopener">▶ Watch from 0:50:52</a>
+  <p>The classic senior-level trap. Treating reservations like a generic CRUD app with caching &#x201C;works&#x201D; until two users book the last room at the same moment: a naive select-then-insert double-books, two cards get charged for one room, and you&#x27;re issuing refunds to angry customers. The skills under test: <strong>concurrency under load, consistency across systems, and designing for failure</strong> — understanding the actual problems, the solutions, and the trade-offs between them.</p>
+
+  <h3>Clarifying the problem <span class="ts">0:53:17</span></h3>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Booking clarifying questions table"><table>
+    <thead><tr><th>Question</th><th>Decision in the course</th></tr></thead>
+    <tbody>
+      <tr><td>Payments on-platform or at check-in?</td><td>On-platform → integrate a payment system.</td></tr>
+      <tr><td>Web only, or mobile too?</td><td>Both (mobile may carry different rates/pricing).</td></tr>
+      <tr><td>Cancellations and overbooking?</td><td>Yes — hotels overbook by ~5–10% expecting cancellations.</td></tr>
+      <tr><td>Fixed or dynamic pricing?</td><td>Dynamic — demand and dates drive prices (Christmas week triples rates).</td></tr>
+      <tr><td>Admin panel for hotel management?</td><td>Yes, but the core revolves around users booking and cancelling.</td></tr>
+      <tr><td>What is the irreducible core?</td><td>A useful test: &#x201C;what could we remove before it stops being Booking.com?&#x201D; Search by location/dates/guests/price is core; the reservation flow must view, book, cancel, and <strong>prevent double bookings</strong>; payments integrate Stripe/PayPal; notifications for confirmations to users and property owners.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Non-functional targets <span class="ts">0:57:31</span></h3>
+  <ul>
+    <li><strong>Strong consistency for bookings</strong> — two users must never book the same room for the same dates. &#x201C;Non-negotiable.&#x2019; Search/discovery can be eventually consistent.</li>
+    <li><strong>High concurrency</strong> — thousands of users hitting the same hotel simultaneously without breaking.</li>
+    <li><strong>Latency:</strong> search results under 500 ms; booking confirmations within 2–3 seconds are fine.</li>
+    <li><strong>Availability 99.9%+ and horizontal scalability</strong> — grow without redesigning. <em>(The auto-transcript garbles this as &#x201C;free 9 uptime&#x201D;; the on-screen slide reads &#x201C;High Availability: 99.9%+ uptime,&#x201D; verified at 0:57:50.)</em></li>
+  </ul>
+
+  <h3>Capacity math: the funnel <span class="ts">0:58:22</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/08-booking-funnel.jpg" alt="Slide &ldquo;Data Estimation: Back-of-the-Envelope Calculations&rdquo;: a funnel with 1. View the hotel room 100%, 2. Room booking page 10%, 3. Reserve the room 10%; beside it assumptions (room nights per year, average stay 2 nights, 365 days/year) and a Booking Holdings report reference" loading="lazy">
+    <figcaption>Traffic is a funnel: 100% view hotels, ~10% browse seriously, ~10% of those reserve. &#x201C;Tire kickers&#x201D; generate most of your QPS, so the read path must be designed for them too. <span class="ts">0:59:20</span></figcaption>
+  </figure>
+  <p><strong>Two ways in</strong> — get either number from the interviewer and derive the rest:</p>
+  <ul>
+    <li><strong>Top-down:</strong> look up monthly visits (e.g. ~500M/month for booking.com via a tool like <a href="https://www.similarweb.com/">SimilarWeb</a>) and compute downward.</li>
+    <li><strong>Bottom-up:</strong> start from reservations per year — <strong>1.1 billion room-nights</strong> for Booking.com (the slide cites Booking Holdings&#x27; reports; <a href="https://bookingholdings.com/wp-content/uploads/2025/02/Q4-2024-BKNG-Earnings-Release.pdf">their FY2024 release reports 1,144M room nights</a>, and <a href="https://www.bookingholdings.com/about/factsheet/">the company factsheet reports ~1.2B for 2025</a>).</li>
+  </ul>
+  <p><strong>The writes (TPS):</strong> 1.1B room-nights ÷ 2 nights/booking = 550M bookings/year ÷ 365 = ~1.5M bookings/day ÷ 86,400 s = <strong>~17 bookings/second</strong>.</p>
+  <p><strong>The reads (QPS):</strong> 500M visits/month ÷ 30 ≈ 17M visits/day ÷ 86,400 ≈ <strong>200 visits/second</strong>; × ~5 backend reads per visit (search queries, availability checks) ≈ <strong>1,000 reads/second</strong>.</p>
+  <div class="callout extra" data-label="Conclusion"><strong>~1,000 QPS vs ~17 TPS — profoundly read-heavy</strong>, but the small write path is exactly where consistency can&#x27;t be sacrificed. Optimize reads aggressively; keep writes strictly correct.</div>
+
+  <h3>High-level architecture <span class="ts">1:04:18</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/09-booking-architecture.jpg" alt="Diagram: Clients (Web App, Mobile App) &rarr; CDN &rarr; API Gateway &rarr; Services box containing Hotel Service, Reservation Service, Rate Service, Payment Service, and Notification Service; Data Stores box with PostgreSQL and Redis; Payment Gateway (Stripe); Messaging box with Kafka/RabbitMQ" loading="lazy">
+    <figcaption>The service-oriented starting design: a CDN serves static assets; the API gateway is the single entry point doing authentication, rate limiting, routing, and load-balancing across service instances. The reservation service owns booking logic, inventory checks, and concurrency; the rate service prices rooms by date; the payment service wraps Stripe/PayPal/Apple Pay/Google Pay; the notification service talks to reservation and payment services. PostgreSQL provides ACID guarantees; Redis caches slow-changing data. <span class="ts">1:05:00</span></figcaption>
+  </figure>
+  <ul>
+    <li><strong>Search at 1,000 QPS:</strong> PostgreSQL alone won&#x27;t carry it → add a <strong>search service backed by Elasticsearch</strong>: full-text search over names/descriptions, geo-filtering (&#x201C;within 5 km&#x201D;), price/rating filters, eventually consistent with the database.</li>
+    <li><strong>Decoupling with a queue:</strong> when a payment succeeds, publish an event (Kafka/RabbitMQ); consumers send email/push notifications and update hotel availability in the search index. Right after payment a user might still see the room &#x201C;available&#x201D; in search — but booking re-checks the database, so they can&#x27;t actually double-book.</li>
+  </ul>
+  <div class="callout warn" data-label="Monolith, microservices, or something between?"><strong>Full microservices</strong> (each service its own database) introduce distributed transactions and consistency problems that don&#x27;t exist in a monolith. A <strong>monolith</strong> simplifies transactions but becomes hard to scale and deploy independently with hundreds of developers. The course&#x27;s recommendation: <strong>pragmatic microservices</strong> — separate services at the application layer, but keep <em>tightly coupled data together</em>: reservations and hotels share one database so you can use local ACID transactions.</div>
+
+  <h3>API design and idempotency <span class="ts">1:11:02</span></h3>
+  <p>RESTful endpoints throughout (the course notes a GraphQL gateway in front of microservices is a common alternative that hides routing from the front end). Listing uses Elasticsearch; single-hotel reads come from PostgreSQL; writes go to PostgreSQL first and propagate to the index eventually.</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Booking-like API table"><table>
+    <thead><tr><th>Purpose</th><th>Endpoint</th><th>Behavior</th></tr></thead>
+    <tbody>
+      <tr><td>List hotels</td><td><code class="inline">GET /v1/hotels?filters…</code></td><td>Query Elasticsearch for filtered results.</td></tr>
+      <tr><td>Hotel detail</td><td><code class="inline">GET /v1/hotels/{id}</code></td><td>Read from PostgreSQL; forward details to the front end.</td></tr>
+      <tr><td>Create / update / delete hotel</td><td><code class="inline">POST /v1/hotels</code>, <code class="inline">PUT|PATCH /v1/hotels/{id}</code>, <code class="inline">DELETE /v1/hotels/{id}</code></td><td>Admin flows; insert/update/delete in SQL, confirm immediately, Elasticsearch catches up eventually.</td></tr>
+      <tr><td>Rooms (sub-resource)</td><td><code class="inline">GET|POST /v1/hotels/{id}/rooms</code>, <code class="inline">PUT|DELETE /v1/hotels/{id}/rooms/{room_id}</code></td><td>Standard nested REST; handle and surface failures.</td></tr>
+      <tr><td>Reservation history / detail</td><td><code class="inline">GET /v1/reservations</code>, <code class="inline">GET /v1/reservations/{id}</code></td><td>Read from SQL; include the invoice.</td></tr>
+      <tr><td>Create reservation</td><td><code class="inline">POST /v1/reservations</code></td><td><strong>With an idempotency key</strong> — see below.</td></tr>
+      <tr><td>Cancel</td><td><code class="inline">DELETE /v1/reservations/{id}</code></td><td>Check the cancellation policy first (a week out: allowed; last minute: not) → confirm or decline.</td></tr>
+      <tr><td>Change dates</td><td><code class="inline">PUT /v1/reservations/{id}</code></td><td>Price difference becomes a second transaction (charge or refund).</td></tr>
+      <tr><td>Search</td><td><code class="inline">GET /v1/search?location&amp;check_in&amp;check_out&amp;guests&amp;price…</code></td><td>Query Elasticsearch, not the database — speed is the point.</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Idempotency — stopping the double-click double-book:</strong> the front end generates a <code class="inline">reservationId</code> (a UUID) when the user opens the form; repeat submissions carry the same key, and the back end returns the existing reservation instead of creating a second one:</p>
+  <div class="codeblock"><div class="code-head">POST /v1/reservations — request body (as shown on the slide)</div>
+<pre><code>{
+  "reservationId": "uuid-13422445",
+  "roomTypeId":    "12354673389",
+  "hotelId":       "245",
+  "startDate":     "2024-12-15",
+  "endDate":       "2024-12-18",
+  "guestCount":    2,
+  "roomCount":     1
+}
+
+// reservationId is generated on the frontend and
+// prevents double bookings when users click submit
+// multiple times</code></pre></div>
+  <p>A backend-only alternative: hash <code class="inline">hotel_id + room_id + user_id + date</code> and block on a hash match — but that also blocks a <em>future</em> legitimate booking of the same room by the same user, so the course prefers the lightweight client-generated UUID when only the double-click case matters. The <em>cross-user</em> double-book needs the concurrency control in the next-but-one section.</p>
+
+  <h3>Data model and inventory logic <span class="ts">1:22:34</span></h3>
+  <p>The pivotal modeling decision: <strong>you book a room <em>type</em>, not a specific room</strong> — room numbers are assigned at check-in. Schema highlights:</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Booking-like schema table"><table>
+    <thead><tr><th>Table</th><th>Key columns</th><th>Why it exists</th></tr></thead>
+    <tbody>
+      <tr><td><code class="inline">hotels</code></td><td>id, name, address, location, description</td><td>Same-brand properties = same name, different IDs; a <code class="inline">hotel_groups</code> helper table can group brands.</td></tr>
+      <tr><td><code class="inline">room_types</code></td><td>id, name, description, capacity, hotel_id</td><td>One hotel → many room types (1:N).</td></tr>
+      <tr><td><code class="inline">room_type_rates</code></td><td>room_type_id, rate multipliers</td><td>Base package 100/night, better view 150, breakfast included 200 — one room type, many rates (1:N).</td></tr>
+      <tr><td><code class="inline">rooms</code></td><td>room_id, floor, available, room_type_id, hotel_id</td><td>The physical rooms assigned at check-in; <code class="inline">available</code> tracks status.</td></tr>
+      <tr><td><code class="inline">room_type_inventory</code></td><td>hotel_id, room_type_id, date (composite PK), total_inventory, total_reserved</td><td><strong>One row per hotel + room type + day.</strong> Pre-populate two years ahead; a daily cron adds new dates. Enables bulk availability updates, scalable pricing/search, and simple overbooking.</td></tr>
+      <tr><td><code class="inline">reservations</code></td><td>reservation_id, room_type_id, hotel_id, guest_id, start_date, end_date, status, room_count</td><td>Guests table holds bookers; one guest → many reservations (1:N).</td></tr>
+      <tr><td><code class="inline">transactions</code></td><td>transaction_id, reservation_id, transaction_type (new/change/refund), amount (±), transaction_date</td><td><strong>Deliberately separate:</strong> book (charge), change dates (charge or refund the difference), cancel (negative amount) — one reservation, many transactions.</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Availability check:</strong> sum inventory rows across the stay window and compare:</p>
+  <div class="codeblock"><div class="code-head">Availability logic (per the course&#x27;s worked example)</div>
+<pre><code>SELECT date, total_inventory, total_reserved
+FROM room_type_inventory
+WHERE hotel_id = ?
+  AND room_type_id = ?
+  AND date BETWEEN ? AND ?;
+
+-- booking is allowed when, for every date:
+--   total_reserved + rooms_to_book &lt;= total_inventory
+--
+-- example: total_inventory = 100, total_reserved = 92
+--   92 + 1 &lt;= 100  →  allow
+--
+-- overbooking: with a 10% policy, treat the limit as
+--   110  — the overbooked rooms are expected to free up
+--   through cancellations before the date arrives</code></pre></div>
+
+  <h3>Concurrency: why double bookings happen <span class="ts">1:33:05</span></h3>
+  <p>The same-user double-click is already solved by the idempotency key. The dangerous case is <strong>two different users</strong> booking the last room of a type simultaneously. PostgreSQL&#x27;s default isolation level is <code class="inline">READ COMMITTED</code> <em>(per the <a href="https://www.postgresql.org/docs/current/transaction-iso.html">official documentation</a>)</em>, and the course traces the race:</p>
+  <div class="codeblock"><div class="code-head">The race, annotated on the slide</div>
+<pre><code>Time 3: User A checks: (99 + 1) &lt;= 100  ✓
+Time 4: User B checks: (99 + 1) &lt;= 100  ✓
+Time 5: User A updates: total_reserved = 100  ✓
+Time 6: User B updates: total_reserved = 100  ✗ — double booked</code></pre></div>
+  <p>Both transactions read valid committed data, both pass the check in the gap before either writes, and both overwrite each other. <code class="inline">READ COMMITTED</code> alone is unsafe for bookings. Two fixes:</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Isolation strategies table"><table>
+    <thead><tr><th>Approach</th><th>Pros</th><th>Cons</th></tr></thead>
+    <tbody>
+      <tr><td><code class="inline">SERIALIZABLE</code> isolation</td><td>Simple — set it when beginning the transaction. Fine at low TPS.</td><td>Transactions block each other; doesn&#x27;t scale with write volume; risks deadlocks when locking multiple resources in different orders (mitigate with <code class="inline">lock_timeout</code> and short transactions).</td></tr>
+      <tr><td><code class="inline">READ COMMITTED</code> + <code class="inline">SELECT … FOR UPDATE</code> row locks</td><td>Locks only the inventory rows being booked; other hotels/dates proceed fully in parallel. <strong>The course&#x27;s preferred fix.</strong></td><td>Contention concentrates on genuinely contested rows (which is exactly where you want it).</td></tr>
+    </tbody>
+  </table></div>
+  <div class="codeblock"><div class="code-head">READ COMMITTED vs SERIALIZABLE (row locking) — as shown on the slide</div>
+<pre><code>BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+SELECT date, total_inventory, total_reserved
+FROM room_type_inventory
+WHERE hotel_id = 211
+  AND room_type_id = 1001
+  AND date BETWEEN '2024-12-23' AND '2024-12-27'
+ORDER BY date
+FOR UPDATE;              -- locks these rows until COMMIT
+
+-- Check availability in application
+-- Update if available
+-- Insert reservation
+
+COMMIT;</code></pre></div>
+  <p><code class="inline">FOR UPDATE</code> serializes access to <em>those specific rows</em>: a second transaction booking the same rows waits its turn; everyone else proceeds. <em>(See <a href="https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE">PostgreSQL&#x27;s row-level locking reference</a> for the exact semantics.)</em></p>
+
+  <h3>Sharding and caching <span class="ts">1:34:44</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/10-booking-sharding.jpg" alt="Slide: 1,000 read QPS and 17 TPS split across Shard 1, Shard 2 &hellip; Shard N; the formula shard_number = consistent_hash(hotel_id) % num_shards; a grid of database shards with one highlighted, annotated &ldquo;~62 read QPS + ~1 write TPS&rdquo;" loading="lazy">
+    <figcaption>Shard by <code class="inline">hotel_id</code>: queries filter by hotel first, so all of one hotel&#x27;s data — and all joins and local transactions — stay on one shard. Sixteen shards leave each with ~62 reads/s and ~1 write/s. <span class="ts">1:37:36</span></figcaption>
+  </figure>
+  <p><strong>Modulo vs consistent hashing:</strong> start with <code class="inline">hash(hotel_id) % num_shards</code> when the shard count is stable. Adding shard #17 under modulo reshuffles nearly all the data; with <strong>consistent hashing</strong> (servers and keys mapped onto a hash ring; each key belongs to the next server clockwise) adding a server moves only ~1/17th of the keys. Many shards that change often → consistent hashing; few stable shards → modulo is fine.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/11-booking-cache.jpg" alt="Slide &ldquo;Caching Strategy&rdquo;: Key inventory:{hotel_id}:{room_type_id}:{date}, Value {total_inventory: 100, total_reserved: 87}, TTL 5 minutes; below, a flow: User searches for hotels &rarr; Check Redis cache for hotel inventory &rarr; Cache hit? Yes: show inventory; No: cache miss &rarr; read from database &rarr; populate Redis &rarr; show; then an invalidation phase: update database with booking transaction &rarr; invalidate affected cache keys &rarr; next user search" loading="lazy">
+    <figcaption>Hot inventory in Redis (or Memcached), keyed per hotel/type/date with a ~5-minute TTL. Searches hit the cache; bookings always validate against the database — <strong>the DB stays the source of truth</strong> — then invalidate the affected keys so the next search reflects reality. <span class="ts">1:40:41</span></figcaption>
+  </figure>
+
+  <h3>Search at scale: why not just PostgreSQL? <span class="ts">1:40:41</span></h3>
+  <p>Relational databases are great at &#x201C;give me the row where id = 123&#x201D; and ACID writes. Search is a different workload:</p>
+  <div class="codeblock"><div class="code-head">Try to search hotels in PostgreSQL (slide example)</div>
+<pre><code>SELECT * FROM hotels
+WHERE location    LIKE '%Paris%'   -- slow full table scan
+  AND amenities   LIKE '%wifi%'    -- even slower
+  AND base_price &lt;= 200
+  AND description LIKE '%luxury%'; -- kills performance</code></pre></div>
+  <ol>
+    <li><code class="inline">LIKE '%text%'</code> forces a full table scan — no index helps.</li>
+    <li>No relevance ranking (which hotel is &#x201C;most relevant&#x201D;?).</li>
+    <li>No typo tolerance (&#x201C;Pari&#x201D; should match &#x201C;Paris&#x201D;).</li>
+    <li>Geospatial distance queries are clunky in plain SQL.</li>
+    <li>Aggregations/facets (&#x201C;count by price range&#x201D;) are expensive.</li>
+  </ol>
+  <p><strong>Elasticsearch</strong> inverts each of these: it tokenizes queries, finds matching documents, ranks by relevance with a similarity algorithm <em>(its default since version 5 is <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-similarity.html">BM25</a> — a research note; the video says &#x201C;one of these algorithms&#x201D; without naming it)</em>, tolerates typos via edit distance, and handles geo distance and aggregations cheaply. Its documents are <strong>denormalized JSON</strong> — the hotel, its location, room types, amenities, and review counts condensed into one searchable document with no joins.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/12-cdc-debezium.jpg" alt="Slide &ldquo;Keeping Elasticsearch in Sync with PostgreSQL&rdquo;: a pipeline reading PostgreSQL (source of truth) &rarr; Write-Ahead Log (WAL) &rarr; Debezium Connector (reads WAL) &rarr; Kafka Topic (event stream) &rarr; Elasticsearch Consumer (processes events) &rarr; Elasticsearch (updated); side notes explain that every change is written to the transaction log first, Debezium is an open-source CDC tool, and each table gets its own Kafka topic" loading="lazy">
+    <figcaption>Change data capture keeps the index eventually consistent: PostgreSQL writes every change to its WAL first; <a href="https://debezium.io/documentation/">Debezium</a> reads the log and publishes each table&#x27;s changes to its own Kafka topic; a consumer applies them to the index. PostgreSQL remains the single source of truth — transactions check it, search uses Elasticsearch. The WAL even aids crash recovery. <span class="ts">1:47:50</span></figcaption>
+  </figure>
+
+  <h3>Replication and global routing <span class="ts">1:45:19</span></h3>
+  <ul>
+    <li><strong>Read replicas</strong> in different availability zones; applications pick a variable deciding primary vs replica: a <em>recent write</em> → read from the primary (the replica may lag); otherwise read from the closest replica.</li>
+    <li><strong>Geo-latency load balancing:</strong> European users book European hotels, US users US hotels — route by region (a US user booking Paris is the exception, not the rule).</li>
+    <li><strong>Region-local caches and search indexes:</strong> US Redis caches US hotels; each region gets its own Elasticsearch. But keep <strong>one primary per shard</strong> — multiple region-primaries would create write conflicts to reconcile, and at 17 TPS you don&#x27;t need them.</li>
+  </ul>
+</section>
+
+<!-- ============ 08 WHATSAPP ============ -->
+<section class="card" id="whatsapp">
+  <div class="sec-head"><span class="sec-num">06</span><h2 id="heading-08">System #3 — messaging (WhatsApp-like)</h2></div>
+  <a class="watch-link" href="https://www.youtube.com/watch?v=soTfFFIQQ8U&amp;t=6645s" target="_blank" rel="noopener">▶ Watch from 1:50:45</a>
+  <p>Messaging shows up constantly in senior/staff interviews because it forces <strong>stateful connections, real-time delivery, offline delivery, multi-device sync, and failure handling</strong> — in one session you must show you understand what happens to messages flying between disconnected users on unreliable mobile networks. The course builds a simple version for a few thousand users, scales it to billions, then identifies where it breaks and how to fix it.</p>
+
+  <h3>Requirements <span class="ts">1:53:18</span></h3>
+  <ul>
+    <li><strong>Core:</strong> 1:1 messaging; group chats up to 100 participants; delivery when the recipient is offline; media attachments (images, video, voice notes); message statuses (sent → delivered → read); online/last-seen presence.</li>
+    <li><strong>Non-functional:</strong> under 500 ms delivery when online; guaranteed delivery (messages never silently vanish); billions of users with high throughput; <strong>minimal server-side retention</strong> (messages cleared once delivered); resilience when individual components fail.</li>
+  </ul>
+
+  <h3>Scale estimates <span class="ts">1:56:38</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/13-whatsapp-estimates.jpg" alt="Back-of-the-envelope slide: 500M users &times; 20 messages = 10 billion messages/day, roughly 115,000 messages per second on average, peak hours 3&ndash;5x = 350,000&ndash;500,000; storage: 1 KB per message &rarr; 10 TB/day, 3.6 PB/year; bandwidth: 50M concurrent connections &times; 10 KB/s = 500 GB/s" loading="lazy">
+    <figcaption>The whole scale story on one slide: 10B messages/day means 115K writes/s on average and up to ~500K/s at peak; 10 TB/day of messages compounds to 3.6 PB/year if you never delete — which is exactly why the retention policy matters. <span class="ts">1:57:30</span></figcaption>
+  </figure>
+  <p>Retention assumptions: 30 days for undelivered messages, and only ~10% of users keep history on servers — users download messages to their devices and back up (e.g. to Google Drive) themselves. That efficiency is what lets messaging run on comparatively minimal infrastructure.</p>
+
+  <h3>Architecture <span class="ts">1:58:15</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/14-whatsapp-architecture.jpg" alt="Diagram: Mobile App (client) &rarr; Load Balancer &rarr; Chat Servers; chat servers connect to Message Queue &rarr; Message Storage Service &rarr; Message Database; User Connection Cache beside them; media upload/download path to Blob Storage &rarr; CDN; Notification Service and Presence Service hang off the chat servers" loading="lazy">
+    <figcaption>Start simple: the app holds a persistent connection through a load balancer to chat servers, which acknowledge immediately and push messages asynchronously to a queue for storage and delivery. <span class="ts">2:01:00</span></figcaption>
+  </figure>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="WhatsApp architecture components table"><table>
+    <thead><tr><th>Component</th><th>Choice</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Chat servers</td><td>Stateless WebSocket servers behind an LB</td><td>Persistent two-way channels; route messages; track presence; handle persistence via the queue.</td></tr>
+      <tr><td>Message queue</td><td>Kafka or RabbitMQ</td><td>Decouples writing from delivery: ack the sender instantly, persist and route asynchronously — also the backbone of failure handling.</td></tr>
+      <tr><td>Message storage</td><td>Cassandra or DynamoDB</td><td>Massive write throughput (billions/day); query patterns are simple — by user, conversation, timestamp.</td></tr>
+      <tr><td>User connection cache</td><td>Redis</td><td>Who is online, on which server, last activity. Microseconds vs milliseconds for a DB lookup — decisive at this scale.</td></tr>
+      <tr><td>Media storage + CDN</td><td>S3 / Google Cloud Storage + CDN</td><td>Hold files; cache popular media at edge locations worldwide.</td></tr>
+      <tr><td>Notifications</td><td>Apple Push (APNs) / Firebase (FCM)</td><td>Reach offline users; they read the message when they open the app.</td></tr>
+      <tr><td>Presence service</td><td>Dedicated service</td><td>Receives heartbeats, updates Redis, publishes presence changes to interested subscribers.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Transport: polling vs long polling vs WebSockets <span class="ts">2:03:41</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/15-transport-options.jpg" alt="Three stacked sequence diagrams: Polling &mdash; client repeatedly asks &lsquo;do you have new messages?&rsquo; and usually gets empty responses, with reconnect loops; Long Polling &mdash; request new messages, server waits until a message arrives or timeout, then the client immediately sends a new request; WebSocket &mdash; initiate HTTP connection, then a persistent two-way channel" loading="lazy">
+    <figcaption>Polling wastes bandwidth and adds latency (message arrives right after an empty check? wait for the next poll). Long polling improves latency but churns connections — every message needs a fresh HTTP handshake, and idle waiting connections still consume memory and thread-pool slots. <span class="ts">2:04:30</span></figcaption>
+  </figure>
+  <p><strong>WebSockets</strong> win for chat: one persistent bidirectional connection — after the initial HTTP request and handshake, client and server can both push at any time. Trade-offs: load balancers must support WebSockets (layer 4 rather than layer 7), and open connections use more server memory — worth it for real-time delivery. <em>(WebSocket protocol: <a href="https://datatracker.ietf.org/doc/html/rfc6455">RFC 6455</a>; API overview: <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API">MDN</a>.)</em></p>
+
+  <h3>Service discovery <span class="ts">2:07:44</span></h3>
+  <p>Chat servers come and go — crashes, deploys, scale-up/down. A <strong>service registry</strong> (Consul or AWS Cloud Map) tracks them: each server registers on boot; health checks run every ~10 seconds; the load balancer queries the healthy list and prunes its routing table, so dead servers stop receiving traffic. <em>(<a href="https://developer.hashicorp.com/consul/docs">Consul documentation</a>.)</em></p>
+
+  <h3>Data model <span class="ts">2:09:00</span></h3>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="WhatsApp schema table"><table>
+    <thead><tr><th>Store</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code class="inline">users</code> (PostgreSQL)</td><td>id (PK), phone (unique), username, created_at, last_seen (drives &#x201C;last seen&#x201D; display).</td></tr>
+      <tr><td><code class="inline">messages</code> (Cassandra)</td><td>message_id (PK), sender_id, receiver_id (FKs to users), content, media URL, status (sent/delivered/read), delivered timestamp, deleted flag. Lives in the high-volume store, not SQL.</td></tr>
+      <tr><td><code class="inline">groups</code> + <code class="inline">group_members</code> (PostgreSQL)</td><td>group id, name, created_at, created_by; members with group_id, user_id, role, joined_at (1:N).</td></tr>
+      <tr><td>Connection registry (Redis)</td><td>user_id → server_id, connection_id, last_active, device_type — refreshed with each heartbeat (~300 s).</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>WebSocket + REST flows <span class="ts">2:12:00</span></h3>
+  <ul>
+    <li><strong>Auth:</strong> client sends user_id + token + device info; server replies with session id, server time, and unread count.</li>
+    <li><strong>Send:</strong> client sends receiver, content, media, timestamp over the established socket; the server acks and independently pushes new messages and delivery/read receipts to whichever device is connected.</li>
+    <li><strong>Read receipts:</strong> opening the message sends <code class="inline">read</code> with message ID + timestamp; the server propagates it so the sender sees the ticks change.</li>
+    <li><strong>Presence heartbeat:</strong> both directions every 5–10 s — the client checks the server is alive, the server notices when the app or tab has closed, and closes the connection to stop wasting bandwidth.</li>
+    <li><strong>Media over REST:</strong> <code class="inline">POST /api/media</code> (file type, size, file, conversation) → server returns an upload URL + media ID + expiry → client uploads directly to storage → success ack, or a delivery-failed error surfaces.</li>
+  </ul>
+
+  <h3>Multi-device sync <span class="ts">2:13:10</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/16-multi-device-sync.jpg" alt="Sequence diagram across User A's Phone, Chat Server A, Chat Server C, User A's Tablet, Chat Server D, and User A's Desktop: send message, ACK (status: sent), display sent message on tablet and desktop, then &lsquo;Where is User B?&rsquo; answered &lsquo;User B has 2 devices on Server B &amp; Server E&rsquo;, then Delivered and Update (status: delivered)" loading="lazy">
+    <figcaption>User A&#x27;s message fan-outs to their own three devices and, via the Redis device map, onward to both of User B&#x27;s devices; delivered/read statuses propagate back through the same web of servers so every screen shows the same state. <span class="ts">2:16:20</span></figcaption>
+  </figure>
+  <ul>
+    <li>Redis knows which devices each user has and which chat server each device uses; the sending server syncs the message to the sender&#x27;s other devices and routes to the recipient&#x27;s devices.</li>
+    <li><strong>Conflict resolution:</strong> last-write-wins with version numbers — the course flags this as not ideal, but workable for chat state.</li>
+    <li><strong>Incremental sync:</strong> a new device requests roughly the last 30 days; older history loads on demand as the user scrolls, and very old messages live in cold storage, fetched lazily. Shipping full history to every new device would be prohibitively expensive.</li>
+    <li><strong>Trade-off:</strong> multi-device roughly doubles the delivery workload — every message goes to multiple devices per user. Users demand it anyway.</li>
+  </ul>
+
+  <h3>Message flows: online, offline, and groups <span class="ts">2:20:19</span></h3>
+  <p><strong>Both online:</strong> server A generates a time-based message ID and acks <em>sent</em> → pushes to the message queue for persistence → Redis says user B is on server B → route via the Redis pub/sub layer → server B delivers in real time → device acks → status becomes <em>delivered</em> → on open, <em>read</em> propagates the same way. Analytics/archival can be enqueued asynchronously alongside.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/17-offline-flow.jpg" alt="Sequence diagram &lsquo;Message Flow (User Offline)&rsquo;: send message to User B, check online status in Redis; alt block: User B is offline &mdash; add message to User B's inbox (ZSET), store message in inbox table, send push notification, enqueue message for further processing; alt: User B is online &mdash; forward for immediate delivery; second block: User B comes online &mdash; connects to chat server, retrieve pending messages from inbox (ZSET), retrieve missed messages, deliver all pending messages" loading="lazy">
+    <figcaption>Offline delivery in one picture: dual-write the inbox (fast Redis ZSET + durable database table), push-notify through APNs/FCM, enqueue for processing, and drain both inbox layers when the recipient reconnects. <span class="ts">2:23:00</span></figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="assets/screenshots/18-group-fanout.jpg" alt="Sequence diagram for a group message: send message to group_789; group service returns 50 user IDs; Redis connection cache reports 30 online, 20 offline; publish to channel:user:1&hellip;user:30; parallel delivery &mdash; route to users on Server B (15 users) and Server C (15 users), deliver via WebSocket, delivery ACKs forwarded back; offline users get inbox records and push notifications" loading="lazy">
+    <figcaption>Group fan-out for ~50 members: check membership once, bulk-check status in Redis, publish to per-user channels for the 30 online members (delivered in parallel across their servers), and write inbox records + push notifications for the 20 offline ones. The message itself is stored <strong>once</strong> — one write per message, not 50. <span class="ts">2:26:30</span></figcaption>
+  </figure>
+
+  <h3>Media: pre-signed URLs, not proxies <span class="ts">2:28:38</span></h3>
+  <p>The wrong way: client → chat server → database → recipient. Chat servers end up bandwidth-limited by file transfers — doing what they&#x27;re terrible at (moving large blobs) instead of what they&#x27;re good at (routing small messages fast). At this scale, a server handling 100,000 connections can be crushed by 100 users uploading megabyte files simultaneously.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/19-media-presigned.jpg" alt="Diagram &lsquo;Media Handling with Presigned URLs (Do it right)&rsquo;: the anti-pattern on top (upload media file &rarr; chat server &rarr; store blob in database &rarr; read blob &rarr; download via server, labeled &lsquo;Bandwidth bottleneck. Servers proxy large files.&rsquo;), then the correct flow with numbered steps: request presigned UPLOAD URL, receive presigned URL + media_id, send message {media_url, recipient=B}, enqueue message event, deliver message {media_url}, message delivered, request presigned DOWNLOAD URL (media_id), presigned GET URL, CDN" loading="lazy">
+    <figcaption>The right way: the app asks its chat server for a pre-signed upload URL, uploads <em>directly</em> to blob storage, and the chat message carries only the small media URL. The recipient requests a pre-signed download URL and fetches through a CDN (replicated to edge locations) or straight from storage. <span class="ts">2:29:30</span></figcaption>
+  </figure>
+  <p>The CDN path adds one extra request round-trip but delivers massive performance and cost benefits at scale — the course calls it the clear winner. Media TTLs (~30 days) align with the message-retention policy so expired media is deleted automatically. <em>(Pre-signed URL mechanics: <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html">AWS S3 documentation</a>.)</em></p>
+
+  <h3>Event-driven persistence: batch everything <span class="ts">2:33:32</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/20-batch-pipeline.jpg" alt="Whiteboard pipeline: queue validated messages &rarr; Batch Buffer &rarr; flush (1000 msgs / 5s) &rarr; Batch Writer &rarr; atomic batch insert &rarr; Database Cluster; update search &amp; analytics &rarr; Index Updater; mark processed &rarr; Commit Offset; retry failed batch / on failure &rarr; Retry &amp; DLQ Handler with steps 1, 2, &hellip; 10 annotated" loading="lazy">
+    <figcaption>The message-storage service scales out by assigning each instance a slice of Kafka partitions (0–9, 10–19, 20–29…). Inside an instance: consume batches of ~500, poll every ~100 ms, validate and enrich (dedup hash, @mentions, link previews) with a 20-worker thread pool, buffer up to 1,000 messages or 5 seconds, then sort by target shard, group by conversation, and atomic-batch-insert. Failures retry through a stepped Retry &amp; DLQ handler before the user ever sees &#x201C;not delivered.&#x201D; <span class="ts">2:39:20</span></figcaption>
+  </figure>
+  <div class="callout extra" data-label="Why batching wins"><strong>One insert ≈ 5 ms.</strong> A thousand individual inserts ≈ 5 seconds. One batched insert of a thousand messages ≈ 50 ms — a <strong>100× throughput improvement</strong> that compounds when millions of messages are being written concurrently.</div>
+  <div class="codeblock"><div class="code-head">Batched write shape (as sketched in the course)</div>
+<pre><code>BEGIN BATCH
+  INSERT INTO messages (timestamp, sender_id, receiver_id, content, media)
+         VALUES (…, …, …, …, …);
+  INSERT INTO messages (…) VALUES (…);
+  -- …up to ~1,000 inserts for one batch
+APPLY BATCH;</code></pre></div>
+  <p class="src">Simplified from the on-screen Cassandra example; the video shows the batch shape rather than a full runnable program.</p>
+
+  <h3>End-to-end encryption <span class="ts">2:41:14</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/21-signal-protocol.jpg" alt="Sequence diagram &lsquo;End-to-End Encryption: Simplified Signal Protocol Flow&rsquo;: User A uploads public identity key to Key Server; User B uploads public identity key + prekeys; User A fetches User B's keys (identity + one prekey); Key Server returns B's keys; User A sends encrypted message + A's ephemeral public key; User B decrypts message, secure session established. Beside it: Encrypted_Message = AES-256(message, session_key + message_counter); MAC = HMAC-SHA256(encrypted_message, mac_key)" loading="lazy">
+    <figcaption>The course&#x27;s simplified Signal-style flow: private keys never leave devices; the server only ever holds public material; the per-message counter means a stolen session key still can&#x27;t decrypt every message. Chat servers relay ciphertext they cannot read. <span class="ts">2:42:00</span></figcaption>
+  </figure>
+  <ol>
+    <li><strong>Registration:</strong> each user generates an identity key pair — the public key goes to the key server, the private key never leaves the device. Users also upload ~100 signed <strong>prekeys</strong> for future session initiators.</li>
+    <li><strong>Session setup:</strong> to message B, user A fetches B&#x27;s public identity key plus one of B&#x27;s prekeys, generates a matching key pair, and performs the key exchange — both ends now share session keys.</li>
+    <li><strong>Per-message protection:</strong> messages encrypt with the session key plus a <strong>message counter</strong> that increments on every exchange (<code class="inline">AES-256(message, session_key + message_counter)</code>, authenticated with <code class="inline">HMAC-SHA256</code>), so compromise of one key doesn&#x27;t expose the whole history.</li>
+  </ol>
+  <div class="callout extra" data-label="From the research (beyond the video)"><p>The video&#x27;s flow is a deliberate simplification of the <a href="https://signal.org/docs/specifications/x3dh/">Signal protocol&#x27;s X3DH key agreement</a> — the real spec&#x27;s &#x201C;prekey bundle&#x201D; (identity key, signed prekey, one-time prekeys consumed after a single use) matches what the course describes. Continued message protection comes from the <a href="https://signal.org/docs/specifications/doubleratchet/">Double Ratchet algorithm</a>, which derives fresh keys per message; the course&#x27;s &#x201C;message counter&#x201D; is a stand-in for the ratchet&#x27;s per-message key derivation. One version note: <a href="https://signal.org/docs/specifications/pqxdh/">Signal has since moved to PQXDH</a>, a post-quantum variant of the same handshake, and WhatsApp documents its own deployment in the <a href="https://www.whatsapp.com/security/">WhatsApp encryption overview</a>. Treat the course&#x27;s version as interview-level, not implementation-level.</p></div>
+
+  <h3>Rate limiting and abuse prevention <span class="ts">2:44:49</span></h3>
+  <p>Without limits, any hacker can scrape data or DDoS the system. Every action type gets a per-user limit — messages (~100/min), group creation (~5/hour), media uploads (~10–100/min) — with the numbers set during the blueprinting phase, not guessed:</p>
+  <div class="codeblock"><div class="code-head">Token-bucket rate limiter (reconstructed from the narration, 2:47:50)</div>
+<pre><code>class RateLimiter {
+  constructor(capacity, refillRate) {
+    this.capacity = capacity;   // e.g. 100 messages
+    this.refillRate = refillRate;
+    this.tokens = capacity;
+  }
+
+  tryConsume(cost = 1) {
+    this.refill();                       // top up based on elapsed time
+    if (this.tokens &gt;= cost) {
+      this.tokens -= cost;               // allow and deduct
+      return true;
+    }
+    return false;                        // over the limit → block
+  }
+
+  refill() {
+    const now = Date.now();
+    const elapsed = now - this.lastRefill;
+    this.tokens = Math.min(this.capacity,
+      this.tokens + (elapsed / 1000) * this.refillRate);
+    this.lastRefill = now;
+    // a blocked user waits until the window resets,
+    // e.g. "try again in 60 seconds"
+  }
+}</code></pre></div>
+  <p class="src">The video shows its own version of this code on screen; the listing above follows the narrated logic (capacity + refill rate, deduct-per-request, false when exhausted) and is labeled as a reconstruction rather than an exact transcription.</p>
+  <p><strong>Enforcement flow:</strong> limit exceeded? → No → allow and continue (persist the message / media / group). → Yes → block the action → notify the user (&#x201C;too many requests in one minute, try again in 60 seconds&#x201D;) → optionally require a CAPTCHA.</p>
+  <p><strong>Progressive penalties:</strong> first offense → warning; repeat → 1-hour restriction; again → 24 hours; still abusing → account suspended for human review (bot? hacker? confused user?), with a suspicious-activity tag and possible permanent ban on the next strike.</p>
+  <p><strong>Other counters:</strong> connection-flood detection (five login attempts from different IPs in one minute → IP connection counter), and group-invite limits. All servers share one <strong>centralized store</strong> (Redis, ~24-hour retention) with <strong>atomic operations</strong>, so hopping to another server can&#x27;t dodge the limit — the counter is global.</p>
+
+  <h3>Database sharding: writes vs reads <span class="ts">2:52:06</span></h3>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Sharding strategy table"><table>
+    <thead><tr><th>Strategy</th><th>Strength</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td>Shard by <code class="inline">user_id</code></td><td>All of a user&#x27;s messages on one shard → reads fetch a single shard.</td><td>Heavy users become hot shards; imbalance grows over time.</td></tr>
+      <tr><td>Shard by <code class="inline">message_id</code></td><td>Perfectly even distribution.</td><td>Every user read scatters across all shards, aggregates, then returns — slow and expensive.</td></tr>
+    </tbody>
+  </table></div>
+  <figure class="shot">
+    <img src="assets/screenshots/22-sharding-replication.jpg" alt="Diagram &lsquo;User-ID Sharding Strategy with Replication&rsquo;: a sharding router applies hash(user_id); Primary Shards (writes only): Writes for User A &rarr; Shard A (hash(User A)), Writes for User B &rarr; Shard B; note &lsquo;Conversation A&harr;B: write copy to each user's shard &mdash; duplicate per participant for fast reads&rsquo;; each shard replicates (async/semisync) to read replicas; User A reads recent/history from their replica, likewise User B" loading="lazy">
+    <figcaption>The course&#x27;s synthesis: shard by user, but when A talks to B, write a copy into both participants&#x27; shards. Writes double; each user&#x27;s reads hit only their own shard, further offloaded to read replicas (async replication; primaries take writes only). <span class="ts">2:54:21</span></figcaption>
+  </figure>
+  <p>General rule from the course: <strong>sharding scales writes; replication scales reads.</strong> And the trade-off (2× write volume) is exactly why the requirements phase should pin down whether reads or writes matter more — if you forgot, ask the interviewer instead of guessing.</p>
+
+  <h3>Cleanup jobs <span class="ts">2:57:53</span></h3>
+  <p>Billions of messages and piles of media demand garbage collection: expired media, old undelivered messages, stale connections. A scheduler (Airflow or cron, daily/weekly) enqueues tasks into a <strong>job queue kept separate from the message queue</strong>; a pool of containerized workers executes cleanups, acks success, requeues failures, and reports job status to monitoring so the pipeline itself keeps improving. Trade-off: scheduled jobs add operational complexity (another thing to monitor and debug) — but the alternative is letting garbage accumulate until the system forces you to clean it anyway.</p>
+
+  <h3>Failure handling: the cache dies <span class="ts">2:59:54</span></h3>
+  <p>Redis holds the undelivered-message inboxes — so what happens when the Redis cluster itself goes down? The design already writes every inbox entry to both Redis (fast path) and the database (durable safety net):</p>
+  <div class="codeblock"><div class="code-head">Write with fallback (as shown on the slide)</div>
+<pre><code>async function storeUndeliveredMessage(userId, message) {
+  try {
+    // Try Redis first (fast path)
+    await redis.zadd(`inbox:${userId}`, message.timestamp, JSON.stringify(message));
+  } catch (redisError) {
+    // Redis is down, log it but don't fail
+    logger.error('Redis unavailable, using database only', redisError);
+  }
+
+  // Always write to database (safety net)
+  await db.query(
+    'INSERT INTO message_inbox (user_id, message_id, sender_id, message_payload, created_at) VALUES ($1, $2, $3, $4, NOW())',
+    [userId, message.id, message.senderId, message]
+  );
+}</code></pre></div>
+  <div class="codeblock"><div class="code-head">Read with fallback (as shown on the slide)</div>
+<pre><code>async function getUndeliveredMessages(userId) {
+  try {
+    // Try Redis first (fast path)
+    const messages = await redis.zrange(`inbox:${userId}`, 0, -1);
+    if (messages.length &gt; 0) {
+      return messages.map(m =&gt; JSON.parse(m));
+    }
+  } catch (redisError) {
+    // log for tracing (e.g. in CloudWatch), then fall through
+  }
+  // Redis unavailable → read from the database instead:
+  // slower, but far better than failing the whole operation
+  return db.query('SELECT … FROM message_inbox WHERE user_id = $1 …');
+}</code></pre></div>
+  <p>When Redis recovers, a background job rehydrates it — <code class="inline">SELECT * FROM message_inbox WHERE delivered IS NULL</code>, write each undelivered message back into the Redis inbox, keep the database records — and normal delivery resumes (write Redis, read Redis). The lesson generalizes: <strong>stale-but-available beats erroring</strong>; fall back to the slower durable path and log for tracing.</p>
+
+  <h3>Kafka cluster failure <span class="ts">3:06:52</span></h3>
+  <p>Inside a Kafka cluster, brokers are the servers; topics split into partitions, each with a leader and replicas; producers write to leaders. <strong>One broker dies</strong>: replace it, rejoin the cluster, and Kafka rebalances partitions over time. <strong>The whole cluster dies</strong> (rare): chat servers can&#x27;t publish, the storage service can&#x27;t consume, and messages risk being lost. Mitigations, in escalating order:</p>
+  <ol>
+    <li><strong>Local in-memory buffer</strong> in the publish path: try Kafka → on failure, log and push to a bounded buffer (~100,000 messages; when full, drop the oldest) → poll for recovery (~2 s, matched against a known ~5 s cluster spin-up time) → republish on recovery.</li>
+    <li><strong>Append-only disk log:</strong> if the server itself dies while buffering, the buffer is also on disk; on recovery, replay the log and delete entries only after they publish successfully.</li>
+    <li><strong>Cluster restoration:</strong> once a new Kafka is provisioned, consumers request <em>messages since last processed ID</em> from the producers, query already-persisted messages from the database, republish exactly the missing ones, and resume normal consumption.</li>
+  </ol>
+  <figure class="shot">
+    <img src="assets/screenshots/24-kafka-recovery.jpg" alt="Diagram &lsquo;Disaster Recovery: Kafka Cluster Restoration&rsquo;: Old Kafka Cluster (destroyed) &rarr; failure detected, new cluster provisioned (x New Kafka); Chat Servers (producers) &harr; Request messages since last_id / Return missing messages &harr; Message Storage Service (consumers); Query last processed message_id &rarr; Message Database; Republish missing messages &rarr; New Kafka Cluster (provisioned) &rarr; Resume normal consumption" loading="lazy">
+    <figcaption>Kafka disaster recovery end to end: producers replay what consumers haven&#x27;t confirmed, the database provides the checkpoint, and the new cluster resumes from exactly the missing slice. <span class="ts">3:08:00</span></figcaption>
+  </figure>
+
+  <h3>Global distribution <span class="ts">3:04:26</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/23-multi-region.jpg" alt="Diagram &lsquo;Multi-Region &amp; Cross-Region Message Flow&rsquo;: User B (London) and User A (Tokyo) both do a DNS lookup against GeoDNS (api.whatsapp.com) and connect to the nearest IP; User B lands in EU West (Ireland) with its own load balancer, chat servers, and Redis cluster; User A lands in APAC (Singapore) with the same full stack; User A's server looks up user:B, finds them in EU West, routes to B, and delivers via WebSocket" loading="lazy">
+    <figcaption>Each region runs the full stack — load balancer, chat servers, Redis clusters, database shards — sized to local user density, and can operate independently. GeoDNS routes each user to the nearest region; cross-region delivery is a Redis lookup plus a routed handoff. <span class="ts">3:05:00</span></figcaption>
+  </figure>
+
+  <h3>Feature flags and gradual rollouts <span class="ts">3:11:14</span></h3>
+  <figure class="shot">
+    <img src="assets/screenshots/25-feature-flags.jpg" alt="Diagram &lsquo;Feature Flags&rsquo;: Chat Server &rarr; check supported features &rarr; Feature Flags Store; gradual enablement per user/group; return enabled features; send messages with new features &rarr; Client App (v2.24.5); strip unsupported fields &rarr; Older Client (v2.20)" loading="lazy">
+    <figcaption>Feature flag stores (LaunchDarkly or the cloud providers&#x27; native solutions) are key-value pairs scoped per environment — on in staging, off in production; then true for 20% of production users; then everyone if failure logs stay quiet. Servers also strip fields that older client versions can&#x27;t parse. <span class="ts">3:12:00</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============ 09 GETTING BETTER ============ -->
+<section class="card" id="getting-better">
+  <div class="sec-head"><span class="sec-num">07</span><h2 id="heading-09">How to actually get better</h2></div>
+  <a class="watch-link" href="https://www.youtube.com/watch?v=soTfFFIQQ8U&amp;t=11269s" target="_blank" rel="noopener">▶ Watch from 3:11:14</a>
+  <ul>
+    <li><strong>Start simple, every time:</strong> requirements → estimates → high-level design → identify bottlenecks → discuss trade-offs. The estimates tell you whether a Kafka broker or database sharding is even needed.</li>
+    <li><strong>It&#x27;s a flow, not a script.</strong> You can&#x27;t memorize whole designs; know the steps and adapt per system.</li>
+    <li><strong>Every decision has costs.</strong> WebSockets use more memory than HTTP but give real-time delivery — worth it for a messenger, maybe not for your app. Be ready to argue both sides.</li>
+    <li><strong>Drill back-of-the-envelope math</strong> until the unit conversions are reflexive, and check your answers.</li>
+    <li><strong>Failure analysis comes last</strong> — after components and flows are stable, not before.</li>
+    <li><strong>Perfection is not the bar.</strong> Nobody designs a perfect system in one or two hours. Interviewers watch <em>how you think</em>, whether you discuss trade-offs or just pick favorites. Say your reasoning out loud — it keeps you honest, and a wrong path gets corrected by hints.</li>
+  </ul>
+  <div class="callout extra" data-label="Where to go next">The speaker points to his pinned system-design-concepts guide on <a href="https://www.youtube.com/@hayk.simonyan">his own channel</a> for the underlying building blocks (consistent hashing, pub/sub, CDC, and so on) referenced throughout the three designs.</div>
+</section>
+
+<!-- ============ 10 CHEAT SHEET ============ -->
+<section class="card" id="cheat-sheet">
+  <div class="sec-head"><span class="sec-num">08</span><h2 id="heading-10">Cheat sheet</h2></div>
+  <div class="cheat-grid">
+    <div class="cheat-card"><div class="cheat-title">The 60-minute skeleton</div><div class="cheat-body">Clarify (10&#x2032;: functional + non-functional, in/out of scope) → Data + APIs (20&#x2032;: entities, contracts, DB choice + why) → Architecture (15&#x2032;: LB → stateless APIs → cache/queue → DB; walk reads and writes) → Scale &amp; failures (10&#x2032;: SPOFs, fallbacks, redundancy, monitoring) → Wrap-up (5&#x2032;: decisions, sacrifices, 10× extensions).</div></div>
+    <div class="cheat-card"><div class="cheat-title">Capacity math reflexes</div><div class="cheat-body">per-day = per-year ÷ 365; per-second = per-day ÷ 86,400. Funnel conversion rates give QPS from visits. Storage = count × avg size (then × 2–3 for replicas). State read:write ratio and let it pick the architecture.</div></div>
+    <div class="cheat-card"><div class="cheat-title">Storage picker</div><div class="cheat-body">Joins/transactions/ACID → PostgreSQL. Huge write volume, simple key queries → Cassandra/DynamoDB. Large blobs → S3-style object storage + signed URLs. Search/filter/rank/geo → Elasticsearch (CDC-synced, never the source of truth). Hot small data → Redis with TTL + invalidation.</div></div>
+    <div class="cheat-card"><div class="cheat-title">Concurrency kit</div><div class="cheat-body">Double-click duplicates → client-generated idempotency key. Cross-user races → <code class="inline">SELECT … FOR UPDATE</code> on the inventory rows (READ COMMITTED + row locks) or SERIALIZABLE at low TPS. Inventory table: one row per (hotel, room type, date); overbooking = raise the effective limit ~10%.</div></div>
+    <div class="cheat-card"><div class="cheat-title">Real-time kit</div><div class="cheat-body">Polling → long polling → WebSocket as latency demands rise. Ack fast, persist async via a queue. Redis: connection registry (user → server/device), pub/sub routing, inbox ZSETs. Push notifications (APNs/FCM) for the offline case. Heartbeats both ways.</div></div>
+    <div class="cheat-card"><div class="cheat-title">Scale-out order</div><div class="cheat-body">CDN edges → stateless API replicas → DB read replicas → cache with TTL/invalidation → shard (hotel_id / user_id; modulo first, consistent hashing when the shard count churns) → region-stack everything, one primary per shard.</div></div>
+    <div class="cheat-card"><div class="cheat-title">Failure patterns</div><div class="cheat-body">Dual-write fast + durable stores; on cache failure, fall back to the DB and rehydrate on recovery. Bounded local buffers in front of queues; append-only disk spill; replay from checkpoint (last processed ID). Dead-letter queues with stepped retries. Batch inserts (1,000 × 5 ms → 50 ms ≈ 100×).</div></div>
+    <div class="cheat-card"><div class="cheat-title">Interview red flags to avoid</div><div class="cheat-body">Designing before clarifying. Silence or monologue. Naming a technology without its why. Skipping the check-in after a phase. Burning all minutes on the happy path and never naming a failure mode.</div></div>
+  </div>
+</section>
+
+<!-- ============ 11 GLOSSARY ============ -->
+<section class="card" id="glossary">
+  <div class="sec-head"><span class="sec-num">09</span><h2 id="heading-11">Glossary</h2></div>
+  <input aria-label="Search glossary" id="glossSearch" class="gloss-search" type="search" placeholder="Filter terms…" autocomplete="off">
+  <div class="glossary" id="glossList">
+    <div class="gterm"><dt>Idempotency key</dt><dd>A client-generated identifier (here, the reservation UUID) that makes repeated identical requests safe: the server recognizes the key and returns the original result instead of performing the action twice.</dd></div>
+    <div class="gterm"><dt>Isolation level (READ COMMITTED / SERIALIZABLE)</dt><dd>How strictly a database separates concurrent transactions. READ COMMITTED (PostgreSQL&#x27;s default) only sees committed data but allows check-then-act races; SERIALIZABLE makes concurrent transactions behave as if serialized, at the cost of blocking and deadlocks.</dd></div>
+    <div class="gterm"><dt>SELECT … FOR UPDATE</dt><dd>A row-level lock: selected rows can&#x27;t be modified by other transactions until COMMIT. Serializes just the contested rows, leaving the rest of the database fully concurrent.</dd></div>
+    <div class="gterm"><dt>Overbooking</dt><dd>Selling more reservations than physical inventory (here ~5–10% above <code class="inline">total_inventory</code>) because some bookings reliably cancel. Modeled by comparing <code class="inline">total_reserved + rooms_to_book</code> against an inflated limit.</dd></div>
+    <div class="gterm"><dt>Change data capture (CDC)</dt><dd>Streaming database changes to downstream systems by reading the write-ahead log (via Debezium into Kafka topics, in the course). Keeps Elasticsearch eventually consistent without double writes in application code.</dd></div>
+    <div class="gterm"><dt>Write-ahead log (WAL)</dt><dd>PostgreSQL&#x27;s append-only record of every change, written before the data pages. Powers replication and CDC — and doubles as a crash-recovery source.</dd></div>
+    <div class="gterm"><dt>Consistent hashing</dt><dd>Mapping servers and keys onto a hash ring so each key belongs to the next server clockwise. Adding a server moves only ~1/N of keys, versus modulo sharding&#x27;s near-total reshuffle.</dd></div>
+    <div class="gterm"><dt>LRU eviction</dt><dd>Least-Recently-Used: when a cache fills, evict the least recently accessed entries first (the course&#x27;s CDN edge policy).</dd></div>
+    <div class="gterm"><dt>WebSocket</dt><dd>A persistent, bidirectional TCP connection upgraded from HTTP (RFC 6455). Both sides push anytime; requires L4 load balancing and memory per open connection.</dd></div>
+    <div class="gterm"><dt>Long polling</dt><dd>The client requests new data and the server holds the request open until data arrives or a timeout expires, then the client immediately re-requests. Better latency than polling, but constant connection churn.</dd></div>
+    <div class="gterm"><dt>Pre-signed URL</dt><dd>A time-limited, signed URL granting direct upload/download access to an object store — letting clients bypass application servers entirely for large media.</dd></div>
+    <div class="gterm"><dt>Dead letter queue (DLQ)</dt><dd>A side queue for messages that repeatedly fail processing; a separate handler retries them with escalating steps before giving up and notifying the user.</dd></div>
+    <div class="gterm"><dt>Token bucket</dt><dd>Rate limiting where each user holds tokens refilling at a fixed rate; each action consumes a token, and an empty bucket means block (optionally with CAPTCHA and escalating penalties).</dd></div>
+    <div class="gterm"><dt>Pub/sub</dt><dd>Publish–subscribe messaging: senders publish to channels (here, Redis channels per online user), subscribers receive without sender/receiver knowing each other directly.</dd></div>
+    <div class="gterm"><dt>Signal protocol / X3DH / Double Ratchet</dt><dd>The end-to-end encryption family behind WhatsApp and Signal: X3DH establishes a shared secret from identity keys and prekeys; the Double Ratchet derives fresh keys per message. The course teaches a simplified interview version.</dd></div>
+    <div class="gterm"><dt>GeoDNS</dt><dd>DNS that resolves the same hostname to different IPs based on the caller&#x27;s location — the first hop that lands each user in their nearest full-stack region.</dd></div>
+    <div class="gterm"><dt>Read-your-writes</dt><dd>Routing a user&#x27;s reads to the primary for a short window after they write, so replication lag never shows them stale data (the course&#x27;s &#x201C;recent write → primary&#x201D; rule).</dd></div>
+    <div class="gterm"><dt>Feature flag store</dt><dd>A key-value service (LaunchDarkly, cloud-native offerings) controlling feature visibility per environment, user percentage, or group — enabling gradual rollouts and instant kill switches.</dd></div>
+    <div class="gterm"><dt>Egress costs</dt><dd>Cloud fees charged when data leaves a provider&#x27;s network to reach users — the dominant bandwidth cost for a streaming service.</dd></div>
+    <div class="gterm"><dt>Last-write-wins</dt><dd>Conflict resolution that accepts the most recent write (with version numbers) when multiple devices update the same state — simple, occasionally lossy, acceptable for chat presence/status.</dd></div>
+  </div>
+</section>
+
+<!-- ============ 12 QUIZ ============ -->
+<section class="card" id="quiz">
+  <div class="sec-head"><span class="sec-num">10</span><h2 id="heading-12">Check your recall</h2></div>
+  <p class="muted">Try to answer first, then reveal. (These test the ideas, not trivia.)</p>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q1.</span>In the hotel system, why is <code class="inline">room_type_inventory</code> keyed by (hotel, room type, date) instead of just counting <code class="inline">rooms</code> rows?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal">Because <b>you book a room type, not a physical room</b> — room numbers are assigned at check-in. One row per hotel + type + date gives cheap bulk availability checks, supports overbooking (raise the effective limit), and is pre-populated two years ahead with a daily cron.</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q2.</span>Two users both see &#x201C;1 room left&#x201D; and both book. Why doesn&#x27;t READ COMMITTED stop this, and what two fixes does the course offer?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal">READ COMMITTED only guarantees you see <b>committed</b> data — both transactions read valid state (99 + 1 ≤ 100) in the gap before either writes, then both update. Fix 1: <b>SERIALIZABLE</b> isolation (simple, fine at low TPS, but blocks and can deadlock). Fix 2 (preferred): <b>READ COMMITTED + SELECT … FOR UPDATE</b>, locking just the inventory rows so contenders queue while everyone else proceeds.</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q3.</span>Why does the booking system accept ~1,000 QPS of search traffic through Elasticsearch but still route every booking through PostgreSQL?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal">The workload is <b>read-heavy but consistency-critical on writes</b>. Elasticsearch handles filters, ranking, typos, and geo at search scale (eventually consistent, CDC-synced), while PostgreSQL remains the <b>single source of truth</b> whose ACID transactions make double-booking impossible.</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q4.</span>A chat server with 100,000 WebSocket connections starts buckling when a few hundred users share photos. What&#x27;s the design error and the fix?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal">Media is flowing <b>through the chat servers</b> (proxying blobs), which starves the message-routing they&#x27;re good at. Fix: <b>pre-signed URLs</b> — the client uploads directly to blob storage and the message carries only a URL; downloads go through a CDN (or direct from storage) with TTLs matching the retention policy.</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q5.</span>Why does the course shard the messenger by <code class="inline">user_id</code> and then <em>duplicate</em> each conversation into both participants&#x27; shards — and what should you have clarified in requirements first?</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal">User-ID sharding alone creates <b>hot shards</b> for heavy users; message-ID sharding spreads every user&#x27;s reads across all shards. Duplicating per participant keeps reads single-shard and blazing fast at the cost of <b>2× writes</b> — a read-optimized choice, which is why you should have asked in requirements whether reads or writes matter more.</div>
+  </div>
+  <div class="quiz-item">
+    <div class="quiz-q"><span class="n">Q6.</span>Kafka dies completely. Walk through the three escalating mitigations.</div>
+    <button class="qbtn" hidden type="button">Reveal answer</button>
+    <div class="reveal">1) <b>Local in-memory buffer</b> in the publish path (bounded ~100K messages, drop oldest), republishing when Kafka recovers. 2) If the server may also die: spill to an <b>append-only disk log</b> and replay after recovery, deleting only after successful publish. 3) On the new cluster: consumers request <b>messages since last processed ID</b>, checkpoint against the database, and republish exactly the missing slice.</div>
+  </div>
+</section>
+
+<!-- ============ 13 SOURCES ============ -->
+<section class="card" id="sources">
+  <div class="sec-head"><span class="sec-num">11</span><h2 id="heading-13">Sources and notes</h2></div>
+  <h3>Primary source</h3>
+  <ul>
+    <li><a href="https://www.youtube.com/watch?v=soTfFFIQQ8U">Design Software Systems Like a Senior Engineer – Complete Course</a> — freeCodeCamp.org, course by <a href="https://www.youtube.com/@hayk.simonyan">Hayk Simonyan</a> (3 h 16 min). Everything attributed to &#x201C;the course,&#x201D; with an inline timestamp, comes from this recording; diagrams are screenshots of its slides and whiteboard frames.</li>
+  </ul>
+  <h3>Supporting research added by this guide</h3>
+  <p class="src">Additions beyond the video are labeled in place (&#x201C;From the research,&#x201D; or parenthetical source notes). Everything else is the course&#x27;s teaching.</p>
+  <ul>
+    <li>Booking Holdings FY2024 results — <a href="https://bookingholdings.com/wp-content/uploads/2025/02/Q4-2024-BKNG-Earnings-Release.pdf">1.1 billion room nights in 2024</a>; <a href="https://www.bookingholdings.com/about/factsheet/">company factsheet</a> (~1.2B in 2025) — corroborating the video&#x27;s 1.1B/year input.</li>
+    <li><a href="https://www.postgresql.org/docs/current/transaction-iso.html">PostgreSQL: transaction isolation</a> and <a href="https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE">row-level locking (FOR UPDATE)</a> — confirming READ COMMITTED as the default and the row-lock semantics the course relies on.</li>
+    <li><a href="https://signal.org/docs/specifications/x3dh/">Signal: X3DH key agreement</a>, <a href="https://signal.org/docs/specifications/doubleratchet/">Double Ratchet algorithm</a>, <a href="https://signal.org/docs/specifications/pqxdh/">PQXDH (newer post-quantum handshake)</a>, and the <a href="https://www.whatsapp.com/security/">WhatsApp encryption overview</a> — background for the E2EE chapter&#x27;s research note.</li>
+    <li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules-similarity.html">Elasticsearch similarity modules (BM25 default)</a> — naming the relevance algorithm the video leaves unnamed.</li>
+    <li><a href="https://datatracker.ietf.org/doc/html/rfc6455">RFC 6455 (WebSocket)</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API">MDN WebSockets API</a>, <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html">AWS S3 pre-signed URLs</a>, <a href="https://debezium.io/documentation/">Debezium documentation</a>, <a href="https://developer.hashicorp.com/consul/docs">Consul documentation</a>, <a href="https://xiph.org/vorbis/doc/">Xiph.org Vorbis (OGG)</a>, <a href="https://www.similarweb.com/">SimilarWeb</a> — standards and vendor references for tools the course mentions by name.</li>
+  </ul>
+  <h3>Transcription and accuracy notes</h3>
+  <ul>
+    <li>The auto-generated captions garble several tool names; this guide uses the correct forms verified against on-screen slides: <em>Redis</em> (not &#x201C;radius/radies&#x201D;), <em>PostgreSQL</em> (not &#x201C;poss/postcarql&#x201D;), <em>OGG</em> (not &#x201C;OG&#x201D;), <em>CAP theorem</em> (not &#x201C;CP theorem&#x201D;), <em>Debezium</em> (the slide names it; the captions say &#x201C;bases connector&#x201D;), and <em>99.9%+ uptime</em> (captions say &#x201C;free 9&#x201D;; the slide at 0:57:50 says 99.9%+).</li>
+    <li>Two code listings are labeled reconstructions from narration (the token-bucket limiter and the availability-check pseudocode); the SELECT FOR UPDATE, fallback, and reservation-body listings are transcribed from on-screen slides. Simplified listings are marked as such.</li>
+    <li>The full transcript and the recording remain working inputs under <code class="inline">.work/</code> in the repository and are not published with this guide.</li>
+  </ul>
+</section>
+
+</div>
+<div class="guide-end"><p>Study guide generated from the freeCodeCamp course by Hayk Simonyan. Watch the original for the full walkthrough: <a href="https://www.youtube.com/watch?v=soTfFFIQQ8U">Design Software Systems Like a Senior Engineer ↗</a></p><a href="../index.html#ai-agents-and-system-design">← Back to the library</a></div>
+</main>
+</div>
+</body>
+</html>

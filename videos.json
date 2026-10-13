@@ -48,4 +48,12 @@
     "description": "Earn the right to run hundreds of agents: verification skills with a CLI and feature map, pstack playbooks, the agent-friendly Dune architecture, and Grok Bot automations that close the outer loop.",
     "tags": ["AI agents", "Verification skills", "Dune"], "source": "https://x.com/poteto/status/2102050467505430555"
   }
+,
+  {
+    "id": "system-design-course", "topic": "AI agents and system design", "group": "ai-agents-and-system-design", "tone": "violet",
+    "folder": "Design_Software_Systems_Like_a_Senior_Engineer_Complete_Course", "page": "index.html",
+    "title": "Design Software Systems Like a Senior Engineer", "speaker": "Hayk Simonyan", "venue": "freeCodeCamp", "duration": "3 h 17 min",
+    "description": "A five-step interview framework, the five dimensions interviewers score, and three complete designs — Spotify-like streaming, Booking-like reservations with double-booking prevention, and WhatsApp-like messaging scaled to billions.",
+    "tags": ["System design", "Interviews", "Architecture"], "source": "https://www.youtube.com/watch?v=soTfFFIQQ8U"
+  }
 ]
