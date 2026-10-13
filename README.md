@@ -1,6 +1,6 @@
 # Video Notes
 
-A static developer study library for GitHub Pages. The root catalog groups six
+A static developer study library for GitHub Pages. The root catalog groups seven
 video summaries into five topic collections. Every guide shares the same dark
 theme, chapter navigation, readable code blocks, and screenshot viewer.
 

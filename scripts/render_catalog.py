@@ -15,6 +15,7 @@ ART = {
     'latency': '<path d="M20 80h210M20 80V15" opacity=".25"/><path d="M25 67h35l12-28 18 34 16-55 18 43 15-20 16 8h65" stroke-width="2"/><path d="M30 25h32M30 32h20" opacity=".4"/>',
     'computer-architecture': '<rect x="83" y="12" width="84" height="76" rx="6"/><rect x="98" y="27" width="54" height="46" rx="2" opacity=".6"/><path d="M102 41h12l-12 14h12M133 41v14m-6-14v14m-6-14v14"/><path d="M95 2v10m20-10v10m20-10v10m20-10v10M95 88v10m20-10v10m20-10v10m20-10v10M73 24h10m-10 18h10m-10 18h10m-10 18h10M167 24h10m-10 18h10m-10 18h10m-10 18h10" opacity=".5"/>',
     'ai-pr-reviewer': '<path d="M125 50L60 20M125 50l65-30M125 50L60 80M125 50l65 30" opacity=".55"/><circle cx="125" cy="50" r="16"/><circle cx="55" cy="18" r="12"/><circle cx="195" cy="18" r="12"/><circle cx="55" cy="82" r="12"/><circle cx="195" cy="82" r="12"/><circle cx="125" cy="50" r="4" fill="currentColor"/>',
+    'agentic-pr-factory': '<path d="M18 84C60 84 76 24 118 20c26-2 42 6 60 6h54" stroke-width="2"/><circle cx="42" cy="72" r="5"/><circle cx="70" cy="46" r="5"/><circle cx="100" cy="28" r="5"/><circle cx="150" cy="24" r="5"/><circle cx="196" cy="26" r="5"/><path d="M18 88h214" opacity=".35"/><path d="M158 20l10 6-10 6" opacity=".8"/>',
 }
 
 

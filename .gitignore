@@ -31,3 +31,4 @@ NoteGPT_*
 # Cookies
 .env
 .cookies
+.pi

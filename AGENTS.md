@@ -8,12 +8,12 @@ Readers should be able to learn the video's concepts, code examples, and practic
 lessons without watching the entire recording.
 
 The website is a static GitHub Pages study library called **Video Notes**. The
-root `index.html` is the catalog: it links to all six summaries, grouped into five
+root `index.html` is the catalog: it links to all seven summaries, grouped into five
 topics. Search enhances the catalog; ordinary links work without JavaScript.
 `.github/workflows/pages.yml` packages and deploys the public site on pushes to
 `main` or manual runs once the repository's Pages source is set to GitHub Actions.
 
-All six guides are plain HTML using the shared `assets/site.css` and
+All seven guides are plain HTML using the shared `assets/site.css` and
 `assets/site.js`. The user prefers a dark theme. Use graphite backgrounds, warm
 white text, and lime accents throughout the site. Keep the shared typography,
 header, chapter sidebar, mobile contents, tables, code blocks, and image treatment
@@ -45,6 +45,7 @@ then regenerate the catalog and rebuild the public site.
 | Performance and distributed systems | `Latency_the_race_to_zero` | `index.html` | Latency, Disruptor, Aeron, replicated state machines, Raft, sequencer architecture. |
 | Computer architecture | `The_Most_Ambiguous_Concept_in_Computer_Science` | `index.html` | ISA versus microarchitecture, ALUs, instruction encodings, binary compatibility, RISC/CISC. |
 | AI agents and system design | `System_Design_for_AI_Agents_Building_a_Multi_Agent_PR_Reviewer` | `LEARN.html` | Multi-agent PR review, grounding/retrieval, storage, orchestration, observability, Genesis Kit. |
+| AI agents and system design | `lauren_here_s_how_i_shipped_2_500_PRs_last_month_to_production` | `index.html` | Trust curve, verification skills (CLI + feature map), pstack, Dune agent-friendly architecture, Grok Bot automations. |
 
 Use `LEARN.html` as the AI course's catalog destination. Its other HTML file,
 `Designing an AI Pull-Request Review Agent.html`, is the saved companion article,
@@ -56,8 +57,8 @@ materials are excluded from the deployment. Keep the nested `genesis-kit/`
 checkout ignored in Git as working reference material; do not commit it as an
 embedded repository or submodule.
 
-Root `prompts.md` and the AI course's `prompts.md` record the original summary
-requirements. `COURSE_SYLLABUS_AND_TIMESTAMPS.txt` is a course outline, not a full
+Root `prompts.md` provides the reusable guide-generation prompt; the AI course's
+`prompts.md` records its original summary requirements. `COURSE_SYLLABUS_AND_TIMESTAMPS.txt` is a course outline, not a full
 transcript. `resources/` contains legacy download inputs and metadata, not another
 video summary or a catalog category.
 
@@ -132,6 +133,24 @@ and ignored. Do not print their contents, copy them into HTML, or publish them.
 - The guides now link to original online recordings. DDD chapter links include
   YouTube timestamps; latency timestamp labels help readers navigate the InfoQ
   recording manually. Keep this behavior independent of ignored local recordings.
+
+## Research and factual accuracy
+
+- Always research before making a claim when you are unsure about a fact, concept,
+  interpretation, code example, or technical behavior. Do not fill gaps with guesses
+  or rely on recollection alone.
+- Always research additional context or explanations you intend to add beyond what
+  the video and its supplied materials establish, even when the topic seems familiar.
+  Read the supporting sources before incorporating the addition into a guide.
+- Prefer primary sources: official documentation, specifications, original research,
+  and the speaker's own material. Follow the current library documentation rules
+  below when researching libraries, frameworks, SDKs, APIs, CLI tools, or services.
+- Cite added claims with links to the sources that support them. Clearly distinguish
+  the video's teaching from supplemental research, adapted examples, and your own
+  inferences. Check that sources match the relevant version and date; label newer
+  behavior separately from the version covered in the video.
+- If research cannot resolve an uncertainty, state what remains uncertain or leave
+  the unsupported addition out. Never present an unverified explanation as fact.
 
 ## Creating or updating a summary
 

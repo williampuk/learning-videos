@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="How Lauren Tan (@poteto) ships thousands of agent-written PRs a month: verification skills, feature maps, pstack, agent-friendly architecture (Dune), and Grok Bot automations."><meta name="theme-color" content="#111513">
+<title>Here's How I Shipped 2,500 PRs Last Month to Production — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://x.com/poteto/status/2102050467505430555">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#ai-agents-and-system-design">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#heading-01"><span>01</span><span>Original talk</span></a><a href="#heading-02"><span>02</span><span>TL;DR — the whole talk in 12 lines</span></a><a href="#heading-03"><span>03</span><span>The story — drowning in manual performance work</span></a><a href="#heading-04"><span>04</span><span>The trust curve — why you can&#x27;t spawn 100 agents yet</span></a><a href="#heading-05"><span>05</span><span>How do I trust my agents more?</span></a><a href="#heading-06"><span>06</span><span>Verification skills — CLI + feature map</span></a><a href="#heading-07"><span>07</span><span>Skills that teach agents to work like real engineers</span></a><a href="#heading-08"><span>08</span><span>Whenever you correct your agent — the 5 layers</span></a><a href="#heading-09"><span>09</span><span>Your codebase is memory</span></a><a href="#heading-10"><span>10</span><span>The gardener — Dune&#x27;s three principles</span></a><a href="#heading-11"><span>11</span><span>Dune — an architecture for agent-sized context</span></a><a href="#heading-12"><span>12</span><span>Automations — your personal Michelin kitchen</span></a><a href="#heading-13"><span>13</span><span>The one takeaway</span></a><a href="#heading-14"><span>14</span><span>Cheat sheet</span></a><a href="#heading-15"><span>15</span><span>Glossary</span></a><a href="#heading-16"><span>16</span><span>Resources</span></a></nav><p class="sidebar-note">Read at your own pace.<br>Keep the original talk close.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">AI agents and system design / Study guide</span>
+<h1>Here's How I Shipped 2,500 PRs Last Month to Production</h1><p class="guide-description">Lauren Tan's 38-minute talk on turning a personal agent setup into a <em>Michelin kitchen</em> for software: trust your agents by giving them the ability to verify their own work, teach them senior-engineer workflows, and reshape your codebase so the shortcut <em>is</em> the right path.</p>
+<div class="guide-meta"><span>By <strong>Lauren Tan (@poteto)</strong></span><span>Grok Bot @ SpaceXAI · prev. Cursor, Meta, Netflix</span><span>38 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://x.com/poteto/status/2102050467505430555">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#ai-agents-and-system-design">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 16 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#heading-01"><span>01</span><span>Original talk</span></a><a href="#heading-02"><span>02</span><span>TL;DR — the whole talk in 12 lines</span></a><a href="#heading-03"><span>03</span><span>The story — drowning in manual performance work</span></a><a href="#heading-04"><span>04</span><span>The trust curve — why you can&#x27;t spawn 100 agents yet</span></a><a href="#heading-05"><span>05</span><span>How do I trust my agents more?</span></a><a href="#heading-06"><span>06</span><span>Verification skills — CLI + feature map</span></a><a href="#heading-07"><span>07</span><span>Skills that teach agents to work like real engineers</span></a><a href="#heading-08"><span>08</span><span>Whenever you correct your agent — the 5 layers</span></a><a href="#heading-09"><span>09</span><span>Your codebase is memory</span></a><a href="#heading-10"><span>10</span><span>The gardener — Dune&#x27;s three principles</span></a><a href="#heading-11"><span>11</span><span>Dune — an architecture for agent-sized context</span></a><a href="#heading-12"><span>12</span><span>Automations — your personal Michelin kitchen</span></a><a href="#heading-13"><span>13</span><span>The one takeaway</span></a><a href="#heading-14"><span>14</span><span>Cheat sheet</span></a><a href="#heading-15"><span>15</span><span>Glossary</span></a><a href="#heading-16"><span>16</span><span>Resources</span></a></nav></details>
+<div class="guide-content">
+
+<!-- ============ VIDEO ============ -->
+<section id="video"><h2 id="heading-01">Original talk</h2><p><a href="https://x.com/poteto/status/2102050467505430555">Watch Lauren Tan's talk on X</a>. Timestamp labels throughout this guide (e.g. <span class="ts">12:32</span>) point to the corresponding moment in the recording.</p>
+<p class="src">Self-recorded and posted free on X (September 2026) — it was originally prepared for Cursor Compile in London, but Lauren was livestreaming for Grok Bot Galaxy that week and released the talk online instead.</p>
+<div class="callout extra"><strong>About the numbers.</strong> The post title says <em>2,500 PRs</em>; the title slide says <em>“i shipped 2000 PRs last month”</em> (with “(good)” scrawled above the 2000), a later slide is captioned <em>“i shipped 5000+ PRs in 6 months”</em> over three GitHub contribution graphs (3,159 / 4,681 / 5,284 commits), and the auto-generated captions say “2,000”. This guide keeps each number attached to where the talk itself shows it — the volume is the hook, not the method.</div></section>
+
+<!-- ============ TLDR ============ -->
+<section class="card tldr" id="tldr">
+  <div class="sec-head"><span class="sec-num">★</span><h2 id="heading-02">TL;DR — the whole talk in 12 lines</h2></div>
+  <ul>
+    <li><strong>Volume is a side effect of trust.</strong> Lauren never set out to ship ~2,000+ PRs a month; the skills, tools, and codebase changes she made all "laddered up to this idea of trust" <span class="ts">04:14</span></li>
+    <li><strong>The 1-to-5-agent phase is the hardest to escape.</strong> You babysit every chat and course-correct constantly; if you leave, nothing happens (or the wrong thing does). Scaling to 100 agents without trust just produces "a ton of slop pull requests", regressions, and bugs <span class="ts">05:38</span></li>
+    <li><strong>Trust = verification.</strong> The unlock was a <em>verification skill</em>: teach the agent to run the real app, take performance traces and heap snapshots (via the Chrome DevTools protocol), and read them itself <span class="ts">03:52</span></li>
+    <li><strong>A verification skill has two halves</strong>: a <em>CLI</em> that reproducibly drives the app and collects proof, and a <em>feature map</em> that records what features exist and how users reach them. "A feature map gives context. A CLI gives control." <span class="ts">09:19</span></li>
+    <li><strong>Verification covers correctness</strong> — "does the checkout button actually check out the cart?" — but not quality. Layer on skills that teach agents to work like real software engineers (her <code class="inline">pstack</code> plugin: debugging, feature development, prototyping playbooks) <span class="ts">12:32</span></li>
+    <li><strong>Whenever you correct an agent, fix it at the lowest possible layer</strong>, in this order: 1) codebase, 2) static analysis (lint/compiler/CI), 3) rules/Bugbot, 4) skills, 5) "style guide". Best of all, make the mistake <em>categorically impossible</em> with better data structures or architecture <span class="ts">15:51</span></li>
+    <li><strong>Your codebase is the agent's memory.</strong> Agents extend the patterns they see — including bad ones. One innocent workaround becomes a de-facto pattern within weeks, "like a virus" <span class="ts">20:43</span></li>
+    <li><strong>Every team needs a gardener</strong> to nip anti-patterns in the bud: delete tech debt, keep one paved path, and write a lint rule against anything that shouldn't exist (a lint rule at least "stops the bleeding") <span class="ts">24:28</span></li>
+    <li><strong>Dune</strong>, the agent-friendly framework powering Grok Bot, makes the shortcut <em>the right path</em>: five nouns organize every app, process boundaries are visible in the folder tree, and a feature "adds files, not registry branches" <span class="ts">26:42</span></li>
+    <li><strong>Automations close the outer loop.</strong> Grok Bot routines subscribe to Slack threads and Sentry alerts and auto-kick off cloud agents that reproduce bugs and open PRs — no elaborate "company brain" infrastructure required <span class="ts">32:34</span></li>
+    <li><strong>Design for minimal context.</strong> A locked-down, conventional codebase is annoying for humans but lets agents (and non-engineer pilots) "do the right thing by default" <span class="ts">19:36</span></li>
+    <li><strong>The kicker:</strong> none of this is a secret — "it's a lot of hard work". Do it, and "you trust the environment so much that your agents can just be free" <span class="ts">37:29</span></li>
+  </ul>
+  <div class="pill-row">
+    <span class="pill">Trust ladder</span><span class="pill">Verification skills</span><span class="pill">Feature map + CLI</span><span class="pill">pstack</span><span class="pill">Codebase as memory</span><span class="pill">Dune</span><span class="pill">Automations</span>
+  </div>
+</section>
+
+<!-- ============ 1 STORY ============ -->
+<section class="card" id="story">
+  <div class="sec-head"><span class="sec-num">01</span><h2 id="heading-03">The story — drowning in manual performance work</h2></div>
+
+  <h3>From the React team to a wall of pull requests <span class="ts" data-t="122">02:02</span></h3>
+  <p>Six months before the talk, Lauren joined Cursor. There were <strong>no agent skills to use</strong>, the codebase was new to her, and the product was new too: Cursor was building <em>the replacement for the Cursor IDE — the new agents window</em>. That window had serious performance problems, and because she had spent time on the React team before joining, her manager asked her to help.</p>
+  <p>Her early time on the team was <strong>extremely manual</strong>: Chrome DevTools performance traces and heap snapshots, over and over, while PRs landed faster than she could check them.</p>
+  <div class="callout talk">"It felt almost an insurmountable wall of pull requests that just kept coming in, and I had no idea whether or not the performance of the app would be regressing… It got to the point where I just got really frustrated and started to think about, you know, wait — we have agents. What am I doing?" <span class="ts" data-t="200">03:20</span></div>
+
+  <h3>The idea: teach the agent to verify <span class="ts" data-t="232">03:52</span></h3>
+  <p>That frustration became her first big idea — <strong>verification skills</strong>:</p>
+  <ul>
+    <li>the agent <strong>runs the application itself</strong>,</li>
+    <li>takes the performance traces itself,</li>
+    <li>understands the traces, finds the hotspots,</li>
+    <li>and basically <strong>climbs toward better performance automatically</strong>.</li>
+  </ul>
+  <p>Over the following six months her productivity "skyrocketed". She never set a goal of thousands of PRs — but every skill, tool, and codebase change she made turned out to ladder up to one thing: <strong>trust</strong>.</p>
+  <div class="callout talk">"I had this thought in the back of my head: I am the bottleneck, and I need to be able to take all of the knowledge that I have as an engineer and impart it into my team of agents, so that I didn't need to be the blocker for everything." <span class="ts" data-t="282">04:42</span></div>
+  <figure class="shot">
+    <img src="assets/screenshots/04_contribution_graphs.png" alt="Three GitHub contribution graphs for poteto showing 3,159, 4,681, and 5,284 commits, captioned 'i shipped 5000+ PRs in 6 months'" loading="lazy">
+    <figcaption>The receipts: three GitHub contribution graphs (<strong>3,159 / 4,681 / 5,284 commits</strong>), captioned <em>"i shipped 5000+ PRs in 6 months"</em>. The steep bars all start ~6 months before the talk. <span class="ts" data-t="120">02:00</span></figcaption>
+  </figure>
+</section>
+
+<!-- ============ 2 TRUST CURVE ============ -->
+<section class="card" id="trust-curve">
+  <div class="sec-head"><span class="sec-num">02</span><h2 id="heading-04">The trust curve — why you can't spawn 100 agents yet</h2></div>
+  <p>The talk's central mental model is a graph: <strong>trust on the Y axis, number of agents on the X axis</strong> — 1, 1&nbsp;to&nbsp;5, 5&nbsp;to&nbsp;10, 10&nbsp;to&nbsp;20, hundreds, thousands.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/05_trust_curve.png" alt="Hand-drawn curve of trust rising with the number of agents, from 1 to thousands" loading="lazy">
+    <figcaption>The trust curve. Volume of agents only pays off on the right side of the graph — and you can't skip to it. <span class="ts" data-t="285">04:45</span></figcaption>
+  </figure>
+  <h3>The 1–5 phase is the hardest to leave <span class="ts" data-t="338">05:38</span></h3>
+  <p>Everyone starts at "1 to 5": you feel like you have to <strong>babysit every chat</strong>, constantly course-correcting and intervening. If you're not there, "basically nothing happens and the agents do the wrong thing."</p>
+  <p>This phase is the hardest to get out of <em>because the exit isn't visible</em> — and the reason you're stuck is simply that you don't yet trust the work your agents hand back:</p>
+  <div class="callout warn">If you don't have trust and you spawn 100 sub-agents or cloud agents anyway, "you're going to quickly find that you just get a ton of slop pull requests, a bunch of regressions, and a bunch of bugs shipped — and no one's going to be very happy with that." <span class="ts" data-t="385">06:25</span></div>
+  <p>So the question that organizes the rest of the talk: <strong>how do you trust your agents more?</strong></p>
+</section>
+
+<!-- ============ 3 HOW ============ -->
+<section class="card" id="how">
+  <div class="sec-head"><span class="sec-num">03</span><h2 id="heading-05">How do I trust my agents more?</h2></div>
+  <p>Lauren's answer has three parts — and each gets its own section below:</p>
+  <ol>
+    <li><strong>Verification for correctness</strong> — teach agents to prove their own work.</li>
+    <li><strong>High-quality skills that teach agents to work like real software engineers</strong> — e.g. her <code class="inline">pstack</code> plugin.</li>
+    <li><strong>Refactoring/rewriting architecture to be agent-friendly</strong> — the "greenfield vs brownfield" question, she notes, applies here.</li>
+  </ol>
+  <figure class="shot">
+    <img src="assets/screenshots/06_trust_agents_more.png" alt="Slide: how do I trust my agents more? Verification for correctness, high quality skills like pstack, refactoring architecture to be agent friendly" loading="lazy">
+    <figcaption>The talk's agenda in one slide. The handwritten aside — <em>greenfield vs brownfield</em> — is her shorthand for the cost of agent-friendliness in new vs existing codebases. <span class="ts" data-t="410">06:50</span></figcaption>
+  </figure>
+  <h3>Verification is a spectrum <span class="ts" data-t="430">07:10</span></h3>
+  <p>"When I say verification, there are sort of levels to that."</p>
+  <ul>
+    <li><strong>Lower end — verification skills:</strong> teach your agent how to <em>run</em> your application and use whatever debugging protocol you have (for web apps, the <strong>Chrome DevTools protocol</strong>): debug the app, take performance traces, take heap snapshots, and so on.</li>
+    <li><strong>Higher end — formal verification:</strong> formal methods and languages like <strong>Lean</strong> or <strong>TLA+</strong>, so business-logic invariants are always true and you can formally verify the application is in a correct state. "Still very much an open question."</li>
+  </ul>
+  <div class="callout talk">"Even if you don't have the ability to run formal methods — and very few people really do — with verification skills, you can get very far." <span class="ts" data-t="505">08:25</span></div>
+</section>
+
+<!-- ============ 4 VERIFICATION ============ -->
+<section class="card" id="verification">
+  <div class="sec-head"><span class="sec-num">04</span><h2 id="heading-06">Verification skills — a CLI gives control, a feature map gives context</h2></div>
+  <p>The first skill Lauren built on the Cursor agent window was <strong>Control Glass</strong>: a verification skill that teaches the agent to run the application and take traces through the Chrome DevTools protocol. It didn't start out this way — she iterated her way into a shape that turned out to be general:</p>
+  <figure class="shot">
+    <img src="assets/screenshots/07_verification_skill.png" alt="High-quality verification slide: a feature map (what exists, how users reach it) plus a CLI ($ drive settings, $ capture proof) means the agent can verify its own work" loading="lazy">
+    <figcaption>The key slide of the talk: <strong>feature map + CLI ⇒ the agent can verify its own work.</strong> <span class="ts" data-t="557">09:17</span></figcaption>
+  </figure>
+  <h3>Part 1 — a CLI, living inside the skill <span class="ts" data-t="559">09:19</span></h3>
+  <p>You want agents to <strong>reproducibly</strong> run the application, collect traces, and collect empirical evidence that the code works and the performance bar is met. Rather than have agents write throwaway scripts that differ between sessions, put a real CLI <em>inside the skill directory</em> — and invest in making it good, so it handles all the use cases and can run the application correctly:</p>
+  <div class="codeblock"><div class="code-head">The verification skill's CLI (as shown on the slide)</div>
+<pre><code>$ drive settings      # drive the real app to a feature
+$ capture proof       # run the real app · collect proof</code></pre></div>
+  <h3>Part 2 — a feature map: materialized memory <span class="ts" data-t="622">10:22</span></h3>
+  <p>The second half is a term she coined: the <strong>feature map</strong>, "inspired by a sitemap". It records, as data stored in the skill directory in the codebase:</p>
+  <ul>
+    <li><strong>what exists</strong> — how the application works and what every feature does;</li>
+    <li><strong>how users reach it</strong> — keyboard shortcuts, which DOM elements to click, and so on.</li>
+  </ul>
+  <p>An automation maintains the feature map as the app changes. Lauren jokes it is "a form of materialized memory" — knowledge that persists outside any single agent conversation.</p>
+  <h3>Why the combination is so powerful <span class="ts" data-t="721">12:01</span></h3>
+  <p>Alone, the CLI let agents control the app but <em>guess</em> at what people wanted — a Slack report would come in with "a very vague screenshot… just three question marks", and the agent had no idea what the user meant. With the feature map, agents can understand requests from internal and external users, then use the CLI to verify their fix on the real app.</p>
+  <div class="callout talk">"We very quickly realized that the control verification skills were so useful that they've become more or less critical infrastructure for our team, and we constantly maintain it… The ability for an agent to verify its own work is extremely powerful." <span class="ts" data-t="742">12:22</span></div>
+  <h3>Verification = correctness, not quality <span class="ts" data-t="752">12:32</span></h3>
+  <p>Verification answers: <em>does the feature do the thing you want?</em> "Does the checkout button actually check out the cart?" Empirical evidence proves it works — but tells you little about <strong>performance or code quality</strong>. That's where the next ingredient comes in.</p>
+</section>
+
+<!-- ============ 5 PSTACK ============ -->
+<section class="card" id="pstack">
+  <div class="sec-head"><span class="sec-num">05</span><h2 id="heading-07">Skills that teach agents to work like real engineers</h2></div>
+  <p>Lauren built a plugin called <code class="inline">pstack</code> — a collection of skills she doesn't deep-dive in this talk, but whose inspiration matters: they encode <strong>the workflows she personally uses as a software engineer</strong> for different kinds of tasks.</p>
+  <ul>
+    <li><strong>Debugging</strong> playbooks</li>
+    <li><strong>Feature development</strong> playbooks</li>
+    <li><strong>Prototyping</strong> playbooks</li>
+  </ul>
+  <p>"There's a whole bunch of different playbooks and skills that ship in pstack that teach your agents how to write code the way that you want them to." <span class="ts" data-t="791">13:11</span></p>
+  <h3>Where senior engineers come in <span class="ts" data-t="835">13:55</span></h3>
+  <p>This is where the more experienced engineers on a team can contribute: a <strong>team repository of skills</strong> that makes every agent smarter. Combine those workflow skills with verification skills and agents produce work that is not just <em>correct</em> but <em>high quality</em> — and because of verification, you get real performance metrics, real numbers, statistics, and telemetry to back that claim.</p>
+  <div class="callout extra"><strong>Beyond the talk:</strong> <code class="inline">pstack</code> is published as a Cursor plugin by Lauren. Its <a href="https://github.com/cursor/plugins/blob/e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a/pstack/README.md">official README</a> identifies <code class="inline">/poteto-mode</code> as the main entry point, and its <a href="https://github.com/cursor/plugins/blob/e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a/pstack/.cursor-plugin/plugin.json">plugin manifest</a> declares the MIT license. These links describe version 0.15.9 at commit <code class="inline">e43c7ee</code>; they are supplemental references, not a claim about the version shown in the recording.</div>
+</section>
+
+<!-- ============ 6 FIVE LAYERS ============ -->
+<section class="card" id="layers">
+  <div class="sec-head"><span class="sec-num">06</span><h2 id="heading-08">Whenever you correct your agent — the 5 layers</h2></div>
+  <p>Lauren calls this the slide to remember — "if there's only one thing you take away from my talk, it should be this": whenever you find yourself correcting an agent, invest the fix at the most effective layer, roughly in this order.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/08_correct_your_agent.png" alt="Slide: whenever you correct your agent — 1. codebase, 2. static analysis (lint/compiler/ci), 3. rules/bugbot, 4. skills, 5. style guide" loading="lazy">
+    <figcaption>The five layers, weakest at the bottom. The quotes around <em>"style guide"</em> are hers. <span class="ts" data-t="930">15:30</span></figcaption>
+  </figure>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="The five correction layers"><table>
+    <thead><tr><th>#</th><th>Layer</th><th>Strength</th><th>What Lauren says about it</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Codebase</strong></td><td>Highest — structural</td><td>The best form of memory. Agents extend the patterns they see; the files they read are their context window. Refactor so the mistake becomes <em>categorically impossible</em> via better data structures or algorithms. Agents won't refactor your code in every PR — they copy what's already there. <span class="ts" data-t="965">16:05</span></td></tr>
+      <tr><td>2</td><td><strong>Static analysis</strong> <small>(lint / compiler / CI)</small></td><td>High — enforced</td><td>Guidelines and constraints enforced in the codebase. When you keep correcting the same mistake, add a lint rule — or better, change the code so the mistake is impossible. <span class="ts" data-t="1009">16:49</span></td></tr>
+      <tr><td>3</td><td><strong>Rules / Bugbot</strong></td><td>Medium — guidance</td><td>Agents mostly follow them, but may forget to read a rule, or the person piloting the agent ignores them. Not as enforceable — still an important part of the environment. <span class="ts" data-t="1043">17:23</span></td></tr>
+      <tr><td>4</td><td><strong>Skills</strong></td><td>Medium — guidance</td><td>Same enforcement profile as rules: mostly used, sometimes skipped. Layer them on top of layers 1–2. <span class="ts" data-t="1043">17:23</span></td></tr>
+      <tr><td>5</td><td><strong>"Style guide"</strong></td><td>Low — humans only</td><td>Only enforceable by humans in code review. You <em>can</em> put style rules into rules/Bugbot/skills — but if you don't, you have "this big glaring hole" where humans must read every changed line. At a high PR rate, that's impossible. <span class="ts" data-t="1073">17:53</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout talk">"I definitely wouldn't recommend relying only on the style guide. Human reviews are a good place to start in terms of finding <em>what's missing</em> — but invest the time to think about the other four parts." <span class="ts" data-t="1106">18:26</span></div>
+  <p>Her recommendation, in order: make the pattern <strong>categorically impossible</strong> through codebase, architecture, and data structures — otherwise reach for <strong>static analysis</strong> — and layer <strong>rules, Bugbot, and skills</strong> on top. <span class="ts" data-t="2204">36:44</span></p>
+</section>
+
+<!-- ============ 7 CODEBASE IS MEMORY ============ -->
+<section class="card" id="memory">
+  <div class="sec-head"><span class="sec-num">07</span><h2 id="heading-09">Your codebase is memory — anti-patterns spread like a virus</h2></div>
+  <p>Why is the codebase the strongest layer? Because of how LLMs work: an agent's context window is largely the files it opens, and <strong>agents love to extend existing patterns</strong> rather than refactor. That cuts both ways.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/09_codebase_is_memory.png" alt="Slide: a framework designed for agents — minimal context agent sees one workaround and copies it into three more" loading="lazy">
+    <figcaption>An agent with minimal context sees one workaround — and reproduces it everywhere it works. <span class="ts" data-t="1190">19:50</span></figcaption>
+  </figure>
+  <div class="callout warn">"If you have existing anti-patterns, you will find that these will spread kind of like a virus. One small workaround, or a comment that explains a workaround — agents love to copy it, and in a matter of days or weeks the workaround has spread everywhere and becomes a de-facto pattern for all agents. That's a really bad place to be in." <span class="ts" data-t="1245">20:45</span></div>
+  <figure class="shot">
+    <img src="assets/screenshots/10_workaround_spread.png" alt="Garden diagram: one workaround becomes the pattern as each copy makes the next copy likelier" loading="lazy">
+    <figcaption>The garden view: <em>one workaround → the pattern</em>. "Each copy makes the next copy likelier." <span class="ts" data-t="1355">22:35</span></figcaption>
+  </figure>
+  <h3>Case study: agents leaving comments <span class="ts" data-t="1382">23:02</span></h3>
+  <p>Her favorite example of an "innocent" pattern that is actually bad: <strong>agents leaving comments in code</strong>. Humans leave comments for edge cases, workarounds, or notes to colleagues — seemingly fine. But in the Cursor codebase she watched agents use their own comments as <em>justification for not solving the actual problem</em>, papering over it with a band-aid or short-term fix.</p>
+  <div class="callout talk">"In Dune we made the choice to ban comments — so that agents would not just copy that pattern and propagate it everywhere in the codebase." <span class="ts" data-t="1443">24:03</span></div>
+  <p>Her ideal is an agent codebase "so locked down it's really annoying for humans to write code in — but so conventional, so standardized, that even innocent-looking patterns are forbidden." That may sound hostile, but it's what lets the <em>next</em> agent keep the codebase good: it's "a garden" — left untended, the weeds win. <span class="ts" data-t="1319">21:59</span></p>
+</section>
+
+<!-- ============ 8 GARDENER ============ -->
+<section class="card" id="gardener">
+  <div class="sec-head"><span class="sec-num">08</span><h2 id="heading-10">The gardener — Dune's three principles</h2></div>
+  <p>Every team needs a role Lauren calls the <strong>gardener</strong>: someone thinking about what creeps into the garden — weeds, pests, organic growth you didn't plant — and nipping it in the bud before it propagates. <span class="ts" data-t="1468">24:28</span></p>
+  <figure class="shot">
+    <img src="assets/screenshots/11_gardeners.png" alt="Slide: delete tech debt → keep one paved path → lint against anti-patterns. Your team needs gardeners." loading="lazy">
+    <figcaption>The gardener's loop: <strong>delete tech debt → keep one paved path → lint against anti-patterns.</strong> <span class="ts" data-t="1560">26:00</span></figcaption>
+  </figure>
+  <p>The principles behind Dune distill to three moves <span class="ts" data-t="1514">25:14</span>:</p>
+  <ol>
+    <li><strong>Delete the tech debt you already have</strong> — for the virus-spreading reasons above.</li>
+    <li><strong>Keep one paved path</strong> for blessed patterns. There should be one conventional way to do things so agents never have to guess — with enough guidance in the codebase, CI, and lint rules to lead them down that path.</li>
+    <li><strong>See a bad pattern? Write a lint rule against it.</strong> You don't have to clean everything up immediately — a lint rule "stops the bleeding": it doesn't solve the problem entirely, but it prevents it from growing. Then have agents clean it up.</li>
+  </ol>
+  <div class="callout talk">"Keep your codebase constantly in a state where you would be happy if an agent were to copy it. That's the kind of mindset I would recommend having." <span class="ts" data-t="1594">26:34</span></div>
+</section>
+
+<!-- ============ 9 DUNE ============ -->
+<section class="card" id="dune">
+  <div class="sec-head"><span class="sec-num">09</span><h2 id="heading-11">Dune — an architecture for agent-sized context</h2></div>
+  <p><strong>Dune</strong> is the client framework her team built to power Grok Bot. The point of this section isn't "go build Dune" — it's that <em>an agent-friendly framework of your own is very powerful</em>, because it's where you encode the tribal knowledge of your best engineers that used to live in style-guide reviews and PR comments.</p>
+  <figure class="shot">
+    <img src="assets/screenshots/12_dune_architecture.png" alt="Dune: architecture for agent-sized context — a narrow local edit can stay correct for the whole Electron app" loading="lazy">
+    <figcaption>Dune's promise: <em>"A narrow local edit can stay correct for the whole Electron app."</em> Its design is based on the public <code class="inline">dune/docs</code>. <span class="ts" data-t="1615">26:55</span></figcaption>
+  </figure>
+  <p>The founding lesson came from the Cursor agent window's performance work: <strong>agents love taking shortcuts — so design the framework so the shortcut is the right path.</strong> The result is a codebase that's annoying for humans (very locked down) but perfect for agents with minimal context. That matters because "not every contributor to your codebase is going to be an engineer anymore — you can have designers, product managers, CEOs going into the code base and shipping features." <span class="ts" data-t="1176">19:36</span></p>
+
+  <h3>Five nouns organize every app <span class="ts" data-t="1636">27:16</span></h3>
+  <p>Every Dune application is organized by five concepts, each with <em>one place in the file tree and one job at runtime</em>:</p>
+  <figure class="shot">
+    <img src="assets/screenshots/19_five_nouns.png" alt="Five nouns organize every app: Feature, Entrypoint, Transcript card, Client, Host around a DUNE APP" loading="lazy">
+    <figcaption>The five nouns: <strong>Feature</strong> (one owned folder for product UI), <strong>Entrypoint</strong> (one view a user can open), <strong>Transcript card</strong> (feature-owned body for one entry type), <strong>Client</strong> (durable renderer state behind hooks and commands — "one writer"), <strong>Host</strong> (always-on behavior behind a typed contract).</figcaption>
+  </figure>
+  <p>In the talk: features are co-located in a single folder; an entry point in the React part of the code determines what you can "think of like a route"; transcript cards show up in the application; a host runs on the Grok Bot virtual machine; and the client powers the overall application. <span class="ts" data-t="1631">27:11</span></p>
+
+  <h3>Process boundaries are visible in the tree <span class="ts" data-t="1680">28:00</span></h3>
+  <p>Dune keeps <strong>strict boundaries</strong> between its concepts — and the folder layout is the contract: "a folder tells an agent where code runs and which imports are legal."</p>
+  <figure class="shot">
+    <img src="assets/screenshots/13_process_boundaries.png" alt="Process boundaries diagram: renderer (Feature UI, Navigation, Client) — typed edge — serving processes (Host extensions, Electron main)" loading="lazy">
+    <figcaption>renderer/ on one side, serving processes on the other, with a <strong>typed edge</strong> between them. The fine print: <em>"shared/ holds cross-process types. Each process imports only its allowed layers"</em> — and, handwritten: <em>"Dune supplies the boundary machinery. The app supplies the behavior."</em></figcaption>
+  </figure>
+  <p>The motivating failure came straight from Cursor's agent window: code occasionally got <strong>accidentally imported into the renderer thread</strong>, bringing slow work with it. The renderer must stay smooth — no long tasks over <strong>16&nbsp;ms</strong> for 60&nbsp;fps, or <strong>8&nbsp;ms</strong> for 120&nbsp;fps — so work has to be chunked, never done all at once. Dune enforces the boundary <em>through the import and dependency graph</em>, categorically eliminating the pattern instead of reviewing for it. <span class="ts" data-t="1681">28:01</span></p>
+
+  <h3>A feature adds files, not registry branches <span class="ts" data-t="1755">29:15</span></h3>
+  <p>Reserved filenames turn a nearby folder into the complete contribution — the build discovers them (Vite collects reserved files), startup validates them (<code class="inline">createDuneApp</code> freezes one catalog), and opening loads them lazily (<code class="inline">view.tsx</code> arrives on first use). The old <code class="inline">shared registry.ts</code> is crossed out: "no second list."</p>
+  <figure class="shot">
+    <img src="assets/screenshots/14_feature_adds_files.png" alt="A feature adds files, not registry branches: features/reports folder with entrypoint.ts, view.tsx, loading.tsx, error.tsx, index.ts" loading="lazy">
+    <figcaption>Two agents can add different feature folders <strong>without editing the same root</strong> — no merge conflicts on a central registry, and no chance to break one.</figcaption>
+  </figure>
+  <div class="codeblock"><div class="code-head">features/reports/ — the reserved filenames (from the slide)</div>
+<pre><code>workspace/
+  entrypoint.ts   # eager identity + policy
+  view.tsx        # lazy React view
+  loading.tsx     # optional eager fallback
+  error.tsx       # optional eager fallback
+index.ts          # public cross-feature edge</code></pre></div>
+
+  <h3>The host-backed feature blueprint <span class="ts" data-t="1765">29:25</span></h3>
+  <p>"A vertical slice keeps transport, durable state, and React in their named owners." Each box below names real file locations — this is the concrete shape of a feature in Dune:</p>
+  <figure class="shot">
+    <img src="assets/screenshots/15_host_backed_blueprint.png" alt="Host-backed feature blueprint: Feature UI, Client, Shared edge, Host extension with file paths" loading="lazy">
+    <figcaption>The blueprint's fine print: <em>"The component never handles IPC channels, Host peer lookup, retry ordering, or process startup."</em> And the definition that ties Dune together: <em>"Agent-friendly means a correct open-file edit preserves the whole app's invariants."</em></figcaption>
+  </figure>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Feature blueprint file map"><table>
+    <thead><tr><th>Box</th><th>Files</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Feature UI</strong></td><td><code class="inline">features/&lt;name&gt;/</code> · <code class="inline">workspace/entrypoint.ts</code> · <code class="inline">workspace/view.tsx</code></td><td>Thin React that reads hooks</td></tr>
+      <tr><td><strong>Client</strong></td><td><code class="inline">client/&lt;name&gt;-store.ts</code> · source adapter · named hook + command</td><td>Owns the local replica</td></tr>
+      <tr><td><strong>Shared edge</strong></td><td><code class="inline">shared/&lt;name&gt;-rpc.ts</code> · <code class="inline">declareRpcEdge</code> · typed args + failures</td><td>Both processes import it</td></tr>
+      <tr><td><strong>Host extension</strong></td><td><code class="inline">extensions/&lt;name&gt;/</code> · <code class="inline">extension.ts</code> + <code class="inline">api.d.ts</code> · service + test</td><td>Owns durable behavior</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Extract the style guide into the framework <span class="ts" data-t="1805">30:05</span></h3>
+  <div class="callout talk">"How do you take away what used to be in the style-guide process — engineers reviewing other engineers' work and leaving comments — and almost extract that knowledge and encode it into the framework, into the codebase itself? The codebase is the materialized snapshot of the state in which you want your agents to extend. You want it so pristine, so great, that the next agent that comes along is very likely to continue that pattern and keep it really good." <span class="ts" data-t="1826">30:26</span></div>
+</section>
+
+<!-- ============ 10 AUTOMATIONS ============ -->
+<section class="card" id="automations">
+  <div class="sec-head"><span class="sec-num">10</span><h2 id="heading-12">Automations — your personal Michelin kitchen</h2></div>
+  <p>Once the layers exist, she says, you can set up "a Michelin kitchen — a software factory." Then she crosses out <em>software factory</em> on the slide: "I'm going to cross out this term because I don't like this term." <span class="ts" data-t="2018">33:38</span></p>
+  <figure class="shot">
+    <img src="assets/screenshots/16_michelin_factory.png" alt="Building a Michelin kitchen / software factory slide: grok bot (new!), cloud agents, automations and Agent SDK" loading="lazy">
+    <figcaption>The building blocks, annotated in her handwriting: <strong>grok bot</strong> = <em>individual automation · line cook agent</em>; <strong>cloud agents</strong> = <em>team automation · factory agent</em>; plus <strong>automations and the Agent SDK</strong>. <span class="ts" data-t="1860">31:00</span></figcaption>
+  </figure>
+  <p>The kitchen analogy carries the mindset, not just the vocabulary: skills and tools are how you <em>train</em> your line cooks; and when a cook keeps tripping over something in the kitchen, you fix the kitchen — "you problem-solve and ensure that others don't trip as well." <span class="ts" data-t="1930">32:10</span></p>
+  <h3>Grok Bot as the outer loop <span class="ts" data-t="1954">32:34</span></h3>
+  <p>Grok Bot and Cursor play complementary roles. Grok Bot provides what she calls the <strong>outer loop</strong>: connect it to services via connectors — <strong>Slack, Datadog, Sentry, PlanetScale</strong>, whatever you use — and it aggregates that information to make good decisions. Some people call this a "company brain", but she doesn't think you need anything that sophisticated: <em>agents are already good at using tools</em>.</p>
+  <ul>
+    <li><strong>Routines</strong> subscribe to Slack threads or Sentry alerts and kick work off automatically.</li>
+    <li>Grok Bot can <strong>auto-kick off cloud agents</strong> — agents with their own machines that take the task, run the app, and verify.</li>
+    <li>On the Cursor side, <strong>automations and the SDK</strong> let you set up additional bots that reuse the same agent infrastructure for more complicated tasks.</li>
+  </ul>
+  <div class="callout talk">"When you combine all of these things — your codebase, your rules, your skills — they all compound, and Grok Bot will automatically respond to events that come from the outer loop and kick off cloud agents." <span class="ts" data-t="2058">34:18</span></div>
+  <h3>What it looks like in practice <span class="ts" data-t="2095">34:55</span></h3>
+  <p>She closes the section with real screenshots of the automations her team runs on Cursor: "we are automatically reproducing bug reports, we are automatically opening pull requests."</p>
+  <figure class="shot">
+    <img src="assets/screenshots/17_automation_bug_triage.png" alt="Slack thread in #glass-oncall-assistant: Benny app reports 'Reproduced but already fixed on main' with reproduction notes" loading="lazy">
+    <figcaption>An on-call automation triaging a real bug report in Slack: the bot reproduces the reported bug on the prior commit, reports it's <strong>already fixed on main</strong>, and links to the cloud agent run (<em>view cloud agent</em>).</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="assets/screenshots/18_automation_agent_fix.png" alt="Slack thread: Cursor agent reply with a reproduction analysis and instructions for the fixing agent" loading="lazy">
+    <figcaption>The reply from the <strong>Cursor AGENT</strong> is worth reading in full — it's the verification loop in action: it reproduced the toast three times, explained the root cause (a terminal watcher combining a URL from one command with machine-wide port snapshots, without verifying the listener's owner), noted the test gap ("current tests cover an existing port and a new same-command port, but not this cross-terminal case"), and left instructions: <em>"For the agent fixing this: re-run the repro path above to verify your fix. Write a failing test, then fix the issue."</em></figcaption>
+  </figure>
+  <div class="callout talk">"Because all of these things compound… you're essentially adding a lot of value to the entire team." <span class="ts" data-t="2110">35:10</span> And zooming back out: spend the time to ascend the trust graph, and you can parallelize your work — and empower every engineer and builder on the team to be extremely productive writing high-quality code. <span class="ts" data-t="2141">35:41</span></div>
+</section>
+
+<!-- ============ 11 TAKEAWAY ============ -->
+<section class="card" id="takeaway">
+  <div class="sec-head"><span class="sec-num">11</span><h2 id="heading-13">The one takeaway</h2></div>
+  <p>She ends by pulling the trust curve back up and then swapping it for a single slide:</p>
+  <div class="callout talk">"If there's only one thing you take away from my talk, it should be this slide: these are the activities that will help you build up towards a high-trust environment. Whenever you find yourself correcting and interviewing your agent, think about these five pieces — and where is the most effective step in this sequence to make your agent much more trustworthy." <span class="ts" data-t="2170">36:10</span></div>
+  <ol>
+    <li><strong>Codebase</strong> — invest the time to make the pattern categorically impossible through architecture and data structures.</li>
+    <li><strong>Static analysis</strong> (lint / compiler / CI) — enforce what you can't structurally prevent.</li>
+    <li><strong>Rules / Bugbot</strong> — guide the agent where enforcement ends.</li>
+    <li><strong>Skills</strong> — teach the workflows you'd teach a new teammate.</li>
+    <li><strong>"Style guide"</strong> — the human layer; use reviews to discover what the other four layers are missing.</li>
+  </ol>
+  <p>Do all of that, add skills for code quality, "and you get to a place where you trust the environment so much that your agents can just be free." She has spent a lot of time doing exactly this for Grok Bot's codebase:</p>
+  <div class="callout talk">"This is really the secret — well, it's not really a secret. It's a lot of hard work. I hope you have a lot of fun and success pulling your own Michelin kitchen." — find her on X, <strong>@poteto</strong> (potato with an e). <span class="ts" data-t="2249">37:29</span></div>
+</section>
+
+<!-- ============ CHEAT SHEET ============ -->
+<section class="card" id="cheatsheet">
+  <div class="sec-head"><span class="sec-num">≡</span><h2 id="heading-14">Cheat sheet</h2></div>
+  <h3>The trust ladder — what each stage feels like</h3>
+  <div class="ladder">
+    <div class="row"><div class="lab">1–5 agents</div><div class="bar"><i style="width:12%"></i></div><div class="val">babysit every chat</div></div>
+    <div class="row"><div class="lab">5–10 agents</div><div class="bar"><i style="width:30%"></i></div><div class="val">needs verification skills</div></div>
+    <div class="row"><div class="lab">10–20 agents</div><div class="bar"><i style="width:50%"></i></div><div class="val">needs quality skills + guardrails</div></div>
+    <div class="row"><div class="lab">Hundreds</div><div class="bar"><i style="width:72%"></i></div><div class="val">needs locked-down codebase</div></div>
+    <div class="row"><div class="lab">Thousands</div><div class="bar"><i style="width:94%"></i></div><div class="val">outer loop + automations compound</div></div>
+  </div>
+  <h3>Verification skill anatomy</h3>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Verification skill anatomy"><table>
+    <thead><tr><th>Half</th><th>Gives the agent…</th><th>Contains</th><th>Maintained by</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CLI</strong> — control</td><td>reproducible hands</td><td>commands to run the real app and capture proof (<code class="inline">drive settings</code>, <code class="inline">capture proof</code>) via the debugging protocol (e.g. Chrome DevTools)</td><td>you — invest in it like infrastructure</td></tr>
+      <tr><td><strong>Feature map</strong> — context</td><td>eyes and a map</td><td>what features exist, what they do, how users reach them (shortcuts, DOM elements)</td><td>an automation, stored in the skill directory</td></tr>
+    </tbody>
+  </table></div>
+  <h3>The correction sequence (lowest layer first)</h3>
+  <div class="stepper">
+    <div class="step"><b>1 · codebase</b>Make the pattern categorically impossible.</div>
+    <div class="step"><b>2 · static analysis</b>Lint / compiler / CI enforce the rule.</div>
+    <div class="step"><b>3 · rules/bugbot</b>Remind the agent where enforcement ends.</div>
+    <div class="step"><b>4 · skills</b>Teach the workflow you'd teach a teammate.</div>
+    <div class="step"><b>5 · "style guide"</b>Humans catch whatever is left — and find gaps.</div>
+  </div>
+  <h3>Dune vocabulary</h3>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Dune vocabulary"><table>
+    <thead><tr><th>Noun</th><th>One line</th><th>Handwritten note</th></tr></thead>
+    <tbody>
+      <tr><td>Feature</td><td>one owned folder for product UI</td><td><em>folder</em></td></tr>
+      <tr><td>Entrypoint</td><td>one view a user can open</td><td><em>openable view</em></td></tr>
+      <tr><td>Transcript card</td><td>feature-owned body for one entry type</td><td></td></tr>
+      <tr><td>Client</td><td>durable renderer state behind hooks and commands</td><td><em>one writer</em></td></tr>
+      <tr><td>Host</td><td>always-on behavior behind a typed contract</td><td></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section class="card" id="glossary">
+  <div class="sec-head"><span class="sec-num">A→Z</span><h2 id="heading-15">Glossary</h2></div>
+  <input aria-label="Search glossary" id="glossSearch" class="gloss-search" type="search" placeholder="Filter terms…" autocomplete="off">
+  <dl class="gloss" id="glossList">
+    <div class="gterm"><dt>Trust curve</dt><dd>The talk's core graph: trust (Y) vs number of agents (X: 1 → thousands). You can only run as many agents as you can trust.</dd></div>
+    <div class="gterm"><dt>Verification skill</dt><dd>A skill that teaches an agent to run the real application, debug it (e.g. via the Chrome DevTools protocol), take traces/heap snapshots, and check its own work.</dd></div>
+    <div class="gterm"><dt>Control Glass</dt><dd>The first verification skill Lauren built for Cursor's agent window; teaches the agent to run the app and take traces through the Chrome DevTools protocol.</dd></div>
+    <div class="gterm"><dt>Feature map</dt><dd>Lauren's coinage (inspired by a sitemap): data in the skill directory recording what features exist, what they do, and how users reach them. "Materialized memory" for agents; maintained by an automation.</dd></div>
+    <div class="gterm"><dt>Formal verification</dt><dd>The high end of the verification spectrum: formal methods (Lean, TLA+) proving business-logic invariants always hold. Few teams can do this; verification skills get you very far without it.</dd></div>
+    <div class="gterm"><dt>pstack</dt><dd>Lauren's plugin: a collection of skills/playbooks (debugging, feature development, prototyping) that teach agents to code the way her team wants.</dd></div>
+    <div class="gterm"><dt>Bugbot</dt><dd>Cursor's agent code-reviewer; in the talk, part of the "rules/bugbot" guidance layer.</dd></div>
+    <div class="gterm"><dt>Paved path</dt><dd>The single blessed, conventional way to do something in a codebase, so agents never have to guess — enforced with guidance in code, CI, and lint rules.</dd></div>
+    <div class="gterm"><dt>Categorically impossible</dt><dd>Her bar for layer-1 fixes: restructure data/algorithms/architecture so the mistake can no longer be expressed at all.</dd></div>
+    <div class="gterm"><dt>Gardener</dt><dd>A team role that watches for creeping anti-patterns ("weeds") and removes or fences them early — delete tech debt, keep one paved path, lint against anti-patterns.</dd></div>
+    <div class="gterm"><dt>Dune</dt><dd>The agent-friendly client framework powering Grok Bot ("architecture for agent-sized context"; one app tree, one process tree, one runtime, based on Electron; documented in dune/docs).</dd></div>
+    <div class="gterm"><dt>Typed edge</dt><dd>The typed boundary between Dune's renderer and serving processes; shared/ holds cross-process types, and each process imports only its allowed layers.</dd></div>
+    <div class="gterm"><dt>16 ms / 8 ms budget</dt><dd>A renderer frame must complete in 16 ms for 60 fps (8 ms for 120 fps); long tasks in the renderer make the UI janky — the lesson behind Dune's main/renderer separation.</dd></div>
+    <div class="gterm"><dt>Grok Bot</dt><dd>The product Lauren works on at SpaceXAI; in this talk, the "outer loop" that connects to services and kicks off cloud agents.</dd></div>
+    <div class="gterm"><dt>Outer loop / company brain</dt><dd>Aggregating signals from tools (Slack, Datadog, Sentry, PlanetScale) so a bot can decide what work to start. Her take: don't over-engineer it — connect the tools and let agents use them.</dd></div>
+    <div class="gterm"><dt>Routine</dt><dd>A Grok Bot automation that subscribes to a Slack thread or Sentry alert and kicks off work automatically.</dd></div>
+    <div class="gterm"><dt>Cloud agent</dt><dd>An agent running on its own machine in the cloud; on the slide, the "team automation / factory agent" to Grok Bot's "individual automation / line cook agent".</dd></div>
+    <div class="gterm"><dt>Michelin kitchen</dt><dd>Her preferred metaphor for a high-trust agent environment (vs "software factory", which she crosses out): creative work, but the kitchen setup — equipment, training, ratio of line cooks to dishwashers — determines the output.</dd></div>
+  </dl>
+</section>
+
+<!-- ============ RESOURCES ============ -->
+<section class="card" id="resources">
+  <div class="sec-head"><span class="sec-num">🔗</span><h2 id="heading-16">Resources</h2></div>
+  <ul>
+    <li><a href="https://x.com/poteto/status/2102050467505430555" target="_blank" rel="noopener">Original talk on X</a> — "here's how i shipped 2,500 PRs last month to production" (Lauren Tan, September 2026; free to watch).</li>
+    <li><a href="https://x.com/poteto" target="_blank" rel="noopener">Lauren Tan (@poteto) on X</a> — the handle she leaves at the end of the talk.</li>
+    <li><strong>Bugbot</strong> — <a href="https://cursor.com/bugbot" target="_blank" rel="noopener">cursor.com/bugbot</a>, Cursor's agent code review (the "bugbot" of layer 3).</li>
+    <li><strong>Follow-up interview</strong> — Matt Pocock talks with Lauren about the same system: <a href="https://www.youtube.com/watch?v=MN9dGgmLyso" target="_blank" rel="noopener">"Poteto on shipping 1,000's of PRs a month"</a> (YouTube).</li>
+    <li><strong>Community write-ups</strong> (independent summaries of the talk and pstack): <a href="https://barnabyrobson.org/on-pstack/" target="_blank" rel="noopener">On pstack — Barnaby Robson</a> · <a href="https://redreamality.com/blog/lauren-tan-poteto-trust-before-parallel/" target="_blank" rel="noopener">Trust First, Then Parallel</a> · <a href="https://intelligentartifact.com/posts/how-lauren-tan-ships-thousands-of-prs-a-month/" target="_blank" rel="noopener">How Lauren Tan Ships Thousands of PRs a Month</a> · <a href="https://genegi.github.io/posts/lessons-from-potetos-2500-prs-talk/" target="_blank" rel="noopener">Lessons from the talk — Gene Gi</a>.</li>
+    <li><strong>Lean &amp; TLA+</strong> — the formal-verification end of the spectrum she name-checks: <a href="https://lean-lang.org/" target="_blank" rel="noopener">lean-lang.org</a> · <a href="https://lamport.azurewebsites.net/tla/tla.html" target="_blank" rel="noopener">TLA+ home page</a>.</li>
+  </ul>
+  <p class="src">All screenshots are stills from the local recording of the talk, used for educational purposes. Slide text (including Dune diagrams and the Slack automation screenshots) is transcribed from the video; quotes are lightly cleaned from the auto-generated captions. "Beyond the talk" boxes contain added context not stated in the talk and are labeled as such.</p>
+</section>
+
+
+<footer>
+  Study guide generated from the recorded talk "Here's how I shipped 2,500 PRs last month to production" by Lauren Tan (@poteto).<br>
+  All screenshots are stills from the local video file in this folder, used for educational purposes.
+</footer></div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>

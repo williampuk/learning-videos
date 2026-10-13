@@ -40,5 +40,12 @@
     "title": "System Design for AI Agents: A Multi-Agent PR Reviewer", "speaker": "Ayush Singh", "venue": "Antern / freeCodeCamp", "duration": "3 h 10 min",
     "description": "Design a production PR review agent from first principles, covering specialist agents, grounded retrieval, orchestration, and an observable data spine.",
     "tags": ["AI agents", "RAG", "System design"], "source": "https://www.youtube.com/watch?v=iqRcGCah0Kw"
+  },
+  {
+    "id": "agentic-pr-factory", "topic": "AI agents and system design", "group": "ai-agents-and-system-design", "tone": "violet",
+    "folder": "lauren_here_s_how_i_shipped_2_500_PRs_last_month_to_production", "page": "index.html",
+    "title": "Here's How I Shipped 2,500 PRs Last Month to Production", "speaker": "Lauren Tan (@poteto)", "venue": "Self-published on X · written for Cursor Compile", "duration": "38 min",
+    "description": "Earn the right to run hundreds of agents: verification skills with a CLI and feature map, pstack playbooks, the agent-friendly Dune architecture, and Grok Bot automations that close the outer loop.",
+    "tags": ["AI agents", "Verification skills", "Dune"], "source": "https://x.com/poteto/status/2102050467505430555"
   }
 ]
