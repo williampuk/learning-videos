@@ -55,5 +55,24 @@
     "title": "Design Software Systems Like a Senior Engineer", "speaker": "Hayk Simonyan", "venue": "freeCodeCamp", "duration": "3 h 17 min",
     "description": "A five-step interview framework, the five dimensions interviewers score, and three complete designs — Spotify-like streaming, Booking-like reservations with double-booking prevention, and WhatsApp-like messaging scaled to billions.",
     "tags": ["System design", "Interviews", "Architecture"], "source": "https://www.youtube.com/watch?v=soTfFFIQQ8U"
+  },
+  {
+    "id": "design-uber",
+    "topic": "AI agents and system design",
+    "group": "ai-agents-and-system-design",
+    "tone": "violet",
+    "folder": "Design_Uber_w_a_Ex-Meta_Staff_Engineer_-_System_Design_Interview_breakdown",
+    "page": "index.html",
+    "title": "Design Uber: System Design Interview Breakdown",
+    "speaker": "Evan King",
+    "venue": "Hello Interview",
+    "duration": "1 h 03 min",
+    "description": "Trace fare estimates and ride matching, then tackle spatial search, adaptive location updates, expiring driver reservations, surge queues, and regional scaling—with researched correctness notes.",
+    "tags": [
+      "System design",
+      "Geospatial search",
+      "Distributed locking"
+    ],
+    "source": "https://www.youtube.com/watch?v=lsKU38RKQSo"
   }
 ]

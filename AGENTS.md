@@ -8,12 +8,12 @@ Readers should be able to learn the video's concepts, code examples, and practic
 lessons without watching the entire recording.
 
 The website is a static GitHub Pages study library called **Video Notes**. The
-root `index.html` is the catalog: it links to all eight summaries, grouped into five
+root `index.html` is the catalog: it links to all nine summaries, grouped into five
 topics. Search enhances the catalog; ordinary links work without JavaScript.
 `.github/workflows/pages.yml` packages and deploys the public site on pushes to
 `main` or manual runs once the repository's Pages source is set to GitHub Actions.
 
-All eight guides are plain HTML using the shared `assets/site.css` and
+All nine guides are plain HTML using the shared `assets/site.css` and
 `assets/site.js`. The user prefers a dark theme. Use graphite backgrounds, warm
 white text, and lime accents throughout the site. Keep the shared typography,
 header, chapter sidebar, mobile contents, tables, code blocks, and image treatment
@@ -47,6 +47,7 @@ then regenerate the catalog and rebuild the public site.
 | AI agents and system design | `System_Design_for_AI_Agents_Building_a_Multi_Agent_PR_Reviewer` | `LEARN.html` | Multi-agent PR review, grounding/retrieval, storage, orchestration, observability, Genesis Kit. |
 | AI agents and system design | `lauren_here_s_how_i_shipped_2_500_PRs_last_month_to_production` | `index.html` | Trust curve, verification skills (CLI + feature map), pstack, Dune agent-friendly architecture, Grok Bot automations. |
 | AI agents and system design | `Design_Software_Systems_Like_a_Senior_Engineer_Complete_Course` | `index.html` | Five-step system design interview framework, five evaluation dimensions, Spotify-like streaming, Booking-like reservations (double booking, SELECT FOR UPDATE, Elasticsearch + CDC), WhatsApp-like messaging (WebSockets, pre-signed media, E2EE, failure handling). |
+| AI agents and system design | `Design_Uber_w_a_Ex-Meta_Staff_Engineer_-_System_Design_Interview_breakdown` | `index.html` | Uber interview design: fare estimates, location updates, quadtrees/geohashes, Redis spatial search, driver reservations, surge queues, regional scaling, and researched correctness notes. |
 
 Use `LEARN.html` as the AI course's catalog destination. Its other HTML file,
 `Designing an AI Pull-Request Review Agent.html`, is the saved companion article,
