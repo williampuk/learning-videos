@@ -75,4 +75,24 @@
     ],
     "source": "https://www.youtube.com/watch?v=lsKU38RKQSo"
   }
+,
+  {
+    "id": "ticketmaster-design",
+    "topic": "AI agents and system design",
+    "group": "ai-agents-and-system-design",
+    "tone": "violet",
+    "folder": "System_Design_Interview_-_Design_Ticketmaster_w_a_Ex-Meta_Staff_Engineer",
+    "page": "index.html",
+    "title": "System Design Interview: Design Ticketmaster",
+    "speaker": "Evan King",
+    "venue": "Hello Interview",
+    "duration": "59 min",
+    "description": "An ex-Meta staff engineer whiteboards Ticketmaster: two-phase booking held by a Redis TTL ticket lock, Elasticsearch search synced via CDC, real-time seat maps, and the virtual waiting queue that absorbs on-sale surges.",
+    "tags": [
+      "System design",
+      "Redis locking",
+      "Elasticsearch"
+    ],
+    "source": "https://www.youtube.com/watch?v=fhdPyoO6aXI"
+  }
 ]

@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A former Meta staff engineer designs Ticketmaster live: requirements, two-phase booking with a Redis TTL lock, Elasticsearch search, real-time seat maps, and the virtual waiting queue."><meta name="theme-color" content="#111513">
+<title>System Design Interview: Design Ticketmaster — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.youtube.com/watch?v=fhdPyoO6aXI">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#system-design-interviews">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#heading-01"><span>01</span><span>TL;DR — the whole design in ten bullets</span></a><a href="#heading-02"><span>02</span><span>1. Why this question, and who's asking</span></a><a href="#heading-03"><span>03</span><span>2. The five-step roadmap</span></a><a href="#heading-04"><span>04</span><span>3. Requirements: find what's hard</span></a><a href="#heading-05"><span>05</span><span>4. Core entities &amp; APIs</span></a><a href="#heading-06"><span>06</span><span>5. High-level design</span></a><a href="#heading-07"><span>07</span><span>6. The 10-minute hold: three fixes</span></a><a href="#heading-08"><span>08</span><span>7. Deep dive: low-latency search</span></a><a href="#heading-09"><span>09</span><span>8. Deep dive: the real-time seat map</span></a><a href="#heading-10"><span>10</span><span>9. Deep dive: surges &amp; the waiting queue</span></a><a href="#heading-11"><span>11</span><span>10. Remaining qualities: scale &amp; cache</span></a><a href="#heading-12"><span>12</span><span>11. What passing looks like</span></a><a href="#heading-13"><span>G</span><span>Glossary — every term, one paragraph</span></a><a href="#heading-14"><span>★</span><span>Cheat sheet — one page, printed</span></a></nav><p class="sidebar-note">Study the flow once.<br>Return to the deep dives before your interview.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">System design interviews / Study guide</span>
+<h1>System Design Interview: Design Ticketmaster</h1><p class="guide-description">A former Meta Staff Engineer — who says he has asked this exact question more than 50 times — designs a Ticketmaster-style ticket booking service from an empty whiteboard. Every step of a real interview loop: requirements, entities, APIs, a working high-level design, and the deep dives (TTL-based seat holds, search, real-time seat maps, virtual waiting queues) that separate senior from staff.</p>
+<div class="guide-meta"><span>By <strong>Evan — ex-Meta Staff Engineer</strong></span><span>Hello Interview</span><span>59 min original recording</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.youtube.com/watch?v=fhdPyoO6aXI">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="https://www.hellointerview.com/learn/system-design/answer-keys/ticketmaster">Written answer key <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#system-design-interviews">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 14 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#heading-01"><span>01</span><span>TL;DR — the whole design in ten bullets</span></a><a href="#heading-02"><span>02</span><span>1. Why this question, and who's asking</span></a><a href="#heading-03"><span>03</span><span>2. The five-step roadmap</span></a><a href="#heading-04"><span>04</span><span>3. Requirements: find what's hard</span></a><a href="#heading-05"><span>05</span><span>4. Core entities &amp; APIs</span></a><a href="#heading-06"><span>06</span><span>5. High-level design</span></a><a href="#heading-07"><span>07</span><span>6. The 10-minute hold: three fixes</span></a><a href="#heading-08"><span>08</span><span>7. Deep dive: low-latency search</span></a><a href="#heading-09"><span>09</span><span>8. Deep dive: the real-time seat map</span></a><a href="#heading-10"><span>10</span><span>9. Deep dive: surges &amp; the waiting queue</span></a><a href="#heading-11"><span>11</span><span>10. Remaining qualities: scale &amp; cache</span></a><a href="#heading-12"><span>12</span><span>11. What passing looks like</span></a><a href="#heading-13"><span>G</span><span>Glossary — every term, one paragraph</span></a><a href="#heading-14"><span>★</span><span>Cheat sheet — one page, printed</span></a></nav></details>
+<div class="guide-content">
+
+    <section id="tldr">
+      <div class="eyebrow">Start here</div>
+      <h2 id="heading-01"><span class="chap-num">★</span>TL;DR — the whole design in ten bullets</h2>
+      <div class="intro-callout">
+        Evan, a former Meta Staff Engineer and co-founder of <a href="https://www.hellointerview.com/learn/system-design/answer-keys/ticketmaster">Hello Interview</a>, walks through <strong>"Design Ticketmaster"</strong> exactly as he runs it in real interviews. The system is a ticket booking service (~100M DAU on his whiteboard) where the hard parts are <em>never double-booking a seat</em>, <em>expiring holds on time</em>, and <em>surviving a Taylor Swift on-sale</em>. Ten bullets carry the whole talk; the chapters below carry the reasoning.
+      </div>
+      <ol>
+        <li><strong>Follow a fixed roadmap.</strong> Requirements → Core Entities → API → High-Level Design → Deep Dives. Requirements + entities + APIs satisfy the functional requirements; the high-level design follows the same goal; deep dives exist to satisfy the non-functional ones. Budget: ~15 minutes through the APIs, ~20 left for design and deep dives. (Ch 2)</li>
+        <li><strong>Functional requirements are three.</strong> Search for events, view an event (details + seat map), book a ticket. Derive them by walking the user journey backwards. (Ch 3)</li>
+        <li><strong>The senior CAP answer is split, not singular.</strong> Strong consistency for booking (never two owners of one seat), high availability for search and viewing (a few seconds of staleness is fine). Mid-level candidates say "consistency over availability" and stop; seniors apply CAP <em>per part of the system</em>. (Ch 3)</li>
+        <li><strong>Reads dwarf writes ~100:1</strong>, and traffic is steady until a mega-event sends "tens or hundreds of millions" to the same seats at once — so scalability means <em>surge handling</em>, not average throughput. (Ch 3)</li>
+        <li><strong>Booking is two-phase.</strong> <code>reserve(ticketId)</code> starts a 10-minute countdown; <code>confirm(ticketId, paymentDetails)</code> completes it. Identity lives in a JWT/session header, never a user ID in the body — that would be spoofable. (Ch 4)</li>
+        <li><strong>The high-level design is deliberately plain.</strong> Client → API gateway (auth, rate limiting, routing) → three microservices (search, event CRUD, booking) → Postgres; Stripe for payment via webhooks. Name the database qualities you need instead of litigating SQL vs NoSQL. (Ch 5)</li>
+        <li><strong>Expiring holds, in order of sophistication:</strong> a <code>reservedAt</code> timestamp → a cron job (works, but holds can last up to ~2× the TTL) → a <strong>Redis ticket lock with a 10-minute TTL</strong> — the optimal answer. Reserve writes nothing to the database; the seat map is "available rows minus locked IDs". If the lock store dies, Postgres ACID still prevents double-booking: first purchase wins, the loser gets an error. (Ch 6)</li>
+        <li><strong>Search gets an inverted index.</strong> Tokenize names/descriptions into terms mapping to events (<em>playoff → [e1, e2, e3]</em>). Keep Elasticsearch as a derived view of Postgres, synced by dual writes or change data capture (CDC). Cache hot queries with the OpenSearch/Elasticsearch node query cache, Redis, or a CDN — but know the caveats: query permutations, lat/long precision, personalization. (Ch 7)</li>
+        <li><strong>Keep the seat map live.</strong> Long polling if users linger 1–5 minutes; server-sent events (unidirectional, which is all you need) or WebSockets if they linger longer. (Ch 8)</li>
+        <li><strong>Protect the backend with a choke point.</strong> For mega on-sales, a <strong>virtual waiting queue</strong> — cheaply a Redis sorted set ordered by arrival time — admits users in batches as seats free up and notifies them over the same SSE connection. "The best answer isn't the most technically complex." (Ch 9)</li>
+      </ol>
+      <p><em>Skip ahead to the chapters below, or jump to the <a href="#glossary">glossary</a> or the <a href="#cheat-sheet">cheat sheet</a>.</em></p>
+    </section>
+
+    <article id="ch1" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-02"><span class="chap-num">1.</span>Why this question, and who's asking</h2>
+        <div class="meta">
+          <span class="badge">00:00 – 01:31</span>
+          <span>~1 min 30 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=0s" target="_blank" rel="noopener">▶ Watch from 0:00</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>The task: design a <strong>ticket booking service like Ticketmaster</strong> — concerts, sports, theater.</li>
+          <li>Asked constantly at <strong>Meta</strong> (especially the "product design"/Product Architecture interview) and across FAANG+ system design loops.</li>
+          <li>The speaker spent <strong>5 years at Meta as a staff engineer and interviewer</strong>, and has asked this question <strong>50+ times</strong> across Meta and Hello Interview mocks — the video is his composite "best answer" plus the mistakes he watches candidates make.</li>
+        </ul>
+      </div>
+      <p>Evan frames the video as the first in a series: a real interview run-through, paused periodically for the tips, frameworks, and failure patterns he has collected as an interviewer. That interviewer's-eye view is the video's real product — you get not just a design but a calibration of <em>which answer passes at which level</em>, repeated at every step.</p>
+      <p>Companion material he mentions and the video description links: the <a href="https://www.hellointerview.com/learn/system-design/answer-keys/ticketmaster" target="_blank" rel="noopener">written answer key on Hello Interview</a>, an <a href="https://hellointerview.com/practice/youtube" target="_blank" rel="noopener">AI-feedback practice loop for this problem</a>, and the <a href="https://link.excalidraw.com/l/56zGeHiLyKZ/2Z8PSPHfA8q" target="_blank" rel="noopener">Excalidraw whiteboard used in the video</a>.</p>
+    </article>
+
+    <article id="ch2" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-03"><span class="chap-num">2.</span>The five-step roadmap</h2>
+        <div class="meta">
+          <span class="badge">01:31 – 02:36</span>
+          <span>~1 min</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=91s" target="_blank" rel="noopener">▶ Watch from 1:31</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Five stations, run in order: <strong>Requirements → Core Entities → API → High-Level Design → Deep Dives</strong>.</li>
+          <li>The first four share one primary goal: <strong>satisfy the functional requirements</strong>. Deep dives exist to satisfy the non-functional ones.</li>
+          <li>He wrote "~100M DAU" on the board — scale context before any design decision.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/01-roadmap.jpg" alt="Whiteboard reading 'Design Ticketmaster … Has ~100M DAU' above a five-box flow: Requirements, Core Entities, API, High-level Design, Deep Dives, with arcs labeled 'Primary Goal: Satisfy Functional Requirements' and 'Primary Goal: Satisfy Non-functional Requirements'" loading="lazy" />
+        <figcaption><strong>02:30 — The roadmap.</strong> The arc labels are the whole strategy: everything through the high-level design serves the functional requirements; deep dives serve the non-functional ones. When you're lost in an interview, re-read which goal the current section serves.</figcaption>
+      </figure>
+
+      <p>Why a fixed roadmap? Because it converts a 40-minute blank page into five timed sub-tasks, and because each station feeds the next: entities become API payloads, APIs become the arrows in the high-level design, and the non-functional requirements become the deep-dive agenda. He also gives a time budget mid-video: reaching the end of the APIs at ~15 minutes is on pace, leaving roughly 20 minutes for the high-level design and deep dives.</p>
+      <div class="callout" data-label="Interview craft">
+        <p>Nothing before the deep dives should be clever. If you find yourself optimizing search or availability during the entity step, you're spending time budgeted for the deep dives — park it ("this won't cut it, I'll come back") exactly as he does with <code>LIKE</code> search in Chapter 5.</p>
+      </div>
+    </article>
+
+    <article id="ch3" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-04"><span class="chap-num">3.</span>Requirements: find what's hard</h2>
+        <div class="meta">
+          <span class="badge">02:36 – 09:20</span>
+          <span>~6 min 45 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=156s" target="_blank" rel="noopener">▶ Watch from 2:36</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li><strong>Functional:</strong> book tickets · view an event (details + seat map) · search for events. Derived backwards from the user journey: search → event page → book.</li>
+          <li><strong>Non-functional — the three that matter here:</strong> strong consistency for booking + high availability for search/viewing (CAP applied per subsystem); reads ≫ writes (~100:1); scalability to handle surges from popular events.</li>
+          <li><strong>Everything else goes "below the line"</strong> (GDPR, fault tolerance, …), and you ask the interviewer to reorder your priorities.</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/02-requirements.jpg" alt="Whiteboard listing Functional Requirement (Book tickets, View an event, Search for events), Non-functional Requirements (strong consistency for booking tickets & high availability for search and viewing events, read >> write, scalability to handle surges from popular events), and Out of scope (GDPR compliance, fault tolerance, etc.)" loading="lazy" />
+        <figcaption><strong>09:00 — The finished requirements board.</strong> Three functional rows, three non-functional rows that are specific to this system, and an explicit out-of-scope list. This is the contract every later design decision checks against.</figcaption>
+      </figure>
+
+      <h3>Functional requirements: walk the journey backwards</h3>
+      <p>He starts from the most essential action — <em>booking a ticket</em> — then asks what it presupposes: booking means viewing an event page with a seating map; viewing presupposes finding the event at all. Hence, in priority order: <strong>book tickets</strong>, <strong>view an event</strong> (details: who, where, when — plus the seat map), <strong>search for events</strong>. If a candidate stalls, these are the three he pushes them toward.</p>
+
+      <h3>Non-functional requirements: don't recite the "ities"</h3>
+      <p>His biggest pet peeve: candidates who write <em>availability, scalability, reliability</em> and move on. Every system has those; listing them proves nothing. "The important part of non-functional requirements is to identify what makes this system unique, interesting, and challenging." For Ticketmaster he works through three:</p>
+      <ol>
+        <li><strong>CAP, asked concretely.</strong> The easy, mid-level answer: prioritize <em>consistency over availability</em>, because no seat may ever belong to two users ("no double booking"). The senior answer refines it: those goals <em>coexist in different parts of the system</em> — <strong>strong consistency for booking</strong> (if a user in Germany buys the seat I'm looking at from America, I must find out instantly or get an error) while <strong>search and viewing stay highly available</strong> (an event added seconds ago not appearing yet is acceptable).</li>
+        <li><strong>Read/write ratio ≈ 100:1.</strong> Far more people browse than buy — he estimates from a single-digit-percent conversion rate. This asymmetry drives later decisions (cache reads aggressively; tickets themselves are the only hot dynamic data).</li>
+        <li><strong>Access pattern: calm, then tsunami.</strong> Booking traffic is even and stable <em>until</em> a Taylor Swift tour, a Super Bowl, or a World Cup goes on sale and "tens or hundreds of millions of people" hit the same seats simultaneously. So scalability here means <strong>surge capacity</strong> — not writing the word, but designing for the spike (see Chapters 8–9).</li>
+      </ol>
+
+      <h3>Below the line: scope negotiation as a feature</h3>
+      <p>Long lists of secondary qualities (GDPR compliance, fault tolerance, analytics) go under a line marked <em>out of scope</em> — then become a conversation: <em>"Here's what I'm prioritizing; want me to move anything up or down?"</em> He flags this as a subtle signal that you see the whole product surface but can still stay focused.</p>
+      <div class="pitfall">
+        <div class="label">Common mistake</div>
+        <p>Reciting generic qualities ("it must be available and scalable") without tying each to this system's specific failure mode. The correction is always the same: name the concrete scenario — double-booking, stale seat maps, Taylor Swift — and let the requirement fall out of it.</p>
+      </div>
+    </article>
+
+    <article id="ch4" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-05"><span class="chap-num">4.</span>Core entities &amp; APIs</h2>
+        <div class="meta">
+          <span class="badge">09:20 – 17:38</span>
+          <span>~8 min 20 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=560s" target="_blank" rel="noopener">▶ Watch from 9:20</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li><strong>Entities (2 min):</strong> <code>Event</code>, <code>Venue</code>, <code>Performer</code>, <code>Ticket</code>. Admin-added events are out of scope. Don't enumerate fields yet — "they will develop naturally."</li>
+          <li><strong>APIs (≤5 min):</strong> one or more endpoints per functional requirement, exchanging those entities. REST by default; GraphQL is the main alternative.</li>
+          <li><strong>Booking is two-phase:</strong> <code>POST /booking/reserve</code> holds a ticket for 10 minutes; <code>PUT /booking/confirm</code> pays for it. Identity rides in a JWT/session header — never a user ID in the body.</li>
+        </ul>
+      </div>
+
+      <h3>Entities: what gets persisted</h3>
+      <p>He lists four: <strong>Event</strong> (added by admins — and he explicitly marks event creation out of scope to keep the interview on the user journey), <strong>Venue</strong> (events happen in stadiums), <strong>Performer</strong>, and most importantly <strong>Ticket</strong> — the table that answers availability, ownership, and price for every seat of an event. On field detail: "I'm not going to detail the fields yet because I don't know them for sure… during the high-level design we'll define the important fields."</p>
+
+      <h3>The APIs</h3>
+      <p>The method: look back at each functional requirement and write the endpoint(s) that satisfy it, taking and returning those entities. He writes TypeScript-inspired pseudocode — <code>Partial&lt;Event&gt;[]</code> just means "enough fields (title, description, performer…) to render search results; the full object comes from the event endpoint."</p>
+
+      <div class="codeblock"><div class="code-head"><span class="label">HTTP · as drawn on the whiteboard (16:00–17:30)</span></div>
+<pre><code><span class="cm"># View an event — everything the event page needs</span>
+GET /event/:eventId  -&gt;  Event &amp; Venue &amp; Performer &amp; Ticket[]
+
+<span class="cm"># Search — all parameters optional</span>
+GET /search?term={term}&amp;location={location}&amp;type={type}&amp;date={date}
+    -&gt;  Partial&lt;Event&gt;[]
+
+<span class="cm"># Booking, phase 1: hold a seat for 10 minutes</span>
+POST /booking/reserve
+header: JWT | sessionToken
+body: { ticketId }
+
+<span class="cm"># Booking, phase 2: pay (POST would also do; it doesn't create a record)</span>
+PUT /booking/confirm
+header: JWT | sessionToken
+body: { ticketId, paymentDetails <span class="cm">(stripe)</span> }</code></pre></div>
+
+      <figure>
+        <img src="assets/screenshots/03-entities-apis.jpg" alt="Whiteboard with the entity list (Event, Venue, Performer, Ticket) and the four API definitions, including reserve and confirm endpoints with JWT session-token headers" loading="lazy" />
+        <figcaption><strong>17:30 — Entities and the four endpoints.</strong> Notice what's <em>absent</em> from the request bodies: any user ID. He calls that out deliberately — see the security note below.</figcaption>
+      </figure>
+
+      <h3>Why booking is two endpoints</h3>
+      <p>If you've bought an airline ticket you know the pattern: pick a seat on the map, then get a payment page with a <strong>10-minute countdown</strong> during which the seat is yours — and returns to the pool if you don't pay. He considers recognizing this unprompted "awesome to see… but it's not a requirement": when a candidate writes a single booking endpoint, he simply points out the two-phase reality and lets them amend it.</p>
+
+      <div class="callout tip" data-label="Security note (worth 30 seconds in the interview)">
+        <p>Several candidates put <code>userId</code> in the reserve body. That's a spoofing hole — anyone could reserve <em>for</em> anyone by editing the ID. Identity belongs in an authenticated <code>Authorization</code> header (JWT or session token) that the server verifies; the mention itself demonstrates technical depth, and then you move on.</p>
+      </div>
+      <h3>The confirm endpoint and Stripe</h3>
+      <p>Confirm carries the ticket ID plus payment details. The booking service hands payment to <strong>Stripe</strong> — he name-drops its <em>Payment Intents</em> API with client libraries for React/JS — and Stripe answers asynchronously via a <strong>webhook callback URL</strong> you register on your booking service. He adds that the exact verb is negotiable: confirm "may not be POST since we are not creating a new record… maybe PUT or PATCH. That's definitely not the most important thing."</p>
+      <div class="callout" data-label="Beyond the video · Stripe's actual contract">
+        <p>The video's sketch matches Stripe's documented design: a <a href="https://docs.stripe.com/payments/payment-intents/verifying-status" target="_blank" rel="noopener">PaymentIntent</a> tracks one payment through states like <code>requires_confirmation</code> → <code>processing</code> → <code>succeeded</code>; because processing is asynchronous (card networks, banks), Stripe's own guidance is to <strong>fulfill orders from the <code>payment_intent.succeeded</code> webhook, not from the client</strong>, which may close the page before completion. Failed payments surface as <code>payment_intent.payment_failed</code>. <em>(Supplemental source: Stripe documentation, linked above.)</em></p>
+      </div>
+    </article>
+
+    <article id="ch5" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-06"><span class="chap-num">5.</span>High-level design</h2>
+        <div class="meta">
+          <span class="badge">17:38 – 28:13</span>
+          <span>~10 min 35 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=1058s" target="_blank" rel="noopener">▶ Watch from 17:38</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Goal: a <strong>simple architecture that satisfies the three functional requirements</strong> — one request path at a time.</li>
+          <li>Client → <strong>API gateway</strong> (authentication, rate limiting, routing) → microservices: <strong>Search</strong>, <strong>Event CRUD</strong>, <strong>Booking</strong> → a <strong>Postgres</strong> database holding the four entity tables; Booking also talks to <strong>Stripe</strong>.</li>
+          <li>Database choice: name the <em>qualities</em> you need (ACID for tickets, transactions, simple relations) and pick the tool you know — the SQL-vs-NoSQL debate itself is "a bit of an outdated topic."</li>
+          <li>The first search implementation is a slow <code>LIKE</code> query, deliberately left unfixed until functional requirements are met.</li>
+        </ul>
+      </div>
+
+      <h3>The skeleton</h3>
+      <p>He opts for <strong>microservices "by far the most common setup in these types of interviews… if you're not sure, it's probably the right call."</strong> The API gateway fronts everything and does three jobs worth naming: authentication, rate limiting, and routing to the right service. Then he walks each API from Chapter 4 through the diagram, one at a time — the discipline being that every arrow on the board traces back to a functional requirement.</p>
+
+      <h3>The database and its schema</h3>
+
+      <figure>
+        <img src="assets/screenshots/04-hld-database.jpg" alt="Whiteboard showing Client connected to an API Gateway (authentication, rate limiting, routing), then to an Event CRUD Service and a Database circle annotated with Event (id, venueId, performerId, tickets[], name, description), Venue (id, location, seatMap), and Performer (id) fields" loading="lazy" />
+        <figcaption><strong>21:00 — Event viewing path and schema.</strong> The <code>Event</code> row carries foreign keys (<code>venueId</code>, <code>performerId</code>) and a one-to-many to tickets; <code>Venue</code> holds location and seat map. Fields appear here — not in the entity step — because now we know which ones the APIs need.</figcaption>
+      </figure>
+
+      <p>On the perennial SQL-vs-NoSQL question he chooses <strong>Postgres</strong> with a rationale: consistency matters for tickets, ACID transactions protect them, and the data has genuine one-to-many relationships. Then the senior-level move:</p>
+      <div class="quote">"In an interview, the NoSQL vs. SQL discussion is a bit of an outdated topic… what's much more interesting is <em>what database qualities you need</em> — most of what a SQL database can do, a NoSQL database can now do too. Many mid-level candidates compare SQL and NoSQL; more experienced candidates say: here are the qualities I need — any of these would work."
+        <cite>— Evan, ~22:10 (condensed from the captions)</cite>
+      </div>
+
+      <h3>Search: good enough for now, and labeled as such</h3>
+      <div class="codeblock"><div class="code-head"><span class="label">SQL · the naive search, as sketched (~24:00)</span></div>
+<pre><code><span class="kw">SELECT</span> * <span class="kw">FROM</span> events
+<span class="kw">WHERE</span> type <span class="kw">IN</span> (…)
+  <span class="kw">AND</span> name <span class="kw">LIKE</span> <span class="st">'%term%'</span>;  <span class="cm">-- full table scan: "horribly, incredibly slow"</span></code></pre></div>
+      <p>Leading wildcards defeat every index, so this scans the whole table per query. That's fine <em>at this stage</em> — the high-level design's job is the functional requirements — as long as you say it out loud: <em>"this isn't going to cut it; I'll come back and optimize once I've satisfied all my functional requirements first."</em> That promise becomes Deep Dive #1.</p>
+
+      <h3>Booking: reserve, pay, confirm</h3>
+      <p>The <strong>booking service</strong> handles both phases. On <code>reserve(ticketId)</code> it updates the ticket row's new <code>status</code> column to <code>reserved</code> and the client gets a 200 with a 10-minute countdown. On <code>confirm(ticketId, paymentDetails)</code> the service calls Stripe, which processes the payment <em>asynchronously</em> — contacting card networks and banks — and reports back not through the original response but through a <strong>webhook</strong> to an endpoint the booking service exposes for that purpose. On success the service updates the row to <code>booked</code> plus the buying <code>userId</code> (confirmation emails are declared out of scope).</p>
+
+      <figure>
+        <img src="assets/screenshots/05-booking-flow.jpg" alt="Complete high-level design whiteboard: Client to API Gateway, branches to Search, Event CRUD Service, and Booking; Booking connects to Stripe and to the Database; Ticket entity lists id, eventId, seat, price, status: available, reserved, booked" loading="lazy" />
+        <figcaption><strong>27:00 — Version 1, complete.</strong> Every functional requirement has a path. The ticket's <code>status</code> enum — <code>available, reserved, booked</code> — is the pivot the next chapter attacks: <code>reserved</code> rows are about to become a bug.</figcaption>
+      </figure>
+    </article>
+
+    <article id="ch6" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-07"><span class="chap-num">6.</span>The 10-minute hold: three fixes, in order of sophistication</h2>
+        <div class="meta">
+          <span class="badge">28:13 – 35:18</span>
+          <span>~7 min</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=1693s" target="_blank" rel="noopener">▶ Watch from 28:13</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li><strong>Bug:</strong> a user who closes their laptop leaves the seat <code>reserved</code> <em>forever</em> — violating the 10-minute expiry.</li>
+          <li><strong>Fix 1 — timestamp column:</strong> store when it was reserved; treat old reserved rows as available. Works, but the data model now lies (<code>reserved</code> rows that aren't really held).</li>
+          <li><strong>Fix 2 — cron job:</strong> every 10 minutes flip expired rows back. Passable for mid-level, but the hold can effectively last ~2× the TTL (up to 19 minutes in his example). Not enough for senior+.</li>
+          <li><strong>Fix 3 — distributed lock (the optimal answer):</strong> reserve writes <em>nothing</em> to the database; it sets <code>ticketId = true</code> in Redis with a 10-minute <strong>TTL</strong>. Seat map = DB-available rows minus Redis-locked IDs. Expiry is exact, to the second.</li>
+          <li><strong>If the lock store dies:</strong> stands up a new instance, but users holding locks in that window lose them — two buyers may race to pay. Postgres ACID still means <em>one</em> winner; the loser gets an error. Bad UX for ≤10 minutes; a deliberate product tradeoff.</li>
+        </ul>
+      </div>
+
+      <h3>The bug</h3>
+      <p>He asks "attentive viewers" to spot the flaw he left on the board: the payment page's countdown is enforced by nothing. If the user abandons checkout, the row stays <code>reserved</code>, seat-map queries exclude it, and the best seat in the house is unbookable for eternity — "which is wrong, and doesn't meet our requirement of expiring after 10 minutes."</p>
+
+      <h3>Fix 1 — a timestamp and a smarter query</h3>
+      <div class="codeblock"><div class="code-head"><span class="label">SQL · availability query with hold expiry (~29:40)</span></div>
+<pre><code><span class="kw">SELECT</span> * <span class="kw">FROM</span> tickets
+<span class="kw">WHERE</span> event_id = :eventId
+  <span class="kw">AND</span> ( status = <span class="st">'available'</span>
+        <span class="kw">OR</span> ( status = <span class="st">'reserved'</span> <span class="kw">AND</span> reserved_at &lt; now() - interval <span class="st">'10 minutes'</span> ) );</code></pre></div>
+      <p>Verdict: "this would absolutely work… the one downside is you make your database and your data model a bit confusing — you have a status of <em>reserved</em> while things aren't actually reserved, and you need to keep these two things consistent." Two sources of truth for one fact is exactly the kind of debt an interviewer probes.</p>
+
+      <h3>Fix 2 — a cron job</h3>
+      <p>A job runs every 10 minutes, finds <code>reserved</code> rows whose timestamp is older than 10 minutes, and flips them to <code>available</code>. "Totally a valid approach, and for mid-level candidates kind of a passing approach for the interview. For senior, staff, principal and beyond — this wouldn't quite cut it." The reason is latency: call the delay between <em>should-have-expired</em> and <em>job-ran</em> <strong>n</strong>. A seat supposed to free at 12:00 that the 12:09 job releases was held 19 minutes — nearly double the promised TTL — and might be sold from under someone else's countdown in the meantime.</p>
+
+      <h3>Fix 3 — a Redis ticket lock (the answer to remember)</h3>
+      <p>Drop both the cron job and the timestamp. On reserve, touch <em>only</em> Redis: key <code>ticketId</code>, value <code>true</code> ("that part doesn't matter"), <strong>TTL = 10 minutes</strong> — after which Redis deletes the key automatically. The booking service's write path disappears; expiry becomes exact rather than periodic.</p>
+      <div class="codeblock"><div class="code-head"><span class="label">Redis commands · what the service effectively runs (adapted from the talk)</span></div>
+<pre><code><span class="cm"># reserve(ticketId): succeed only if not already held; auto-expire in 10 min</span>
+<span class="kw">SET</span> ticket:{ticketId} <span class="st">true</span> <span class="kw">NX</span> <span class="kw">EX</span> <span class="nm">600</span>
+
+<span class="cm"># confirm(ticketId) succeeds -&gt; write booked + userId to Postgres, DEL the lock</span>
+<span class="kw">DEL</span> ticket:{ticketId}
+
+<span class="cm"># seat map: SELECT available FROM postgres, then drop IDs still present in Redis</span>
+<span class="kw">EXISTS</span> ticket:{ticketId}</code></pre></div>
+      <p>Rendering the seat map becomes a two-step read: query Postgres for <code>available</code> tickets, then check Redis for each ID and remove the ones still locked. A laptop-closer's seat reappears at <strong>10 minutes and one second</strong>, because the key is simply gone. And why Redis rather than an in-memory map inside the booking service? Because the service "isn't a single machine… it will horizontally scale, and all instances need the same consistent, singular view of the lock." He calls this "the optimal answer."</p>
+
+      <h3>What if the lock store goes down?</h3>
+      <p>Detection + a new instance is fast, but every user who reserved in the dying instance's last 10 minutes loses their hold — so within that window two users can reach the payment page for the same seat. The safety net is the database: Postgres's ACID guarantees serialize the two <code>booked</code> writes, "the first person to send a purchase request wins, and the other gets an error." Integrity survives; the user experience doesn't. He'd take that trade — but frames it as a product conversation, not an engineering fiat: <em>"is it acceptable that in this disaster scenario we keep integrity but users suffer for ten minutes?"</em></p>
+      <div class="callout" data-label="Beyond the video · the lock pattern in Redis's own docs">
+        <p>The sketch above is Redis's documented simple locking primitive: <a href="https://redis.io/docs/latest/commands/set/" target="_blank" rel="noopener"><code>SET resource-name anystring NX EX max-lock-time</code></a> acquires the lock iff the key is absent, and "the lock will be auto-released after the expire time is reached" — exactly the ticket-hold semantics. Redis also publishes a <a href="https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/" target="_blank" rel="noopener">Redlock algorithm</a> with stronger multi-node guarantees, and notes the single-instance pattern's caveats (e.g. releasing a lock you no longer own — the fix is value-checked deletes). The interview answer needs only the TTL idea. <em>(Supplemental source: redis.io.)</em></p>
+      </div>
+    </article>
+
+    <article id="ch7" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-08"><span class="chap-num">7.</span>Deep dive: low-latency search</h2>
+        <div class="meta">
+          <span class="badge">35:18 – 46:19</span>
+          <span>~11 min</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=2118s" target="_blank" rel="noopener">▶ Watch from 35:18</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Deep-dive method: <strong>re-read your non-functional requirements</strong>, find the unmet one, lead there. He adds <em>low-latency search</em> to the NFR list mid-interview — editing requirements as you learn is expected, not a mark against you.</li>
+          <li>Replace <code>LIKE</code> with <strong>Elasticsearch</strong>: an inverted index maps each tokenized term to the events containing it (<em>playoff → [e1, e2, e3]</em>), with geospatial support layered on.</li>
+          <li>Elasticsearch stays a <strong>derived view</strong> of Postgres — never the primary store (durability, no complex transactions; he "learned the hard way" at his first startup). Sync via dual writes or change data capture; this system's write volume is tiny, so no queue needed.</li>
+          <li>Popular queries are cacheable <em>because there's no personalization</em> — three levers: the engine's node query cache, Redis/Memcached, or a CDN in front of the search API (30–60 s), each with stated caveats.</li>
+        </ul>
+      </div>
+
+      <h3>The fix: an inverted index</h3>
+      <p>A search-optimized database like <strong>Elasticsearch</strong> (his default recommendation for interviews) builds an <em>inverted index</em>: break each event's name and description into tokens, and map every term to the documents — here, events — that contain it. His example sentence, "The Philadelphia Eagles are playing in a wild-card matchup against the Broncos…", becomes terms like <em>Philadelphia, Eagles, wild card</em>; then <em>playoff → events 1, 2, 3</em> and <em>swift → events 5, 6, n</em> sit in "a hash map of sorts," so a term query is one lookup instead of a table scan. Combined indexes let one query mix text terms, location, and date.</p>
+
+      <figure>
+        <img src="assets/screenshots/06-inverted-index.jpg" alt="Whiteboard with an Elasticsearch bubble connected to the Search service, notes reading 'playoff: [event1, event2, event3]' and 'swift: [event5, event6, eventN]' with 'node query caching' written below" loading="lazy" />
+        <figcaption><strong>39:00 — The inverted index on the board.</strong> Two terms and their posting lists are all he draws — that's the depth needed. The "node query caching" note pre-figures the cache lever at the end of this chapter.</figcaption>
+      </figure>
+
+      <div class="callout" data-label="Beyond the video · the geo claim, version-checked">
+        <p>He hedges on air: Elasticsearch "supports geospatial queries… using a combination of quadtrees and geohashing — don't take my word as ultimate truth." Verified: that was <strong>exactly</strong> how classic Elasticsearch indexed shapes — <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.4/geo-shape.html" target="_blank" rel="noopener">GeohashPrefixTree and QuadPrefixTree</a> rasterized shapes into grid terms for the inverted index. Since Elasticsearch 6.6 those prefix trees are <strong>deprecated and removed</strong>; <code>geo_shape</code> now indexes shapes as a triangular mesh in a <a href="https://www.elastic.co/blog/bkd-backed-geo-shapes-in-elasticsearch-precision-efficiency-speed" target="_blank" rel="noopener">BKD tree</a>, and <code>geo_point</code> moved to BKD back in 6.0. So: correct for the classic architecture the talk assumes; modern clusters do it differently. <em>(Supplemental sources: Elastic docs and blog, linked.)</em></p>
+      </div>
+
+      <h3>Keeping Elasticsearch honest: syncing from Postgres</h3>
+      <p>First, a rule: <strong>Elasticsearch as primary data store is not best practice</strong> — durability concerns and no real transactional support. He used it that way at his first startup "and learned the hard way." So Postgres stays the source of truth and changes must propagate. Two ways:</p>
+      <ol>
+        <li><strong>Dual writes in application code.</strong> Every event write goes to Postgres <em>and</em> Elasticsearch. Simple, but the app now owns failure handling: if the second write fails, retry it or back out the first — "a few things to consider depending on your product requirements, but definitely a viable solution."</li>
+        <li><strong>Change data capture (CDC).</strong> Changes to the primary store are captured onto a stream; a worker consumes the stream and applies each change to Elasticsearch. In interviews this is drawn as one arrow, and he's explicit that the arrow hides "a pretty serious abstraction — a stream, and some worker that does the write," which you should acknowledge. One trap to name: Elasticsearch has a <strong>per-second write limit</strong> because every write updates indexes, so high-churn systems need a queue or batching in front of it. <em>This</em> system doesn't: events, venues, performers barely change and are added at most in the hundreds or thousands per day — "absolutely nothing" — so direct per-change updates are fine.</li>
+      </ol>
+      <div class="callout tip" data-label="Beyond the video · seeing CDC in the wild">
+        <p>For a concrete instance of the "capture the write-ahead log, publish the change" pattern he abstracts, see <a href="https://debezium.io/" target="_blank" rel="noopener">Debezium</a> — an open-source change-data-capture platform that tails databases like Postgres and emits each row change onto Kafka-style streams. <em>(Supplemental source: debezium.io.)</em></p>
+      </div>
+
+      <h3>Making hot queries faster: three cache levers</h3>
+      <p>The setup observation matters more than the levers: this system does <strong>no ranking or personalization</strong>, so two users issuing the same search get byte-identical results — which is precisely what makes the query cacheable. Flag that when you cache, he says, because it's also the boundary of the technique.</p>
+      <ol>
+        <li><strong>The engine's own query cache.</strong> You're likely running OpenSearch (AWS's managed Elasticsearch fork), which "supports something called node query caching — I think that's what it's called, don't quote me, look that up." His description: a cache on each instance/shard holding the ~10,000 most popular queries, LRU-evicted, enabled via config — "quick, dirty, easy, works great."</li>
+        <li><strong>Redis or Memcached in front.</strong> Cache the search term (or its normalized form) → results. Works fine; the price is <em>invalidation discipline</em> when events change.</li>
+        <li><strong>The CDN you already have.</strong> Most systems front static assets with a CDN; let it also cache the search API response for 30–60 seconds. A million people searching the same thing then get answers from an edge node "geographically close to them… wicked fast." His preferred lever for exactly this reason.</li>
+      </ol>
+      <div class="callout" data-label="Beyond the video · the name he wasn't sure about, verified">
+        <p>The feature <strong>is</strong> called the <a href="https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/node-query-cache-settings" target="_blank" rel="noopener">node query cache</a> — but with two corrections to the on-air description. It is <strong>one cache per node, shared by all shards on that node</strong> (not one per shard), and it caches results of queries in <em>filter context</em> on a per-Lucene-segment basis. The rest checks out: LRU eviction, default budget 10% of heap, up to <strong>10,000 queries</strong> tracked via a query-history heuristic, enabled by default and tunable via <code>indices.queries.cache.size</code>. OpenSearch documents the same cache and tuning knob in its <a href="https://docs.opensearch.org/latest/search-plugins/caching/index/" target="_blank" rel="noopener">caching guide</a>, alongside a separate <a href="https://docs.opensearch.org/latest/search-plugins/caching/request-cache/" target="_blank" rel="noopener">shard request cache</a> (default 1% of heap) that caches whole request results per shard and invalidates on refresh. <em>(Supplemental sources: Elastic and OpenSearch documentation.)</em></p>
+      </div>
+      <h3>When each search cache fails</h3>
+      <ul>
+        <li><strong>CDN:</strong> value decays as query <em>permutations</em> multiply. Raw <code>lat/long</code> as a parameter kills it — no two users share coordinates, so "two users would never hit the same" cache key and you're "just wasting space on the CDN." Coarse values ("San Francisco" + date) keep hit rates healthy.</li>
+        <li><strong>All of them:</strong> the day the product adds personalized recommendations, identical-query caching is wrong by definition — the same API call must return different results per user. Worth saying aloud in the interview as the boundary of the optimization.</li>
+      </ul>
+    </article>
+
+    <article id="ch8" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-09"><span class="chap-num">8.</span>Deep dive: the real-time seat map</h2>
+        <div class="meta">
+          <span class="badge">46:19 – 52:00</span>
+          <span>~5 min 40 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=2779s" target="_blank" rel="noopener">▶ Watch from 46:19</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li><strong>Problem:</strong> the seat map is a snapshot. Seconds after it loads, seats it shows as available can be gone — the user clicks one and gets an error. "A really bad experience," and frequent exactly for the popular events you care about.</li>
+          <li><strong>Option 1 — long polling:</strong> hold an HTTP request open ~30–60 s; server answers when a ticket status changes; client immediately re-requests. Cheap, no new infrastructure, ideal when users spend 1–5 minutes on the page.</li>
+          <li><strong>Option 2 — persistent connection:</strong> WebSockets (bidirectional) or Server-Sent Events (unidirectional server→client). Since the server only needs to push "that seat is taken," SSE is sufficient; the implementation is more complex and he leaves it out of interview scope.</li>
+        </ul>
+      </div>
+      <p>He first traces today's path to make the staleness concrete: the client asks the event CRUD service for event/venue/performer, then tickets with status, then crosses those against the Redis lock so held seats render as unavailable. Accurate for one instant — then a "1 second, 2 seconds, 5 minutes…" clock starts, and every tap risks an error. The fix is push: update the client whenever a ticket moves between <code>available</code>, <code>reserved</code>, or <code>booked</code>.</p>
+      <div class="codeblock"><div class="code-head"><span class="label">Push options, as compared in the talk</span></div>
+<pre><code><span class="cm"># Long polling — one held HTTP request at a time</span>
+<span class="kw">while</span> (user On SeatMapPage):
+    changes = <span class="ty">await</span> server.holdOpenForTicketChanges(<span class="nm">30</span>..<span class="nm">60</span>s)  <span class="cm"># respond on change or timeout</span>
+    client.apply(changes)                                    <span class="cm"># then immediately re-request</span>
+
+<span class="cm"># SSE — one persistent server->client stream (his pick)</span>
+client: <span class="kw">new</span> <span class="ty">EventSource</span>(<span class="st">"/events/{eventId}/seat-updates"</span>)    <span class="cm"># server pushes whenever a status changes</span>
+
+<span class="cm"># WebSockets — same persistence, both directions (more than this problem needs)</span></code></pre></div>
+      <p>The selection logic is the interview-worthy part: <strong>long polling is "super cheap, easy to implement, requires no additional infrastructure"</strong> and is perfect for minute-scale sessions; only analytics showing hour-long sessions justify operating persistent connections. And between the two persistent options, <strong>SSE's one-way street is a feature</strong> here — the client never needs to talk back, so take the simpler primitive. He'd wire SSE between client, API gateway, and the event CRUD service, pushing every status change.</p>
+      <div class="callout" data-label="Beyond the video · SSE mechanics worth knowing">
+        <p><a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events" target="_blank" rel="noopener">Server-Sent Events</a> are plain HTTP: the server responds <code>Content-Type: text/event-stream</code> and writes small newline-delimited text events; the browser's <code>EventSource</code> API parses them and <strong>reconnects automatically</strong> if the stream drops. One operational footnote from the same page: without HTTP/2, browsers cap SSE connections per site (historically six per browser+domain) — with HTTP/2 the streams multiplex over one connection. <em>(Supplemental source: MDN.)</em></p>
+      </div>
+    </article>
+
+    <article id="ch9" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-10"><span class="chap-num">9.</span>Deep dive: surges &amp; the virtual waiting queue</h2>
+        <div class="meta">
+          <span class="badge">52:00 – 53:50</span>
+          <span>~1 min 50 s (the densest stretch of the talk)</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=3060s" target="_blank" rel="noopener">▶ Watch from 51:00</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Real-time updates <em>amplify</em> the mega-event problem: 100,000–1,000,000 people watch "10,000 to 100,000 seats" evaporate in milliseconds — the page "goes black."</li>
+          <li>Fix: introduce a <strong>choke point</strong> in front of the backend — a <strong>virtual waiting queue</strong>, enabled per-event by admin config for the few events that need it.</li>
+          <li>Implementation: a <strong>Redis sorted set</strong> (priority by arrival time; some systems randomize for fairness so the geographically closest users don't always win), plus event-driven admission — every time N seats are taken, admit the next N, pull their IDs/tokens from the queue, and notify them over the <strong>same SSE connection</strong> from Chapter 8.</li>
+          <li>The lesson he draws: simple + creative beats technically complex.</li>
+        </ul>
+      </div>
+      <div class="quote">"They get to that page and it immediately goes black — they'll see all these available seats, and within a couple of milliseconds it's just going to go black, because everything got booked… 100,000 or a million people all trying to fight for the same 10,000 to 100,000 seats. So we need to introduce a choke point… protect our backend services… and improve the user experience by doing so."
+        <cite>— Evan, ~52:00</cite>
+      </div>
+      <p>The queue only exists for events that need it — an admin flips it on per event. Everyone else browses as usual. For a mega on-sale, buyers land in the queue ("Thanks for your interest — you're in line; we'll let you know when it's your turn") and the system meters entry: when 100 seats are booked, let the next 100 (or 1,000) through, remove them from the set by user ID/session/token, and push "you're in" over SSE. Admission is thus driven by <em>actual inventory</em>, so the people entering always have something real to buy.</p>
+      <div class="callout" data-label="Beyond the video · why a sorted set is the natural fit">
+        <p>Redis <a href="https://redis.io/docs/latest/commands/zadd/" target="_blank" rel="noopener">sorted sets</a> keep unique members ordered by a score (O(log N) inserts) — score = arrival timestamp gives a FIFO priority queue with cheap range pops from the front; Redis's own docs highlight leaderboards/rank queries, which is also how you'd render "you are #48,113 in line." Using <code>Math.random()</code>-style scores (or shuffled admission) instead makes queue order fair across geographies, since arrival time favors users near your servers. <em>(Supplemental source: redis.io.)</em></p>
+      </div>
+      <div class="mnemonic">
+        <h4>The lesson he pauses to draw</h4>
+        <p>"A simple solution, but a sophisticated solution… often the best answer isn't the most technically complex, but instead solves the problem in a simple and perhaps creative way." If your surge answer starts with exotic infrastructure, you skipped the waiting room every ticket site you've ever used already has.</p>
+      </div>
+    </article>
+
+    <article id="ch10" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-11"><span class="chap-num">10.</span>Remaining qualities: scale, shard, cache — with purpose</h2>
+        <div class="meta">
+          <span class="badge">53:50 – 56:40</span>
+          <span>~2 min 50 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=3230s" target="_blank" rel="noopener">▶ Watch from 53:50</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Cross off the remaining NFRs: strong consistency (done — the Redis lock), high availability for reads, read-heavy ratio.</li>
+          <li><strong>Generic scaling talk is the least interesting</strong> to interviewers: managed gateways with load balancers, services autoscaling horizontally on CPU/memory — say it once, briefly.</li>
+          <li><strong>Do math only when it changes the design.</strong> Early back-of-envelope QPS dumps ("wow, big system") teach nobody anything — "math without a purpose." Compute when a decision hangs on it: e.g., does the tickets table outgrow one Postgres instance?</li>
+          <li>If sharding: shard <strong>by <code>event_id</code></strong> (most queries are per-event) or <strong>by <code>venue_id</code></strong> (if geographic locality of searches matters) — a pros/cons discussion with the interviewer, no right answer.</li>
+          <li><strong>Cache the immutable 95%:</strong> events/venues/performers barely change → cache them in Redis, invalidate on write, no eviction policy needed (or bound it to upcoming events). Tickets stay uncached — they're the dynamic part. Result: the view path hits Redis for context, Postgres only for tickets.</li>
+        </ul>
+      </div>
+
+      <h3>The "math without a purpose" aside</h3>
+      <p>Astute viewers notice he never did QPS/storage estimations after the NFRs — on purpose. Most candidates compute daily active users and QPS, exclaim "wow, that's a lot," and move on: "I didn't learn anything about the candidate; the candidate didn't learn anything that would inform their design. They were just checking a box. I consider this math without a purpose." His rule: run the numbers at the moment a choice depends on them — here, deciding whether Postgres needs sharding — and let the result drive the discussion.</p>
+
+      <h3>Caching the read path</h3>
+      <p>Since reads outnumber writes ~100:1, and event/venue/performer rows are near-immutable, he adds a Redis cache keyed by event ID holding the event + its venue + performer. On database updates, invalidate or update the cache; no LRU/LFU policy is needed if the working set fits ("or maybe just events that are upcoming or within the last four months"). The <code>GET /event/:eventId</code> path becomes: Redis for the context, one Postgres query for tickets — because tickets are the dynamic data you deliberately don't cache.</p>
+
+      <figure>
+        <img src="assets/screenshots/07-final-design.jpg" alt="Final whiteboard architecture: Client via CDN to API Gateway; Search service with Elasticsearch fed by CDC from Postgres; Event CRUD Service with a Redis cache; Virtual waiting queue feeding Booking; Booking connected to Postgres, a Redis Ticket Lock (ticketId: true, TTL 10), and Stripe" loading="lazy" />
+        <figcaption><strong>57:00 — The finished design.</strong> Every box earns its place from a named requirement: CDN (hot searches), Elasticsearch + CDC (low-latency search), Redis cache (read-heavy), ticket lock (strong consistency + exact expiry), waiting queue (surges), Stripe webhooks (two-phase payment).</figcaption>
+      </figure>
+    </article>
+
+    <article id="ch11" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-12"><span class="chap-num">11.</span>What passing looks like — and a final self-check</h2>
+        <div class="meta">
+          <span class="badge">56:40 – 58:39</span>
+          <span>~2 min</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=fhdPyoO6aXI&amp;t=3490s" target="_blank" rel="noopener">▶ Watch from 56:40</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li><strong>Mid-level:</strong> what's on the board through Chapter 6 — especially reaching the Redis lock, which most mid-level candidates don't — passes "with flying colors." Stopping at the cron job can still pass if follow-ups are handled confidently.</li>
+          <li><strong>Senior:</strong> this design passes. <strong>Staff:</strong> "probably," depending on execution, confidence, and depth shown elsewhere — principles get evaluated at staff level.</li>
+          <li><strong>The closing ritual:</strong> re-check every functional and non-functional requirement against the board. Two yeses = confident close.</li>
+        </ul>
+      </div>
+      <p>He closes by reminding viewers deep dives are self-directed — "it's up to you to decide which direction to take the conversation" — and invites corrections and questions in the comments. The durable takeaway is the checklist habit: <em>does this satisfy all my functional requirements, and all my non-functional ones?</em> If you can say yes to both, you're done — "obviously don't say 'I know I passed' out loud."</p>
+
+      <h3>Check yourself</h3>
+      <ol>
+        <li>Why is "consistency over availability" an incomplete CAP answer for Ticketmaster, and what's the complete one?</li>
+        <li>Why must <code>userId</code> never appear in the reserve request body, and what replaces it?</li>
+        <li>A cron job flips expired holds every 10 minutes. Give the concrete scenario where a seat is held ~19 minutes.</li>
+        <li>On reserve, the optimal design writes nothing to Postgres. How does the seat map still hide held seats — and what happens at exactly T+10:01 for an abandoned hold?</li>
+        <li>The Redis lock store dies. Why can two users still not both own seat 12A?</li>
+        <li>Name the three levers for hot search queries and one condition that disables each.</li>
+        <li>Your analytics show users sit on the seat map for ~40 minutes. Which push mechanism, and why not the other?</li>
+        <li>Why does a virtual waiting queue use arrival time as its sorted-set score — and when would you deliberately not?</li>
+      </ol>
+      <p><em>(All answers are in the chapters above; the cheat sheet compresses them.)</em></p>
+    </article>
+
+    <!-- GLOSSARY -->
+    <section id="glossary">
+      <h2 id="heading-13"><span class="chap-num">G</span>Glossary — every term, one paragraph each</h2>
+      <p>Terms as used in the talk, with the video's framing first and standard definitions where they add precision.</p>
+      <div class="glossary-grid">
+
+        <div class="glossary-item"><span class="term">API Gateway</span><div class="defn">The single front door for API requests. In this design it performs <strong>authentication, rate limiting, and routing</strong> to the right microservice. A managed one (e.g. AWS API Gateway) brings its own load balancer — which is most of the "how do you scale it" answer.</div></div>
+
+        <div class="glossary-item"><span class="term">CAP theorem (applied per part)</span><div class="defn">Under a network partition a system must choose between consistency and availability. The talk's refinement: the choice is <strong>per subsystem</strong> — booking picks consistency (no double booking), search/viewing picks availability (seconds of staleness are fine).</div></div>
+
+        <div class="glossary-item"><span class="term">CDC (Change Data Capture)</span><div class="defn">Capturing every change to a primary data store onto a stream, where workers consume and apply it elsewhere (here: into Elasticsearch). Drawn as one arrow in interviews — an abstraction hiding the stream and the worker. Debezium is the canonical open-source implementation.</div></div>
+
+        <div class="glossary-item"><span class="term">CDN (Content Delivery Network)</span><div class="defn">Edge servers geographically close to users. Used here twice: assumed for static assets, and — for 30–60&nbsp;second TTLs — as a cache for hot search API responses. Loses value as query-parameter permutations multiply.</div></div>
+
+        <div class="glossary-item"><span class="term">Distributed lock</span><div class="defn">A mutual-exclusion flag stored outside the services that use it, so horizontally scaled instances share one view. The talk's version: a Redis key per held ticket with a TTL, so the hold self-destructs. In-memory maps inside one service don't qualify — other instances can't see them.</div></div>
+
+        <div class="glossary-item"><span class="term">Elasticsearch / OpenSearch</span><div class="defn">A search-optimized database built around the <em>inverted index</em>. OpenSearch is AWS's managed fork — "you're probably using OpenSearch." Never use it as the primary store (durability, no complex transactions); treat it as a derived, rebuildable view of the system of record.</div></div>
+
+        <div class="glossary-item"><span class="term">Inverted index</span><div class="defn">Tokenize documents into terms; map each term to the list of documents containing it (<em>playoff → [event1, event2, event3]</em>). Turns "find events matching this word" from a full table scan into a hash-map-style lookup.</div></div>
+
+        <div class="glossary-item"><span class="term">Long polling</span><div class="defn">The client sends an HTTP request the server holds open (talk: ~30–60&nbsp;s) until there's something to say, then the client immediately asks again — a while loop. Cheap, infrastructure-free push emulation; right when sessions last minutes, not hours.</div></div>
+
+        <div class="glossary-item"><span class="term">Node query cache</span><div class="defn">Elasticsearch/OpenSearch's built-in cache of filter-context query results: one cache <strong>per node shared by its shards</strong>, LRU, default ~10% of heap and up to 10,000 queries — the feature Evan cited as "node query caching… don't quote me." (His per-shard phrasing was the one part off; see Ch 7's research note.)</div></div>
+
+        <div class="glossary-item"><span class="term">PaymentIntent / webhook</span><div class="defn">Stripe's object representing one payment, processed <strong>asynchronously</strong> across card networks and banks. Because the buyer may close the tab, the result arrives at a callback URL you register — the <code>payment_intent.succeeded</code> webhook — and fulfillment belongs there, not in the browser.</div></div>
+
+        <div class="glossary-item"><span class="term">Partial&lt;Event&gt;</span><div class="defn">TypeScript-flavored pseudocode from the talk: a search result carries only the fields needed to render the result list (title, description, performer…); the full entity comes from <code>GET /event/:eventId</code>. The concept matters — trimming payloads — not the syntax.</div></div>
+
+        <div class="glossary-item"><span class="term">Rate limiting</span><div class="defn">Rejecting or throttling requests per client at the gateway, protecting backends from abuse and accidental floods. Named as one of the API gateway's three jobs; the virtual waiting queue is the purpose-built sibling for on-sale surges.</div></div>
+
+        <div class="glossary-item"><span class="term">Redis TTL</span><div class="defn">Time-to-live: the server deletes a key automatically when its TTL elapses. The entire hold-expiry mechanism compresses into this one primitive — <code>SET ticket:{id} true EX 600</code> — making expiry exact rather than periodic.</div></div>
+
+        <div class="glossary-item"><span class="term">Seat map</span><div class="defn">The venue layout showing each seat's state: available, reserved (held), or booked. Built from ticket rows cross-checked against the Redis lock — and, after Chapter 8, kept live by push updates.</div></div>
+
+        <div class="glossary-item"><span class="term">Server-Sent Events (SSE)</span><div class="defn">A persistent, <strong>unidirectional</strong> (server→client) HTTP stream. Chosen over WebSockets here because the client never needs to send — the server only announces "seat X is gone." Browser support via <code>EventSource</code> with auto-reconnect.</div></div>
+
+        <div class="glossary-item"><span class="term">Sharding key</span><div class="defn">The column a database is partitioned by. Candidates here: <code>event_id</code> (most queries are per-event, keeping each event's tickets together) or <code>venue_id</code> (if search correlates with the user's geography). Deliberately discussed only when scale math demands it.</div></div>
+
+        <div class="glossary-item"><span class="term">Strong consistency</span><div class="defn">Every read reflects every completed write — no window in which two users both believe they own seat 12A. Required for the booking path; backed in this design by the Redis lock during holds and by Postgres ACID at purchase time.</div></div>
+
+        <div class="glossary-item"><span class="term">Two-phase booking</span><div class="defn">Reserve (hold a specific ticket for 10 minutes) then confirm (pay). Mirrors airline checkout. Separates seat selection from payment so inventory is locked while the buyer types card numbers — and returned automatically if they don't.</div></div>
+
+        <div class="glossary-item"><span class="term">Virtual waiting queue</span><div class="defn">The surge choke point: excess traffic for a mega on-sale waits in line instead of hammering the backend. Redis sorted set by arrival time (or randomized for fairness); batches admitted as inventory frees; admitted users notified over SSE. Enabled per-event by admins.</div></div>
+
+        <div class="glossary-item"><span class="term">Webhook</span><div class="defn">A URL you expose so an external system can call <em>you</em> when something happens. Stripe reports payment results this way because the original HTTP request ended long before the card networks answered.</div></div>
+
+        <div class="glossary-item"><span class="term">WebSocket</span><div class="defn">A persistent, <strong>bidirectional</strong> connection between client and server. The more powerful sibling of SSE — and more than this problem needs, since updates flow one way only.</div></div>
+
+      </div>
+    </section>
+
+    <!-- CHEAT SHEET -->
+    <section id="cheat-sheet">
+      <h2 id="heading-14"><span class="chap-num">★</span>Cheat sheet — one page, printed, ready</h2>
+      <p>Print this and rehearse the cards in order — they follow the interview's own sequence.</p>
+
+      <div class="cheat-grid">
+        <div class="cheat-card"><div class="cheat-title">The five stations</div><div class="cheat-body"><strong>R-CE-A-H-D</strong>: Requirements → Core Entities → API → High-level design → Deep dives. First four satisfy <em>functional</em> requirements; deep dives satisfy <em>non-functional</em> ones. Pace: ~15 min through APIs, ~20 min left.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Functional requirements (this problem)</div><div class="cheat-body"><strong>B-V-S</strong>: Book tickets · View an event (details + seat map) · Search for events. Derive by walking the journey backwards: book ⇒ view ⇒ search.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">NFRs that matter here</div><div class="cheat-body"><strong>C-R-S</strong>: Consistency (strong, for booking) + Availability (search/view) split · Reads ≫ writes ~100:1 · Surge scalability (Taylor Swift / Super Bowl / World Cup). Everything else goes below the line — then ask the interviewer to reorder.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Entities &amp; endpoints</div><div class="cheat-body"><code>Event · Venue · Performer · Ticket</code>. One endpoint per requirement: <code>GET /event/:id</code>, <code>GET /search?…</code> → <code>Partial&lt;Event&gt;[]</code>, <code>POST /booking/reserve {ticketId}</code>, <code>PUT /booking/confirm {ticketId, paymentDetails}</code>. Skip field detail until the HLD.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Security one-liner</div><div class="cheat-body">Identity in the <strong>JWT/session header</strong>, never <code>userId</code> in the body — body values are attacker-editable. Mention it, don't marinate in it.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Database choice phrasing</div><div class="cheat-body">Name <em>qualities</em>: ACID + transactions for tickets, simple relations, consistency. "Postgres because I know it and it fits — NoSQL would also work." Don't relitigate SQL vs NoSQL; experienced candidates outgrew the debate.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Hold-expiry ladder</div><div class="cheat-body"><strong>T → C → L</strong>: Timestamp column (model lies) → Cron every 10 min (hold up to ~2× TTL; passes mid-level) → <strong>Redis lock with TTL</strong> (exact expiry; the optimal answer). Reserve writes nothing to SQL; seat map = available rows − locked IDs.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Lock-store failure story</div><div class="cheat-body">Instance dies → holds in the last 10 min vanish → two buyers race to pay → <strong>Postgres ACID: first write wins</strong>, loser errors. Integrity intact, UX bad for ≤10 min — a product decision, say so.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Search in three moves</div><div class="cheat-body"><strong>I-S-C</strong>: Inverted index (Elasticsearch/OpenSearch; terms → events) · Sync from Postgres via dual writes or CDC (ES write limits; here volume is tiny) · Cache hot queries (node query cache / Redis / CDN 30–60 s). Never ES-as-primary-store.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Search-cache boundaries</div><div class="cheat-body">Cacheable <em>because</em> results are impersonal. CDN dies with parameter permutations (raw lat/long = zero hits); all of it dies if personalization ships. Saying the boundary is the senior move.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Live seat-map ladder</div><div class="cheat-body">Session minutes-long → <strong>long polling</strong> (30–60 s holds, no new infra). Longer or unbounded → <strong>SSE</strong> (one-way push; enough) or WebSockets (bidirectional; more than needed).</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Surge playbook</div><div class="cheat-body">Choke point = <strong>virtual waiting queue</strong>, admin-enabled per event. Redis sorted set by arrival (randomize for fairness) → admit batches as seats free → pop ID/token → notify via the same SSE stream. "The best answer isn't the most technically complex."</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Math with a purpose</div><div class="cheat-body">No QPS theater after NFRs. Compute when a decision hangs on it (e.g., "does tickets outgrow one Postgres?") → then, if sharding: <code>event_id</code> (query locality) vs <code>venue_id</code> (geo locality), weighed aloud.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Read-path cache</div><div class="cheat-body">Event/venue/performer ≈ immutable → Redis keyed by <code>event_id</code>, invalidate on write, no eviction policy needed (or bound to upcoming events). Tickets: never cached — the dynamic 5%.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Closing ritual</div><div class="cheat-body">Walk the board against every FR and every NFR. Two yeses = done. Level calibration: cron+lock ≈ mid-level pass; full design = senior pass; staff = execution + depth elsewhere.</div></div>
+
+      </div>
+    </section>
+
+  
+<footer>
+  <p>Generated as a learning companion to "System Design Interview: Design Ticketmaster" by Evan (Hello Interview).</p>
+  <p>Follow the original recording for the full walkthrough; whiteboard captures accompany these notes, with timestamps linking back to the video.</p>
+  <p>Content for educational use only. Quotes are condensed from the video's captions; supplemental research is labeled and sourced inline.</p>
+</footer></div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>
