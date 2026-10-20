@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A 15-minute Hello Interview talk on distributed transactions: how two-phase commit works, why it blocks in production, and why orchestrated sagas with a transactional outbox are the pattern that actually ships."><meta name="theme-color" content="#111513">
+<title>Distributed Transactions Explained: 2 Phase Commit vs Saga Pattern — Video Notes</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="skip-link" href="#study-guide">Skip to the study guide</a><div class="reading-progress" aria-hidden="true"></div>
+<header class="site-bar"><div class="site-bar-inner">
+<a class="site-brand" href="../index.html" aria-label="Video Notes home"><span class="brand-mark" aria-hidden="true">⌁</span><span>Video Notes<span class="brand-dot">.</span></span></a>
+<nav class="site-nav" aria-label="Site navigation"><a href="../index.html#library">The library</a><a href="https://www.youtube.com/watch?v=DOFflggE_0Q">Original video ↗</a></nav>
+</div></header>
+<div class="guide-layout">
+<aside class="guide-sidebar"><a class="back-library" href="../index.html#performance-and-distributed-systems">← Back to the collection</a><span class="section-label">In this guide</span>
+<nav class="guide-toc" aria-label="Chapters"><a href="#heading-01"><span>01</span><span>TL;DR — the talk in twelve bullets</span></a><a href="#heading-02"><span>02</span><span>1. One database, one transaction</span></a><a href="#heading-03"><span>03</span><span>2. When one database becomes three</span></a><a href="#heading-04"><span>04</span><span>3. Two-phase commit: the textbook answer</span></a><a href="#heading-05"><span>05</span><span>4. Why 2PC falls over in production</span></a><a href="#heading-06"><span>06</span><span>5. The Saga: a different assumption</span></a><a href="#heading-07"><span>07</span><span>6. Choreography vs orchestration</span></a><a href="#heading-08"><span>08</span><span>7. Where the pain moves: compensation</span></a><a href="#heading-09"><span>09</span><span>8. The dual write problem and the outbox</span></a><a href="#heading-10"><span>10</span><span>9. Before you reach for a saga: fix the boundary</span></a><a href="#heading-11"><span>11</span><span>10. The pattern to remember</span></a><a href="#heading-12"><span>12</span><span>Check your recall</span></a><a href="#heading-13"><span>G</span><span>Glossary — every term, one paragraph</span></a><a href="#heading-14"><span>★</span><span>Cheat sheet — one page, printed</span></a><a href="#heading-15"><span>S</span><span>Sources and notes</span></a></nav><p class="sidebar-note">Fifteen minutes of video.<br>One page of cheat sheet.</p></aside>
+<main class="guide-main" id="study-guide">
+<header class="guide-hero"><span class="eyebrow">Performance and distributed systems / Study guide</span>
+<h1>Distributed Transactions Explained: 2 Phase Commit vs Saga Pattern</h1><p class="guide-description">Sharding a database or splitting a monolith turns one order into three separate transactions on three separate machines — and ACID stops applying to the operation as a whole. Evan walks the two textbook answers, <strong>two-phase commit</strong> and the <strong>Saga pattern</strong>, shows exactly why 2PC blocks once the participants are independent services, and lands on the architecture that actually ships: an orchestrated saga, idempotent steps, and a transactional outbox.</p>
+<div class="guide-meta"><span>By <strong>Evan King — Hello Interview</strong></span><span>14 min 46 s original recording</span><span>Published 5 May 2026</span></div>
+<div class="guide-actions"><a class="button primary" href="https://www.youtube.com/watch?v=DOFflggE_0Q">Watch original <span aria-hidden="true">↗</span></a><a class="button" href="https://www.hellointerview.com/youtube/distributed-transactions">Hello Interview <span aria-hidden="true">↗</span></a><a class="button" href="../index.html#performance-and-distributed-systems">Explore this topic <span aria-hidden="true">→</span></a></div>
+</header>
+<details class="mobile-contents"><summary>Contents · 15 sections</summary><nav class="guide-toc" aria-label="Chapters on mobile"><a href="#heading-01"><span>01</span><span>TL;DR — the talk in twelve bullets</span></a><a href="#heading-02"><span>02</span><span>1. One database, one transaction</span></a><a href="#heading-03"><span>03</span><span>2. When one database becomes three</span></a><a href="#heading-04"><span>04</span><span>3. Two-phase commit: the textbook answer</span></a><a href="#heading-05"><span>05</span><span>4. Why 2PC falls over in production</span></a><a href="#heading-06"><span>06</span><span>5. The Saga: a different assumption</span></a><a href="#heading-07"><span>07</span><span>6. Choreography vs orchestration</span></a><a href="#heading-08"><span>08</span><span>7. Where the pain moves: compensation</span></a><a href="#heading-09"><span>09</span><span>8. The dual write problem and the outbox</span></a><a href="#heading-10"><span>10</span><span>9. Before you reach for a saga: fix the boundary</span></a><a href="#heading-11"><span>11</span><span>10. The pattern to remember</span></a><a href="#heading-12"><span>12</span><span>Check your recall</span></a><a href="#heading-13"><span>G</span><span>Glossary — every term, one paragraph</span></a><a href="#heading-14"><span>★</span><span>Cheat sheet — one page, printed</span></a><a href="#heading-15"><span>S</span><span>Sources and notes</span></a></nav></details>
+<div class="guide-content">
+
+    <section id="tldr">
+      <div class="eyebrow">Start here</div>
+      <h2 id="heading-01"><span class="chap-num">★</span>TL;DR — the talk in twelve bullets</h2>
+      <div class="intro-callout">
+        This is a <strong>15-minute</strong> Hello Interview talk by <a href="https://www.hellointerview.com/youtube/distributed-transactions" target="_blank" rel="noopener">Evan King</a>. Its shape is: start with the easy version (one database, one transaction), break it by sharding, present the two textbook answers, kill 2PC with three concrete failure modes, then build up the Saga from first principles and finish on the reliability machinery — <strong>idempotency, the dual write problem, and the transactional outbox</strong>. The bullets below carry the argument; the chapters carry the reasoning.
+      </div>
+      <ol>
+        <li><strong>A single-database order is easy.</strong> Charge the card, reserve the inventory, record a ledger entry — one transaction, ACID guarantees, automatic rollback if any write fails. "You probably don't even think about it much." (Ch 1)</li>
+        <li><strong>Two of the four ACID guarantees are the ones that matter here.</strong> <em>Atomicity</em> — all three writes happen or none do; <em>isolation</em> — nobody sees the half-finished state. (Ch 1)</li>
+        <li><strong>Sharding or splitting the monolith changes everything.</strong> One transaction against one database becomes three operations against three databases on three machines. That is a <strong>distributed transaction</strong>, and there is no database-level rollback across it. (Ch 2)</li>
+        <li><strong>2PC is the academic answer.</strong> A coordinator asks every participant "can you commit?", collects the votes, then tells everyone to commit. Strong consistency; no window of partial state. (Ch 3)</li>
+        <li><strong>But 2PC is a blocking protocol, and blocking is dangerous across machines.</strong> Coordinator crash → participants hold locks and can safely decide nothing; one slow participant → the whole system moves at the slowest participant's speed; a partition → no safe default. (Ch 4)</li>
+        <li><strong>So almost nobody runs 2PC across independent services.</strong> It survives <em>inside</em> distributed databases (Spanner, YugabyteDB), where the database owns the complexity and the caller never sees it. Pat Helland's "Life Beyond Distributed Transactions" is the canonical argument. (Ch 4)</li>
+        <li><strong>The Saga starts from a different assumption.</strong> You do not need all-or-nothing across services; you need a way to <em>eventually</em> reach a consistent state. Break the work into a chain of independent local transactions, each committed on its own terms. (Ch 5)</li>
+        <li><strong>Failures are undone with business-level compensations</strong> — a refund instead of a rollback, a cancellation instead of an abort. The price is <strong>eventual consistency</strong>: a customer may briefly see a charge before the refund, but nothing is blocked and other transactions keep flowing. (Ch 5, Ch 7)</li>
+        <li><strong>Two flavours.</strong> <em>Choreography</em> is decentralized publish/subscribe — fine for two or three steps, untraceable at five or six. <em>Orchestration</em> puts a central orchestrator in charge: it knows exactly which step failed, runs compensations in the right order, and is <strong>durable</strong> — it restarts, reads its own state, and resumes. (Ch 6)</li>
+        <li><strong>Compensating actions are the hard part.</strong> Refunds are visible to the customer, some actions cannot be undone at all, compensations can themselves fail — so they need retries, and retries need <strong>idempotency</strong>. "The same level of reliability engineering for your failure handling as you do for your happy paths." (Ch 7)</li>
+        <li><strong>The reliability gap is the dual write.</strong> Saving to the database and publishing to a broker are two writes to two systems, and either can fail alone. The <strong>transactional outbox</strong> turns them into one local transaction; a relay (change data capture, or a polling loop) publishes afterwards. (Ch 8)</li>
+        <li><strong>Before any of it: can you avoid the distributed transaction?</strong> If the data that must change together can live in one database, design the boundary that way — it is simpler, faster, and more reliable. And if you truly need strong consistency, use a distributed database that does 2PC internally rather than building it yourself. (Ch 9, Ch 10)</li>
+      </ol>
+
+      <h3>Jump to a moment</h3>
+      <p>Every row links back into the original recording, so you can re-watch the exact 90 seconds behind any claim below.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Timestamp</th><th>What happens</th><th>Chapter</th></tr></thead>
+          <tbody>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=0s" target="_blank" rel="noopener">00:00</a></td><td>One database, one order, ACID guarantees</td><td><a href="#ch1">1</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=51s" target="_blank" rel="noopener">00:51</a></td><td>Sharding splits one transaction into three</td><td><a href="#ch2">2</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=128s" target="_blank" rel="noopener">02:08</a></td><td>Definition of a distributed transaction</td><td><a href="#ch2">2</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=154s" target="_blank" rel="noopener">02:34</a></td><td>2PC: prepare, vote, commit</td><td><a href="#ch3">3</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=240s" target="_blank" rel="noopener">04:00</a></td><td>Failure mode 1: the coordinator crashes</td><td><a href="#ch4">4</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=285s" target="_blank" rel="noopener">04:45</a></td><td>Failure mode 2: a slow participant holds everybody up</td><td><a href="#ch4">4</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=305s" target="_blank" rel="noopener">05:05</a></td><td>Failure mode 3: a network partition has no safe default</td><td><a href="#ch4">4</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=316s" target="_blank" rel="noopener">05:16</a></td><td>Pat Helland, "Life Beyond Distributed Transactions"</td><td><a href="#ch4">4</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=329s" target="_blank" rel="noopener">05:29</a></td><td>Where 2PC <em>does</em> survive: inside a distributed database</td><td><a href="#ch4">4</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=351s" target="_blank" rel="noopener">05:51</a></td><td>The Saga: a different starting assumption</td><td><a href="#ch5">5</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=396s" target="_blank" rel="noopener">06:36</a></td><td>Compensating actions: refund, cancel, reverse</td><td><a href="#ch5">5</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=442s" target="_blank" rel="noopener">07:22</a></td><td>Choreography vs orchestration</td><td><a href="#ch6">6</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=556s" target="_blank" rel="noopener">09:16</a></td><td>Why an orchestrator is not a 2PC coordinator</td><td><a href="#ch6">6</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=584s" target="_blank" rel="noopener">09:44</a></td><td>Why compensation is harder than it sounds</td><td><a href="#ch7">7</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=650s" target="_blank" rel="noopener">10:50</a></td><td>Retries need idempotency</td><td><a href="#ch7">7</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=686s" target="_blank" rel="noopener">11:26</a></td><td>The dual write problem</td><td><a href="#ch8">8</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=705s" target="_blank" rel="noopener">11:45</a></td><td>The transactional outbox</td><td><a href="#ch8">8</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=742s" target="_blank" rel="noopener">12:22</a></td><td>Do you even need a distributed transaction?</td><td><a href="#ch9">9</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=786s" target="_blank" rel="noopener">13:06</a></td><td>Choosing choreography or orchestration</td><td><a href="#ch9">9</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=837s" target="_blank" rel="noopener">13:57</a></td><td>If eventual consistency is not acceptable</td><td><a href="#ch9">9</a></td></tr>
+            <tr><td><a class="ts" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=856s" target="_blank" rel="noopener">14:16</a></td><td>The pattern to remember</td><td><a href="#ch10">10</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <article id="ch1" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-02"><span class="chap-num">1.</span>One database, one transaction</h2>
+        <div class="meta">
+          <span class="badge">00:00 – 00:51</span>
+          <span>~51 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=0s" target="_blank" rel="noopener">▶ Watch from 0:00</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>The running example: a customer places an order, and <strong>one database transaction</strong> covers three writes — charge their card, reserve the inventory, record a ledger entry for accounting.</li>
+          <li>"If any of those writes fails, the database rolls everything back automatically, and it's just like nothing happened. You probably don't even think about it much."</li>
+          <li>Of the four ACID letters, he names the two that matter for this story: <strong>atomicity</strong> (all three writes together or none) and <strong>isolation</strong> (no one sees the half-finished state).</li>
+        </ul>
+      </div>
+
+      <p>The talk opens on a small white card — a browser-style "Thank you for shopping with us!" confirmation with a green check — and then fans it out into three coloured service boxes. That single card is the business operation everything else in the video is about: one order, three writes, one guarantee.</p>
+
+      <figure>
+        <img src="assets/screenshots/01-acid-guarantees.jpg" alt="Slide showing the letters A C I D with four coloured dots underneath, revealing the acronym one letter at a time." loading="lazy" />
+        <figcaption><strong>00:22 — The ACID slide.</strong> The dots appear one at a time as he walks the acronym. He deliberately develops only <em>atomicity</em> and <em>isolation</em> in this talk: the other two letters are not what break when you shard.</figcaption>
+      </figure>
+
+      <h3>Atomicity: no world where the card is charged and the stock is not</h3>
+      <p>He states atomicity in the concrete terms of the running example: "Either all three of those writes happen together, or none of them do. There's no world where the card gets charged, but the inventory doesn't get reserved." That is the guarantee the whole rest of the video is negotiating with — and Chapter 2 is where it stops being available for free.</p>
+
+      <h3>Isolation: nobody observes the middle</h3>
+      <p>Isolation is the second one he picks: "While that transaction is in progress, no other part of your system can see the half-finished state. Another query checking the customer's balance won't see a charge for an order that hasn't fully processed yet."</p>
+      <div class="callout" data-label="Why only two letters">
+        <p>ACID stands for <strong>Atomicity, Consistency, Isolation, Durability</strong>, but the talk only develops atomicity and isolation, and says so: the database gives you "what are called ACID guarantees, which basically means two things that matter here." That is a deliberate narrowing, not an oversight — the failure mode that matters when a transaction spans machines is the <em>all-or-nothing</em> promise and the <em>visibility</em> of intermediate states, not durability of a single row write. <em>(Supplemental context: the strictest reading of ACID is serializability, a property of a <em>single</em> database's concurrency control. The moment the work is spread across databases, that guarantee simply has no scope left to apply to.)</em></p>
+      </div>
+
+      <h3>The one line that matters</h3>
+      <p>"The database handles all of this behind the scenes, and you just write your SQL and move on." Everything in the next fourteen minutes is the story of what happens when you can no longer write one SQL statement against one database.</p>
+    </article>
+
+    <article id="ch2" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-03"><span class="chap-num">2.</span>When one database becomes three</h2>
+        <div class="meta">
+          <span class="badge">00:51 – 02:34</span>
+          <span>~1 min 43 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=51s" target="_blank" rel="noopener">▶ Watch from 0:51</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Growth brings more traffic, more data, more writes, and eventually "that single database starts hitting its limits."</li>
+          <li>You do what everyone does: <strong>shard the database</strong> to spread write load, or <strong>split the monolith into microservices</strong> where each service owns its own database.</li>
+          <li>"Your data now lives on multiple independent machines instead of one. And at this point, everything changes."</li>
+          <li>One transaction against one database becomes <strong>three separate operations against three separate databases on three separate machines</strong>.</li>
+          <li>"You can't wrap a transaction across these independent databases, because they don't know about each other." If the card charge commits and the inventory reservation then fails (out of stock), <strong>there is no database-level rollback that can undo that charge</strong>.</li>
+          <li>"When you're processing thousands of transactions a second across distributed infrastructure, partial failures like these aren't edge cases, they actually become pretty routine."</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/02-sharding-one-to-three.jpg" alt="Diagram of a large green cluster of database nodes fanning out with dashed arrows into three separate database cylinders coloured orange, blue and purple." loading="lazy" />
+        <figcaption><strong>01:02 — The split.</strong> One logical cluster of nodes, three physical stores. The "specifics can vary, but the result is the same."</figcaption>
+      </figure>
+
+      <figure>
+        <img src="assets/screenshots/03-three-services-one-order.jpg" alt="An order-confirmation card on the left with three dashed arrows to Payment service (Charge payment, orange database), Inventory service (Reserve inventory, blue database) and Accounting service (Record ledger entry, purple database)." loading="lazy" />
+        <figcaption><strong>01:40 — One order, three services, three databases.</strong> Each service owns its own store. The order card is the same one business operation from Chapter 1 — but the atomicity that came for free is now gone.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="assets/screenshots/04-partial-failure-commit-fail.jpg" alt="The order-confirmation card fanning out to three databases: the orange payment database is labelled COMMIT with a green tick, the blue inventory database is labelled FAIL, and the purple accounting database has no label." loading="lazy" />
+        <figcaption><strong>01:50 — The partial failure, drawn.</strong> The orange payment store commits; the blue inventory store fails. The purple accounting store never gets a verdict. There is no single transaction that can undo the orange one — that is the whole problem, in one frame.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="assets/screenshots/05-many-orders-per-second.jpg" alt="A dense grid of dozens of identical order-confirmation cards, each reading 'Thank you for shopping with us!' with a green tick, filling the right side of the frame." loading="lazy" />
+        <figcaption><strong>02:06 — Why partial failure is not an edge case.</strong> The slide multiplies the order card to show volume. Every one of those cards is a three-write operation spread across three databases — and at "thousands of transactions a second", the failure in the previous figure happens as a matter of course, not as a surprise.</figcaption>
+      </figure>
+
+      <h3>The definition the rest of the talk hangs on</h3>
+      <p>At 02:08 he names the class of problem:</p>
+      <div class="quote">A single logical operation that needs to span multiple independent databases or services, where all the steps need to either succeed together or be cleaned up when something goes wrong.</div>
+      <p>Note the careful wording: "either succeed together <em>or be cleaned up</em>." That second clause is the seam the whole second half of the talk pulls apart. A database rollback undoes work invisibly. "Cleaned up" means a <em>business-level</em> undo — and that distinction is where all the pain moves.</p>
+
+      <h3>The two textbook answers</h3>
+      <p>"The textbooks give us two approaches to distributed transactions. Two-phase commit and the Saga pattern. In practice, the industry has overwhelmingly chosen one over the other, and understanding why will save you a lot of pain." The talk then spends roughly two minutes on the first and ten on the second, because the <em>why</em> is the lesson.</p>
+    </article>
+
+    <article id="ch3" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-04"><span class="chap-num">3.</span>Two-phase commit: the textbook answer</h2>
+        <div class="meta">
+          <span class="badge">02:34 – 04:00</span>
+          <span>~1 min 26 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=154s" target="_blank" rel="noopener">▶ Watch from 2:34</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>2PC is "a classic academic solution." It adds one new component: a <strong>coordinator</strong>, "whose entire job is to make sure that all participants in a transaction agree on the outcome before any make their changes permanent."</li>
+          <li><strong>Phase 1 — prepare.</strong> The coordinator asks every participant "Can you commit this transaction?" Each participant does the actual work, <strong>durably records</strong> it so nothing is lost if it crashes, <strong>locks the affected rows</strong> so nobody else can modify them, and votes yes or no.</li>
+          <li>Any single "no" → the coordinator tells everyone to <strong>abort</strong> and release their locks.</li>
+          <li><strong>Phase 2 — commit.</strong> If every vote is yes, the coordinator sends a commit message; each participant makes its changes permanent and releases the locks.</li>
+          <li>The result: <strong>strong consistency</strong> — the same guarantee the single database gave. "There's no window where the system is in a partial or inconsistent state. On paper, it's exactly what you want."</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/06-two-phase-commit-map.jpg" alt="Slide titled 2-Phase Commit: a client on the left connected to a teal coordinator circle, which fans out with dashed arrows to Payment service, Inventory service and Accounting service, each beside its own database cylinder. The accounting connection shows a question mark." loading="lazy" />
+        <figcaption><strong>02:45 — The topology.</strong> Client → coordinator → three participants, each with its own database. The "?" on the accounting leg is the query the protocol exists to answer: can this participant commit?</figcaption>
+      </figure>
+
+      <div class="codeblock">
+        <div class="code-head"><span class="label">Reconstructed message flow — the protocol as the talk describes it</span></div>
+        <pre><code>  Coordinator              Payment svc        Inventory svc       Accounting svc
+      |                            |                   |                     |
+      |--- prepare(order 42) ----->|                   |                     |
+      |--- prepare(order 42) -----------------------------> |                     |
+      |--- prepare(order 42) -----------------------------------------------> |
+      |                            |                   |                     |
+      |    each participant: do the work, write it durably so it survives
+      |    a crash, lock the affected rows, then vote
+      |                            |                   |                     |
+      |&lt;- yes --------------------|                   |                     |
+      |&lt;- yes ------------------------------------->  |                     |
+      |&lt;- yes ------------------------------------------------------->    |
+      |                            |                   |                     |
+      |    ANY vote is "no"  ->  abort everyone, release all locks
+      |    ALL votes are "yes" ->  phase 2
+      |                            |                   |                     |
+      |--- commit(order 42) ----->|                   |                     |
+      |--- commit(order 42) -----------------------------> |                     |
+      |--- commit(order 42) -----------------------------------------------> |
+      |                            |                   |                     |
+      |    each participant: make the change permanent, release the locks
+      |</code></pre>
+      <div class="code-cap"><p>This is a <strong>reconstruction written for this guide</strong> from the spoken description at 02:51–03:32 and the on-screen diagrams. The recording contains no code, no message names, and no protocol identifiers; the message wording above is my own.</p></div>
+      </div>
+
+      <h3>Why the participant has to lock, and why it has to lock <em>before</em> voting</h3>
+      <p>The prepare phase is not a dry run. By the time a participant votes yes it has already done three things: processed the request, written the result durably, and <strong>taken row locks</strong>. The lock is what makes the second phase safe — the data cannot change between the vote and the commit. It is also, as Chapter 4 shows, the thing that turns a coordinator crash into a system-wide stall.</p>
+
+      <div class="callout" data-label="Supplemental research — the canonical description">
+        <p>Jim Gray's 1981 paper describes this protocol with a memorable image: 2PC "is very similar to the wedding ceremony in which the minister asks 'Do you?' and the participants say 'I do' (or 'No way!') and then the minister says 'I now pronounce you'." The same paper makes the precise point the talk relies on: "The participant abdicates the right to unilaterally abort once it says 'I do' to the prepare request." <em>(Source: J. Gray, "The Transaction Concept: Virtues and Limitations," VLDB 1981 — <a href="https://www.cs.utexas.edu/~rossbach/cs380p/papers/gray81vldb-transaction.pdf" target="_blank" rel="noopener">cs.utexas.edu</a>.)</em> That abdication is exactly why the participant cannot rescue itself in Chapter 4.</p>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/07-phase1-vote-phase2-commit.jpg" alt="Slide split into Phase 1 and Phase 2. In Phase 1 a teal coordinator fans out to Payment service (green check), Inventory service (red X) and Accounting service (red X), each with stacked prepared-record bars and small padlock icons." loading="lazy" />
+        <figcaption><strong>03:20 — Prepare, vote, abort.</strong> In this frame two participants vote no, so the coordinator aborts. The padlocks on the prepared records are the visible cost of phase 1: rows stay locked until the decision arrives.</figcaption>
+      </figure>
+    </article>
+
+    <article id="ch4" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-05"><span class="chap-num">4.</span>Why 2PC falls over in production</h2>
+        <div class="meta">
+          <span class="badge">04:00 – 05:51</span>
+          <span>~1 min 51 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=240s" target="_blank" rel="noopener">▶ Watch from 4:00</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>"The fundamental problem with two-phase commit is that <strong>it's a blocking protocol</strong>, and blocking in a distributed system is dangerous because you're now dependent on multiple machines all staying healthy at the same time."</li>
+          <li><strong>Failure 1 — coordinator crash.</strong> It collects all three yes votes, then dies before sending the decision. The participants cannot commit (maybe abort was coming) and cannot abort (maybe commit was coming). "So they just wait." Every other transaction touching those locked rows is now blocked too.</li>
+          <li><strong>Failure 2 — one slow participant.</strong> If the ledger service takes 10 seconds to answer the prepare message, the other two sit there with locks held for the full 10 seconds "doing nothing. That means the entire system moves at the speed of the slowest participant."</li>
+          <li><strong>Failure 3 — network partition.</strong> If the coordinator cannot reach a participant at all, "there's no safe default. It can't tell whether the message got through or not."</li>
+          <li>"This is why <strong>almost nobody uses two-phase commit across services in production</strong>." Pat Helland's <em>Life Beyond Distributed Transactions</em> is the canonical argument; 2PC survives only <em>inside</em> distributed databases such as Spanner and YugabyteDB, where "the database handles the complexity internally so that you as the caller don't have to."</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/08-coordinator-crash.jpg" alt="The coordinator circle is now orange with a skull inside it, while Payment service, Inventory service and Accounting service each show a spinner, a database and a stack of locked prepared records." loading="lazy" />
+        <figcaption><strong>04:40 — The coordinator is dead.</strong> Orange skull at the centre, spinners at the participants, padlocks still on their prepared records. Nothing in the diagram can move — and that is the point.</figcaption>
+      </figure>
+
+      <h3>Failure mode 1: the crash in the worst possible second</h3>
+      <p>"Picture this. The coordinator collects all three yes votes from the participants. But then it crashes. Right there, after collecting the votes but before it gets a chance to send the commit decision. Now the participants are all stuck."</p>
+      <p>His explanation of the deadlock is precise and worth memorising, because it is the reason <em>nobody</em> can break the tie:</p>
+      <ul>
+        <li>"They can't go ahead and commit on their own because maybe the coordinator was about to tell them to abort."</li>
+        <li>"They can't abort on their own either because maybe the coordinator was about to tell them to commit and the other participants already went through with it."</li>
+      </ul>
+      <p>And then the blast radius: "every other transaction in your system that needs to touch any of those locked rows is now blocked, too, waiting for the locks that nobody can release." One coordinator crash does not fail one transaction; it stalls every transaction that needs the same rows.</p>
+
+      <figure>
+        <img src="assets/screenshots/09-slow-participant.jpg" alt="Payment service, Inventory service and Accounting service grouped inside a red dashed boundary, with a red '10 s' spinner on the right edge of the group and small padlock icons on their prepared records." loading="lazy" />
+        <figcaption><strong>05:05 — The slow participant.</strong> The dashed red boundary is the transaction waiting on one straggler. Two services are idle with locks held for the full ten seconds, because they are waiting for the third.</figcaption>
+      </figure>
+
+      <h3>Failure mode 2: the slowest participant sets the pace</h3>
+      <p>"If the ledger service, for example, were to take 10 seconds to respond to the prepared message, the card service and the inventory service are both just sitting there with their locks held for those full 10 seconds doing nothing. That means the entire system moves at the speed of the slowest participant." A latency blip in one dependency becomes a throughput collapse in all of them.</p>
+
+      <h3>Failure mode 3: a partition has no safe default</h3>
+      <p>"And if a network partition means the coordinator can't reach the participant at all, there's no safe default. It can't tell whether the message got through or not." The coordinator has two possible actions and no information to choose between them — so it does nothing, and the locks stay.</p>
+
+      <div class="callout danger" data-label="Supplemental research — is 2PC always blocking?">
+        <p>It is worth being precise, because "2PC is blocking" is a statement about the <em>classic</em> protocol, not a law of nature. Gray and Lamport's <em>Consensus on Transaction Commit</em> puts it exactly this way: "The classic Two-Phase Commit protocol blocks if the coordinator fails. Fault-tolerant consensus algorithms also reach agreement, but do not block whenever any majority of the processes are working… Two-Phase Commit is not fault tolerant because it uses a single coordinator whose failure can cause the protocol to block." Non-blocking variants exist — three-phase commit, and their own <em>Paxos Commit</em> with 2F+1 coordinators — but they buy their progress guarantee with extra messages, extra processes, and additional assumptions about timing. The talk's version is the classic single-coordinator protocol, and its conclusion holds for exactly that protocol. <em>(Source: J. T. Gray and L. Lamport, "Consensus on Transaction Commit," ACM Transactions on Database Systems 31(1), 2006 — Microsoft Research MSR-TR-2003-96: <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-2003-96.pdf" target="_blank" rel="noopener">microsoft.com/research</a>.)</em></p>
+      </div>
+
+      <h3>The paper the talk puts on screen</h3>
+      <figure>
+        <img src="assets/screenshots/10-helland-paper.jpg" alt="A two-page academic paper on screen with a yellow thought-bubble icon above it, the title area showing the abstract and introduction columns." loading="lazy" />
+        <figcaption><strong>05:20 — Helland's paper.</strong> The video shows the paper itself on screen while naming it: "Life Beyond Distributed Transactions".</figcaption>
+      </figure>
+
+      <p>Evan's summary of the argument: "Distributed transactions across autonomous services don't work at internet scale. The industry took this lesson to heart." The paper's own language is blunter and more useful:</p>
+      <blockquote>When flying an airplane that needs all of its engines to work, adding an engine reduces the availability of the airplane. Running a distributed transaction system over thousands of nodes is impractical without special mechanisms to tolerate outages. When application developers build systems using non-highly available distributed transactions, the solutions are brittle and must be discarded. Natural selection kicks in…</blockquote>
+      <p>and its conclusion is the ancestor of the second half of this talk:</p>
+      <blockquote>You can't use distributed transactions, so you use workflow.</blockquote>
+      <p class="src">Supplemental source: Pat Helland, <a href="https://queue.acm.org/detail.cfm?id=3025012" target="_blank" rel="noopener"><em>Life Beyond Distributed Transactions: An apostate's opinion</em></a>, ACM Queue 14(5), 2016 — an updated, abbreviated version of the CIDR 2007 paper (<a href="https://www.cidrdb.org/cidr2007/papers/cidr07p15.pdf" target="_blank" rel="noopener">cidr07p15.pdf</a>), also published in CACM 60(2), 2017.</p>
+
+      <div class="callout" data-label="A small correction to the attribution">
+        <p>Helland's paper is not about sagas. Its formal contributions are <strong>entities</strong> (keyed data that can be updated atomically only within itself), <strong>activities</strong> (per-partner messaging state), and <strong>workflow</strong> as the mechanism for reaching decisions across entities without atomicity. The talk's use of it is accurate as far as it goes — the paper does argue that distributed transactions across autonomous services do not survive at scale — but the paper's own prescription ("the management of uncertainty must be implemented in the business logic… It's simply workflow") is the direct ancestor of the <em>orchestrator</em> in Chapter 6, not of the choreography pattern.</p>
+      </div>
+
+      <h3>Where 2PC does survive</h3>
+      <p>"2PC does exist in production, but only inside distributed databases like Google Spanner or Yugabyte DB, where the coordinator and the participants are tightly coupled within the same system. This way the database handles the complexity internally so that you as the caller don't have to."</p>
+      <p>Google's own documentation describes the same protocol the talk drew, in the same order:</p>
+      <div class="callout info" data-label="Supplemental research — Spanner's internal 2PC">
+        <p>Google Cloud's <em>Life of Spanner Reads &amp; Writes</em> walks a multi-split write: "One participant becomes the coordinator… The job of the coordinator is to make sure the transaction either commits or aborts atomically across all participants." Then: "Participants acquire locks. (It's the first phase of two-phase commit.)" Each participant "records its locks and validation results in its Paxos log. This ensures the transaction state remains intact across server failures." Then the coordinator decides and "communicates the transaction outcome to all of the Participants. (This is the second phase of two-phase commit.)" The document also states plainly: "We implement two-phase commit (2PC) for transactions that span splits, but a transaction to a single split bypasses 2PC and uses a simpler, faster protocol." <em>(Source: <a href="https://docs.cloud.google.com/spanner/docs/whitepapers/life-of-reads-and-writes" target="_blank" rel="noopener">docs.cloud.google.com/spanner</a>.)</em></p>
+        <p>That is the talk's point, confirmed by the primary source: inside a distributed database the coordinator and the participants are the same system, they fail together, they recover together, and the application developer never sees a lock. YugabyteDB's documentation describes the same shape over Raft: single-shard atomicity comes free from the Raft batch, while multi-shard transactions use a <strong>transaction status table</strong> — a coordinator-held status record (<code>pending</code> → <code>committed</code> / <code>aborted</code>) plus provisional writes at each participant tablet. <em>(Source: <a href="https://docs.yugabyte.com/stable/architecture/transactions/distributed-txns/" target="_blank" rel="noopener">docs.yugabyte.com</a>.)</em></p>
+      </div>
+
+      <p>And the boundary the talk draws is a deployment-boundary boundary, not a technical one: "across independent services with different deployment schedules and different failure characteristics, that's where it all falls apart."</p>
+    </article>
+
+    <article id="ch5" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-06"><span class="chap-num">5.</span>The Saga: a different starting assumption</h2>
+        <div class="meta">
+          <span class="badge">05:51 – 07:22</span>
+          <span>~1 min 31 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=351s" target="_blank" rel="noopener">▶ Watch from 5:51</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>"When companies need to coordinate work across multiple services, the saga pattern is what they reach for. Uber, Netflix, Amazon, DoorDash, they all use this pattern in production."</li>
+          <li>The different assumption: <strong>"You don't actually need all or nothing atomicity spanning multiple services. You just need a way to eventually get to a consistent state, even when things go wrong along the way."</strong></li>
+          <li>"You break the work into a chain of independent local transactions. So, each service does its piece of work and commits to its own database on its own terms."</li>
+          <li>When a later step fails, earlier steps cannot be rolled back — so you run a <strong>compensating action</strong>: "business level undos that reverse the effects of what already happened. So, a refund instead of a rollback, a cancellation instead of an abort."</li>
+          <li>Something must <strong>detect the failure and trigger the compensations</strong> — "how that works is a key design decision."</li>
+          <li>The trade: <strong>eventual consistency</strong> instead of strong. "A customer might briefly see a charge on their card before the refund goes through, but it always converges to a correct state and <strong>nothing is blocked</strong> while that convergence is happening. Other transactions can keep flowing normally that entire time."</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/11-2pc-vs-saga-guarantee.jpg" alt="Two panels side by side: 2PC labelled 'All or nothing' with a dashed arrow to a green tick and a dashed arrow to a red cross, and Sagas labelled 'Eventual consistency' with a wavy dotted line." loading="lazy" />
+        <figcaption><strong>06:10 — The guarantee on the table.</strong> 2PC promises a definite yes-or-no. Sagas promise a definite <em>destination</em>, reached a little later. Everything else in the talk is the price of that difference.</figcaption>
+      </figure>
+
+      <h3>What changes, concretely</h3>
+      <p>Compare the two guarantees side by side. In 2PC, the answer to "did the order happen?" is available immediately and is always the same for everyone. In a saga, the answer becomes "it is happening, or it is being undone, and here is which" — a three-valued answer, with a window in the middle where the honest answer is "not yet".</p>
+      <p>The compensating actions the video names map one-to-one onto the three services:</p>
+
+      <figure>
+        <img src="assets/screenshots/12-compensating-actions.jpg" alt="Three rows: an orange database with a red FAIL label pointing to a box reading Refund; a blue database with a red FAIL label pointing to a box reading Cancel order; a purple database with a red FAIL label pointing to a box reading Reverse entry." loading="lazy" />
+        <figcaption><strong>06:50 — The compensation table.</strong> Each service's local undo, in business language rather than database language. Note the asymmetry: "Cancel order" and "Reverse entry" are invisible to the customer; "Refund" is not.</figcaption>
+      </figure>
+
+      <div class="callout" data-label="Supplemental research — where the Saga came from">
+        <p>The pattern is García-Molina and Salem's, from SIGMOD 1987. Their definition: a saga is a long-lived transaction "written as a sequence of transactions that can be interleaved with other transactions," where the system guarantees "that either all the transactions in a saga are successfully completed or compensating transactions are run to amend a partial execution." Each sub-transaction <code>T<sub>i</sub></code> gets a compensating transaction <code>C<sub>i</sub></code>, and the guarantee is that either <code>T₁…T<sub>n</sub></code> all run, or <code>T₁…T<sub>j</sub></code> run followed by <code>C<sub>j</sub>…C₁</code>. <em>(Source: H. García-Molina &amp; K. Salem, "Sagas," SIGMOD 1987 — <a href="https://www.cs.princeton.edu/techreports/1987/070.pdf" target="_blank" rel="noopener">cs.princeton.edu</a>.)</em></p>
+        <p>Two details in the original paper sharpen the talk's version:</p>
+        <ul>
+          <li><strong>A compensation is not a restore.</strong> "The compensating transaction undoes, from a semantic point of view, any of the actions performed by <code>T<sub>i</sub></code>, but does not necessarily return the database to the state that existed when the execution of <code>T<sub>i</sub></code> began." Their airline example: cancelling a reservation cannot simply restore the old seat count, because other transactions may have run in between.</li>
+          <li><strong>There is no isolation.</strong> "Other transactions might see the effects of a partial saga execution." Chris Richardson's modern restatement of the pattern for microservices (<a href="https://microservices.io/patterns/data/saga.html" target="_blank" rel="noopener">microservices.io/patterns/data/saga</a>) lists the two resulting drawbacks: "Lack of automatic rollback" and "Lack of isolation (the 'I' in ACID)."</li>
+        </ul>
+        <p>The talk's "a refund instead of a rollback, a cancellation instead of an abort" is exactly the 1987 definition of a semantic undo. The consequence the talk stresses — the customer sees the charge and the refund — is the same consequence the paper describes when it says a compensation does not restore prior state.</p>
+      </div>
+
+      <div class="callout info" data-label="Supplemental research — the production claims">
+        <p>The talk's claim that these companies run sagas is supported by published engineering accounts, not just folklore:</p>
+        <ul>
+          <li><strong>Netflix</strong> built Conductor as "an orchestration engine" for long-running business processes, and the Orkes write-up of that architecture describes Conductor's role as a saga coordinator: "An orchestrator such as Orkes Conductor acts as a centralized coordinator that maintains the application state and handles the distributed transactions. This is often referred to as a saga pattern." <em>(Source: <a href="https://orkes.io/blog/workflows-as-a-distributed-transactional-backend" target="_blank" rel="noopener">orkes.io</a>; original: <a href="https://medium.com/netflix-techblog/netflix-conductor-a-microservices-orchestrator-2e8d4771bf40" target="_blank" rel="noopener">Netflix TechBlog, "Netflix Conductor: A microservices orchestrator"</a>, 2016.)</em></li>
+          <li><strong>Uber</strong> — the InfoQ account of Uber's zero-downtime trip-fulfillment migration states that the previous system "facilitated distributed transactions among services A, B, and C to ensure synchronization of entities stored within them, <strong>employing the saga pattern</strong>." <em>(Source: <a href="https://www.infoq.com/articles/uber-migration-hybrid-cloud/" target="_blank" rel="noopener">infoq.com</a>.)</em></li>
+        </ul>
+        <p class="src">The video gives no source for DoorDash or Amazon, so this guide does not assert one either.</p>
+      </div>
+    </article>
+
+    <article id="ch6" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-07"><span class="chap-num">6.</span>Choreography vs orchestration</h2>
+        <div class="meta">
+          <span class="badge">07:22 – 09:37</span>
+          <span>~2 min 15 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=442s" target="_blank" rel="noopener">▶ Watch from 7:22</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Two implementations, and "the choice between them determines <strong>who's responsible for detecting failures and running compensations</strong>."</li>
+          <li><strong>Choreography</strong> is the decentralized option: publish/subscribe. The card service charges and publishes <em>card charged</em>; the inventory service listens, reserves, publishes <em>inventory reserved</em>; the ledger service picks that up and records the entry. On failure, the failing service publishes a failure event and upstream services run their own compensations.</li>
+          <li>"This works well when you have a simple flow with just two or three steps. But, once you get to five or six services all publishing and reacting to each others events, figuring out the current state of any given transaction becomes really difficult… you end up digging through logs across a dozen different services trying to piece together what happened."</li>
+          <li><strong>Orchestration</strong> is centralised: a dedicated orchestrator tells each service what to do one step at a time and waits for confirmation. "If something fails, the orchestrator knows exactly what steps failed and can run the right compensating action in the right order."</li>
+          <li>Tools named: <strong>Temporal</strong> and <strong>AWS Step Functions</strong> — and Evan adds that Hello Interview uses this pattern internally for payment and fulfilment flows.</li>
+          <li><strong>The key difference from a 2PC coordinator: durability.</strong> "The orchestrator doesn't leave locks dangling across your system. It's durable. When it restarts, it reads its own state from a database and it picks up exactly where it left off. So, no rows are locked in the meantime and no other transactions are blocked during that recovery period."</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/13-choreography-events.jpg" alt="Slide titled Choreography: Notification service, Payment service, Inventory service, Accounting service and Shipping service each connected by dashed lines to a central bus labelled with the events CARD CHARGED, INVENTORY RESERVED, ENTRY RECORDED and NOTIFICATION SENT." loading="lazy" />
+        <figcaption><strong>08:15 — Choreography.</strong> No hub, no controller: every service both publishes and subscribes. The event names in the middle are the entire protocol.</figcaption>
+      </figure>
+
+      <h3>Choreography: the flow, and where it breaks down</h3>
+      <p>"It uses a publish subscribe pattern where each service broadcasts an event when it finishes its work and any interested service can pick it up and react. So, the card service charges the card and then publishes a card charged event. The inventory service is listening for that event. So, when it arrives, it reserves the stock and publishes an inventory reserved event. The ledger service picks that up and then records the entry."</p>
+      <p>The failure path is symmetric: "If something fails, the failing service publishes a failure event and the upstream services react by running their own compensations." Every participant owns both its step and its undo. That symmetry is the appeal — and the cost, once the flow grows: the state of a given transaction is spread across every one of those services, and the only place it exists is in the logs. Evan's list of unanswered questions is worth keeping: "Where exactly did it fail? Which compensating actions have already run? Did the refund actually go through?"</p>
+
+      <figure>
+        <img src="assets/screenshots/14-orchestration-hub.jpg" alt="Slide titled Orchestration: a white gear circle in the centre with dashed lines to Payment service (green check), Inventory service (green check), Shipping service, Accounting service, and Notification service (red X)." loading="lazy" />
+        <figcaption><strong>08:55 — Orchestration.</strong> One gear, one owner of the flow. The ✓ and ✗ bubbles show the orchestrator's view of each step's outcome — the thing choreography has no single place to hold.</figcaption>
+      </figure>
+
+      <h3>Orchestration: the hub, and why it is not a 2PC coordinator</h3>
+      <p>"Instead of services reacting to each others events, you have a dedicated orchestrator service that controls the entire flow. It tells each service what to do one step at a time. Card service, charge the card. It waits for confirmation. Inventory service, reserve the stock. Wait for confirmation."</p>
+      <p>Then the sentence that is the heart of the whole talk, at 09:16:</p>
+      <blockquote>The important difference between Saga orchestration and 2PC coordinators is what happens when it crashes. The orchestrator doesn't leave locks dangling across your system. It's durable. When it restarts, it reads its own state from a database and it picks up exactly where it left off. So, no rows are locked in the meantime and no other transactions are blocked during that recovery period.</blockquote>
+      <p>Compare the two crash stories directly:</p>
+
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th></th><th>2PC coordinator</th><th>Saga orchestrator</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Holds what?</strong></td><td>Row locks inside every participant's database</td><td>No locks. Its own workflow state in its own store</td></tr>
+            <tr><td><strong>When it crashes</strong></td><td>Participants are stuck holding locks until an operator intervenes</td><td>Restarts, re-reads its own state, resumes where it left off</td></tr>
+            <tr><td><strong>Effect on others</strong></td><td>Every transaction touching the locked rows is blocked</td><td>None — no rows are held</td></tr>
+            <tr><td><strong>What it guarantees</strong></td><td>All-or-nothing, immediately</td><td>Eventual consistency, with compensating actions in flight</td></tr>
+            <tr><td><strong>Slowest participant</strong></td><td>Everyone waits, locks held</td><td>Everyone waits, but nothing is locked</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/15-saga-orchestrator-durable.jpg" alt="Slide titled Saga Orchestrator: a central gear connected to Shipping service with an orange database, Payment service with a check and an orange database, Inventory service with a check and a blue database, Accounting service with a purple database, and Notification service with a green database, plus a NOTIFY CLIENT label." loading="lazy" />
+        <figcaption><strong>09:30 — The orchestrator with its own world.</strong> Each participant keeps its own database; the orchestrator keeps its own state. No participant is holding a lock on behalf of anyone else — which is why a crash here is a pause, not a deadlock.</figcaption>
+      </figure>
+
+      <div class="callout info" data-label="Supplemental research — the tools the talk names">
+        <p><strong>Temporal.</strong> The talk says it "was created by the engineer behind Uber's Cadence workflow engine". The accurate version: Temporal was created by <strong>Maxim Fateev and Samar Abbas</strong>, who co-created the <strong>Cadence</strong> workflow engine at Uber starting in 2015; they left Uber and forked Cadence into Temporal in 2018–19, which Temporal now develops as MIT-licensed open source. <em>(Sources: <a href="https://temporal.io/about" target="_blank" rel="noopener">temporal.io/about</a>; <a href="https://temporal.io/blog/oss-startups-podcast" target="_blank" rel="noopener">Fateev on the OSS Startups Podcast</a>.)</em></p>
+        <p>Temporal's own documentation describes the durability property the speaker claims, almost word for word: "Once a Workflow starts, it runs to completion, whether that takes a second or a year. If the process running it crashes, the Temporal Service hands the work to another process, which <strong>rebuilds the state of the execution and resumes at the point where it stopped</strong>, with local variables and progress intact." The state it rebuilds from is the <strong>Event History</strong> — "an append-only log of Events for your application… durably persisted by the Temporal Service, so your application state survives crashes or failures." Temporal also supervises each Activity with a retry policy and timeouts, which is where "retry the compensation" becomes a configuration value rather than a hand-rolled loop. <em>(Source: <a href="https://docs.temporal.io/evaluate/understanding-temporal" target="_blank" rel="noopener">docs.temporal.io</a>.)</em></p>
+        <p><strong>AWS Step Functions.</strong> This one needs a caveat the talk does not give, because Step Functions comes in two flavours and they differ in exactly the property the speaker is relying on. A <strong>Standard</strong> workflow gives "Exactly-once workflow execution", runs for up to one year, is described as "ideal for long-running, durable, and auditable workflows", and is "suited to orchestrating non-idempotent actions, such as … processing payments" — that is the saga-orchestrator use case. An <strong>Express</strong> workflow runs for up to five minutes, uses at-least-once (async) or at-most-once (sync) execution, does <em>not</em> persist execution state between state transitions, and "Idempotency is not automatically managed". So if you orchestrate a saga with Express workflows, <strong>you</strong> have to make every step idempotent. <em>(Source: <a href="https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html" target="_blank" rel="noopener">docs.aws.amazon.com/step-functions</a>.)</em></p>
+      </div>
+    </article>
+
+    <article id="ch7" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-08"><span class="chap-num">7.</span>Where the pain moves: compensating actions</h2>
+        <div class="meta">
+          <span class="badge">09:37 – 11:05</span>
+          <span>~1 min 28 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=577s" target="_blank" rel="noopener">▶ Watch from 9:37</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>"Sagas solve the blocking problem that makes 2PC impractical, but they introduce a different kind of complexity, the <strong>compensating actions themselves</strong>."</li>
+          <li><strong>Compensation is visible.</strong> The customer "sees an actual charge show up on their card, and then a few seconds later they see a refund. Their bank might even send them a push notification for each one. It works correctly, but it's not the invisible cleanup that a database rollback gives you."</li>
+          <li><strong>Some actions cannot be undone.</strong> "You can't unsend that email." A webhook to a third party can be cancelled, "but you can't guarantee that they'll process it in time or at all."</li>
+          <li><strong>Compensations can themselves fail.</strong> "What if the refund API is down when you need to issue that refund? Now you need retry logic for your compensations."</li>
+          <li><strong>Retries require idempotency.</strong> The refund "needs the operation to be idempotent, meaning it produces the same result whether you run it once or 10 times, so that a retry doesn't accidentally refund the customer twice."</li>
+          <li>"You end up needing the same level of reliability engineering for your failure handling as you do for your happy paths."</li>
+        </ul>
+      </div>
+
+      <p>The structure of this chapter is a chain of four escalations, and it is worth noticing that each one is a *consequence* of the previous one. Visibility is annoying. Irreversibility is dangerous. Failing compensations force retries. Retries force idempotency. There is no way to stop at "visibility" — if a compensation can fail, you need a retry, and a retry that is not idempotent is worse than no retry at all.</p>
+
+      <figure>
+        <img src="assets/screenshots/16-idempotent-refund.jpg" alt="Two panels side by side. The left, marked with a green check, shows a transaction list with PAYMENT 250.00 and one REFUND -250.00. The right, marked with a red cross, shows PAYMENT 250.00 followed by three REFUND lines of -250.00 each." loading="lazy" />
+        <figcaption><strong>11:00 — Idempotency, on a bank statement.</strong> Left: one charge, one refund. Right: one charge, three refunds, because the compensation was retried without an idempotency guard. The customer is out $500.</figcaption>
+      </figure>
+
+      <h3>Making the operation idempotent</h3>
+      <p>"Idempotent" is the term the talk stumbles over in the auto-generated captions ("item potent"); it is the standard systems term, and it has a standard implementation: an idempotency key that is <em>stable across retries</em> and unique per logical operation.</p>
+
+      <div class="codeblock">
+        <div class="code-head"><span class="label">Adapted example — idempotent refund, not code from the video</span></div>
+        <pre><code>POST /v1/refunds HTTP/1.1
+Idempotency-Key: 8f14e45f-ceea-467a-9a3d-1b2c3d4e5f60
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 derived from (saga instance id + step name) — NOT from the attempt
+
+Amount:   25000
+Currency: usd
+Charge-Id: ch_3P9xQ2eZvKYlo2C</code></pre>
+        <div class="code-cap"><p>The shape follows <a href="https://docs.stripe.com/api/idempotent_requests" target="_blank" rel="noopener">Stripe's idempotent-requests documentation</a>, which is a public specification of the pattern, not code from this recording.</p></div>
+      </div>
+
+      <p>The critical detail, and the one people get wrong: the key must be derived from the <strong>logical operation</strong> — the saga instance plus the step — so that every retry sends the <em>same</em> key. If you generate a fresh random key per attempt, the server sees a brand-new operation each time and will happily refund three times. Stripe's guidance on key generation is directly transferable: "we suggest using V4 UUIDs, or another random string with enough entropy to avoid collisions", and it warns against putting sensitive data in the key.</p>
+
+      <div class="callout" data-label="Supplemental research — the other source of duplicates">
+        <p>Idempotency is not only about your own retries. A message broker that offers at-least-once delivery will hand you the same event twice, and the transactional outbox's relay can publish twice if it crashes between publishing and recording that it did. Chris Richardson states the requirement plainly in the outbox pattern: "The Message relay might publish a message more than once… As a result, a message consumer must be idempotent, perhaps by tracking the IDs of the messages that it has already processed. Fortunately, since message Consumers usually need to be idempotent (because a message broker can deliver messages more than once) this is typically not a problem." <em>(Source: <a href="https://microservices.io/patterns/data/transactional-outbox.html" target="_blank" rel="noopener">microservices.io/patterns/data/transactional-outbox</a>.)</em> So idempotency has to be designed for at the consumer anyway — and the saga's compensation step is just the most visible place it bites.</p>
+      </div>
+
+      <h3>The order of your compensation design matters</h3>
+      <p>The talk's escalation is also a checklist. Before you design a saga step, answer four questions:</p>
+      <ol>
+        <li><strong>What is the compensating action, in business language?</strong> "Refund" and "cancel" are answers. "Roll back" is not — that is the database's word, and you do not have one.</li>
+        <li><strong>Who sees it?</strong> If a customer sees it, your UX has to include a charge and a refund appearing in sequence. If a third party sees it, you may have no way to retract it.</li>
+        <li><strong>Can it fail?</strong> If it can, it needs retries — and a place to park the retries when they keep failing.</li>
+        <li><strong>Is it safe to run twice?</strong> If not, it needs an idempotency key <em>before</em> you ship it, not after the first double refund.</li>
+      </ol>
+      <p>Evans's own summary of the chapter: "Each step in your saga needs a well-defined compensating action, and some of those compensations are inherently imperfect."</p>
+    </article>
+
+    <article id="ch8" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-09"><span class="chap-num">8.</span>The dual write problem, and the transactional outbox</h2>
+        <div class="meta">
+          <span class="badge">11:05 – 12:22</span>
+          <span>~1 min 17 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=665s" target="_blank" rel="noopener">▶ Watch from 11:05</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>When the card service finishes charging, it must do <strong>two things</strong>: save the result to its own database, and publish an event to a message broker so the next service in the chain knows to proceed.</li>
+          <li>"The problem is that those are <strong>two completely separate writes to two completely separate systems</strong>. This is called the <strong>dual write problem</strong>."</li>
+          <li><strong>Database write succeeds, publish fails</strong> → "the next step in your saga never gets triggered and the whole flow stalls."</li>
+          <li><strong>Publish succeeds, database write fails</strong> → "downstream services are reacting to something that didn't actually happen in your database."</li>
+          <li><strong>The fix: transactional outbox.</strong> Write both your data <em>and</em> the outgoing event into the same database via a single local transaction — the event goes into an outbox table right alongside your data write, "so that either both commit or neither do."</li>
+          <li>Then "a separate background process watches the outbox table and publishes those events to your message broker. That background process can use <strong>change data capture</strong>, which means it tails the database's own transaction logs to pick up new entries, or it can simply pull the outbox table on a regular interval."</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/17-dual-write.jpg" alt="Payment service with a green check fans out along two dashed arrows to a Database cylinder and a Message broker box, with a separate dot on each path marking the two independent writes." loading="lazy" />
+        <figcaption><strong>11:30 — The dual write.</strong> Two arrows, two dots, two destinations. Each dot is a point at which the system can be half-way — and the two halves can disagree.</figcaption>
+      </figure>
+
+      <h3>The two bad outcomes, in words</h3>
+      <div class="grid-2">
+        <div class="card"><h3>DB ok, publish fails</h3><p>The card is charged and recorded, but the next service never hears about it. <strong>The flow stalls</strong> — the saga is alive, the customer's money is gone, and nobody is driving. This is the failure that hurts most, because it is silent.</p></div>
+        <div class="card"><h3>Publish ok, DB write fails</h3><p>Downstream services reserve stock and record a ledger entry for an order that, in the source of truth, does not exist. <strong>The system diverges</strong> — and the divergence is now spread across three services.</p></div>
+      </div>
+
+      <h3>The outbox: one transaction, two things</h3>
+      <figure>
+        <img src="assets/screenshots/18-outbox-row.jpg" alt="An orange database and a purple database, both connected by dashed lines to a single horizontal table row with a green check mark at its right end." loading="lazy" />
+        <figcaption><strong>12:11 — The outbox.</strong> The business data and the outgoing event land in the <em>same</em> database, in the <em>same</em> transaction, so the row with the green tick appears only when both are committed.</figcaption>
+      </figure>
+
+
+      <div class="codeblock">
+        <div class="code-head"><span class="label">Adapted example — PostgreSQL outbox, not code from the video</span></div>
+        <pre><code>-- Adapted from Chris Richardson's "Transactional Outbox" pattern.
+-- The video describes the pattern in prose and one diagram; no SQL is shown.
+
+CREATE TABLE outbox (
+    id           UUID PRIMARY KEY,          -- event id; also the consumer's dedup key
+    aggregate_id UUID NOT NULL,             -- e.g. the order id
+    event_type   TEXT NOT NULL,             -- e.g. 'OrderPaid'
+    payload      JSONB NOT NULL,            -- the event body
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    published_at TIMESTAMPTZ                -- NULL until the relay has sent it
+);
+
+-- One local transaction writes the business row AND the event.
+BEGIN;
+
+INSERT INTO orders (id, status, amount) VALUES ($1, 'PAID', $2);
+
+INSERT INTO outbox (id, aggregate_id, event_type, payload)
+VALUES (gen_random_uuid(), $1, 'OrderPaid', $3::jsonb);
+
+COMMIT;   -- both rows commit together, or neither does
+</code></pre>
+        <div class="code-cap"><p>Boilerplate (indexes, retention, partitioning, the relay's own retry policy) is omitted. The essential shape is one table and one extra <code>INSERT</code> inside the business transaction.</p></div>
+      </div>
+
+      <div class="codeblock">
+        <div class="code-head"><span class="label">Adapted example — the relay that publishes from the outbox</span></div>
+        <pre><code>-- Relay loop, one of the two options the video names ("pull the outbox
+-- table on a regular interval"). The other is transaction log tailing / CDC.
+
+SELECT id, aggregate_id, event_type, payload
+FROM outbox
+WHERE published_at IS NULL
+ORDER BY created_at
+LIMIT 100;
+
+-- publish each row to the broker, then:
+UPDATE outbox SET published_at = now() WHERE id = $1;
+
+-- WARNING: the relay can publish a row and crash before the UPDATE, so the
+-- same event will be published again. Consumers must be idempotent on
+-- outbox.id -- which is why outbox.id must be carried on the message.</code></pre>
+        <div class="code-cap"><p>The two-step publish-then-mark is exactly why the consumer needs an idempotency key. The event id is that key.</p></div>
+      </div>
+
+      <div class="callout" data-label="Supplemental research — the pattern, and why 2PC cannot solve it">
+        <p>Chris Richardson's <em>Transactional Outbox</em> pattern states the problem and the fix in one line: "The solution is for the service that sends the message to first store the message in the database as part of the transaction that updates the business entities. A separate process then sends the messages to the message broker." He also names the two relay implementations the video mentions: <strong>transaction log tailing</strong> and <strong>polling publisher</strong> — the first is what "change data capture" means in practice. <em>(Source: <a href="https://microservices.io/patterns/data/transactional-outbox.html" target="_blank" rel="noopener">microservices.io/patterns/data/transactional-outbox</a>.)</em></p>
+        <p>The crucial extra sentence is why the outbox is necessary rather than merely tidy: "it is <strong>not viable to use a traditional distributed transaction (2PC) that spans the database and the message broker. The database and/or the message broker might not support 2PC. And even if they do, it's often undesirable to couple the service to both the database and the message broker.</strong>" That is the closing of the loop the whole talk has been building — you cannot 2PC your way out of the dual write, because the broker is not a transaction participant. Hence the outbox. <em>(Same source.)</em></p>
+        <p>If you use CDC, <a href="https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html" target="_blank" rel="noopener">Debezium's outbox event router</a> is the reference implementation; it expects an outbox table with columns for the event <code>id</code>, <code>aggregatetype</code>, <code>aggregateid</code>, <code>type</code> and a <code>payload</code>, and it routes each row to a topic named after its aggregate type. <em>(Source: <a href="https://debezium.io/" target="_blank" rel="noopener">debezium.io</a>.)</em></p>
+      </div>
+    </article>
+
+    <article id="ch9" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-10"><span class="chap-num">9.</span>Before you reach for a saga: fix the boundary</h2>
+        <div class="meta">
+          <span class="badge">12:22 – 14:16</span>
+          <span>~1 min 54 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=742s" target="_blank" rel="noopener">▶ Watch from 12:22</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>"Before you reach for either of these patterns, the first question you ask yourself is <strong>whether you actually need a distributed transaction at all</strong>."</li>
+          <li>"If you can design your service boundaries so that the data that transacts together lives in the same database, do that. This is easier to get right up front than to try to retrofit later."</li>
+          <li>The worked example: "move the inventory and ledger table into the same database that has the payments table if they always need to be updated together. This way a local database transaction is simpler, faster, and more reliable than any distributed alternative. And this is always the best answer when you can make it work."</li>
+          <li>If you genuinely must distribute: "you're going to use a saga. That's not really a debate in the industry anymore. The question is which flavor of saga makes sense for your situation."</li>
+          <li><strong>Choreography</strong> — "usually where teams start, and for simple flows it works great": three or four steps, genuinely independent services, no need for centralised visibility. The named example is "an e-commerce notification system where an order is placed event triggers an email or a notification independently". "Most teams eventually outgrow it as their flows get more complex, but there's no reason to over-engineer from day one."</li>
+          <li><strong>Orchestration</strong> — "for anything more complex than that": branching logic, needing to see exactly where a transaction is stuck, compensation logic tricky and wanting it "defined in one clear place rather than scattered across half a dozen services".</li>
+          <li>Last note: "if eventual consistency truly is not acceptable for a particular piece of your system, consider whether that data can live in a <strong>single distributed database</strong> like Spanner or Yugabyte DB that handle that strong consistency internally for you. That's a very different thing from trying to build 2PC yourself across independent services."</li>
+        </ul>
+      </div>
+
+      <h3>The advice that comes first, and is the most valuable</h3>
+      <p>Notice the order of the talk. The saga is introduced as the answer, and then in Chapter 9 the speaker walks <em>back</em> to the question that should come first: "the first question you ask yourself is whether you actually need a distributed transaction at all." Everything in Chapters 5–8 is a description of what you pay when the answer is yes.</p>
+      <div class="callout tip" data-label="A boundary worth re-reading">
+        <p>"If you can design your service boundaries so that the data that transacts together lives in the same database, do that." The reasoning behind it is economic as much as technical: a local transaction is "simpler, faster, and more reliable than any distributed alternative", it never blocks other work, and it has no compensation to design. Splitting a service is a decision with a permanent price, so it is worth making it for reasons of <em>scale, ownership, or deployment independence</em> — not because two tables felt like they belonged to different teams.</p>
+        <p class="src"><em>This guide's inference, not the speaker's:</em> the talk gives no criteria for when co-locating is or is not appropriate. In practice the boundary is legitimate when the data needs independent scaling, independent deploy schedules, or a different access/ownership model — and illegitimate when the split is only organisational theatre, because a saga's price (eventual consistency, compensation logic, outbox, idempotency, retries) is paid for the life of the system, while the benefit of a split is reversible.</p>
+      </div>
+
+      <h3>Choosing the flavour</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th></th><th>Choreography</th><th>Orchestration</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Shape</strong></td><td>Decentralised publish/subscribe. Every service both publishes and reacts.</td><td>Central orchestrator issues commands, waits for confirmations, decides what runs next.</td></tr>
+            <tr><td><strong>Who detects failure?</strong></td><td>The failing service, by publishing a failure event. Upstream services react.</td><td>The orchestrator — it knows exactly which step failed.</td></tr>
+            <tr><td><strong>Who runs compensations?</strong></td><td>Each upstream service runs its own, in response to events.</td><td>The orchestrator runs "the right compensating action in the right order".</td></tr>
+            <tr><td><strong>Visibility</strong></td><td>Scattered. You reconstruct state from logs across a dozen services.</td><td>Central. You can see exactly where a transaction is stuck.</td></tr>
+            <tr><td><strong>Suits</strong></td><td>Two or three steps; genuinely independent services; no need for centralised visibility.</td><td>Anything more complex: branching logic, tricky compensation, audit needs.</td></tr>
+            <tr><td><strong>Cost</strong></td><td>Simple to start; hard to change once many services publish to each other.</td><td>Another component to run and to keep correct — but the flow is in one place.</td></tr>
+            <tr><td><strong>Tools named in the talk</strong></td><td>— (event bus)</td><td>Temporal, AWS Step Functions</td></tr>
+            <tr><td><strong>Evan's verdict</strong></td><td>"Where teams start… there's no reason to over-engineer from day one."</td><td>"What most teams end up using once they reach any serious scale… the pattern we'd recommend that most teams use."</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>And if eventual consistency is not acceptable at all?</h3>
+      <p>The last technical note in the talk is the escape hatch, and it is the same observation that opened Chapter 4: 2PC is not the problem — 2PC <em>across independent services</em> is the problem. "Consider whether that data can live in a single distributed database like Spanner or Yugabyte DB that handle that strong consistency internally for you. That's a very different thing from trying to build 2PC yourself across independent services." The database owns the coordinator, the participants, the failure recovery, and the locks; your application just issues a transaction that spans shards.</p>
+
+      <div class="callout warn" data-label="A note on the video's own description">
+        <p>The YouTube description for this video says "reach for a distributed database like Spanner or <strong>CockroachDB</strong> that handles 2PC internally". The <em>spoken</em> track and the <em>on-screen</em> material both say <strong>Spanner</strong> and <strong>YugabyteDB</strong> — a slide at 14:10 shows the YCQL and yugabyteDB logos. CockroachDB appears only in the description text, and this guide does not find it in the recording. The advice is the same either way, because CockroachDB also provides serializable distributed transactions; the guide follows the recording. <em>(CockroachDB's transaction layer is documented at <a href="https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer" target="_blank" rel="noopener">cockroachlabs.com/docs</a> — but that is this guide's note, not the video's.)</em></p>
+      </div>
+    </article>
+
+    <article id="ch10" class="chapter">
+      <div class="chapter-head">
+        <h2 id="heading-11"><span class="chap-num">10.</span>The pattern to remember</h2>
+        <div class="meta">
+          <span class="badge">14:16 – 14:41</span>
+          <span>~25 s</span>
+          <a class="watch-link" href="https://www.youtube.com/watch?v=DOFflggE_0Q&amp;t=856s" target="_blank" rel="noopener">▶ Watch from 14:16</a>
+        </div>
+      </div>
+      <div class="chapter-tldr">
+        <div class="label">In one paragraph</div>
+        <ul>
+          <li>Three ingredients: <strong>Saga with orchestration</strong>, <strong>independent (idempotent) operations at every step</strong>, and a <strong>transactional outbox</strong>.</li>
+          <li>"It means accepting eventual consistency, but that's a trade-off the industry has made deliberately."</li>
+          <li>"And it's the architecture that Uber, Netflix, and Amazon actually run in production today."</li>
+        </ul>
+      </div>
+
+      <figure>
+        <img src="assets/screenshots/19-final-pattern.jpg" alt="A yellow-outlined box reading 'Saga with Orchestration' with a dashed line pointing down to three logos: Uber, NETFLIX and amazon." loading="lazy" />
+        <figcaption><strong>14:20 — The closing slide.</strong> "Saga with orchestration", and the three companies the talk names. The other two ingredients — idempotent operations and the transactional outbox — are spoken immediately before this frame appears.</figcaption>
+      </figure>
+
+      <p>If you remember one thing from fifteen minutes, make it this. The three ingredients are not three independent best practices — they are one pattern, and each covers a specific hole the others leave:</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Ingredient</th><th>Hole it closes</th><th>Failure it prevents</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Orchestrated saga</strong></td><td>No single place knows the state of a transaction</td><td>A stalled flow nobody can diagnose; compensations run in the wrong order</td></tr>
+            <tr><td><strong>Idempotent steps</strong></td><td>Retries and duplicate deliveries are inevitable</td><td>Double refunds, double charges, double reservations</td></tr>
+            <tr><td><strong>Transactional outbox</strong></td><td>Database and broker are two separate systems</td><td>Events that never arrive, or arrive for things that never happened</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>And the price of all three, stated plainly by the speaker: "It means accepting eventual consistency, but that's a trade-off the industry has made deliberately."</p>
+    </article>
+
+    <section class="card" id="quiz">
+      <div class="sec-head"><span class="sec-num">12</span><h2 id="heading-12">Check your recall</h2></div>
+      <p class="muted">Answer before you reveal. These test the reasoning, not the vocabulary.</p>
+      <div class="quiz-item">
+        <div class="quiz-q"><span class="n">Q1.</span>The coordinator has collected three "yes" votes and then crashes. Why can't a participant simply abort?</div>
+        <button class="qbtn" hidden type="button">Reveal answer</button>
+        <div class="reveal">Because it does not know what the coordinator decided. If it aborts and the coordinator had already recorded a commit decision, the other participants may already have committed — so the transaction ends up partially aborted and partially committed. Equally, it cannot commit on its own: the coordinator may have been about to tell everyone to abort. It has given up the right to decide unilaterally by saying "yes" in the prepare phase. That is why 2PC is a <b>blocking</b> protocol: the only way out is for the coordinator to come back.</div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-q"><span class="n">Q2.</span>Name the three ways 2PC fails in the talk, and what each one costs the rest of the system.</div>
+        <button class="qbtn" hidden type="button">Reveal answer</button>
+        <div class="reveal">(1) <b>Coordinator crash</b> — participants hold locks and can decide nothing; every other transaction touching those rows is blocked too. (2) <b>Slow participant</b> — everyone waits, locks held, so the whole system moves at the slowest participant's speed. (3) <b>Network partition</b> — the coordinator cannot reach a participant, so there is no safe default action to take; the transaction hangs and the locks stay.</div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-q"><span class="n">Q3.</span>The talk says 2PC "does exist in production". Under exactly what condition?</div>
+        <button class="qbtn" hidden type="button">Reveal answer</button>
+        <div class="reveal">Only <b>inside a distributed database</b> such as Spanner or YugabyteDB — where the coordinator and the participants are tightly coupled within the same system, so the database owns the complexity and the application caller never sees it. Across independent services, with their own deployment schedules and failure characteristics, it "falls apart". The condition is not "2PC is safe" but "2PC's participants fail and recover together".</div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-q"><span class="n">Q4.</span>What is the difference between a rollback and a compensating action?</div>
+        <button class="qbtn" hidden type="button">Reveal answer</button>
+        <div class="reveal">A rollback is the <b>database</b> undoing its own uncommitted work: invisible, atomic, free. A compensating action is a <b>business-level</b> undo performed by the application to reverse something that was already committed: a refund, a cancellation, a reversal entry. It is visible to the customer, it can itself fail, it may not restore the exact prior state (other transactions may have run in between), and some actions cannot be compensated at all — you cannot unsend an email.</div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-q"><span class="n">Q5.</span>Your saga orchestrator crashes halfway through. Why is that a pause rather than a deadlock?</div>
+        <button class="qbtn" hidden type="button">Reveal answer</button>
+        <div class="reveal">Because the orchestrator holds <b>no locks</b> in the participants' databases. It is durable: on restart it reads its own workflow state and resumes exactly where it left off. Contrast the 2PC coordinator, which leaves prepared records and row locks behind in every participant, and whose participants cannot proceed until it returns.</div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-q"><span class="n">Q6.</span>Your refund step retries and the customer is refunded three times. What single change prevents it, and what mistake would break that change?</div>
+        <button class="qbtn" hidden type="button">Reveal answer</button>
+        <div class="reveal">Send an <b>idempotency key</b> that is stable across retries and derived from the logical operation (the saga instance id plus the step), not from the attempt. The mistake is generating a fresh key per attempt — the server then sees three different operations and charges three refunds. The key must also travel on the message so consumers can dedupe, because both broker redelivery and the outbox relay can publish the same event twice.</div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-q"><span class="n">Q7.</span>You save to the database and then publish to a broker. What is the worst thing about that ordering, and how does the outbox change it?</div>
+        <button class="qbtn" hidden type="button">Reveal answer</button>
+        <div class="reveal">The database write and the publish are <b>two independent writes to two systems</b> — the "dual write problem". If the write succeeds and the publish fails, the saga stalls silently; if the publish succeeds and the write fails, downstream services react to something that never happened. The outbox makes it <b>one</b> local transaction: the event row and the business row are written together into the same database, so either both commit or neither does. A relay then publishes from the outbox, by CDC or by polling — and the relay can publish twice, which is why consumers must be idempotent.</div>
+      </div>
+      <div class="quiz-item">
+        <div class="quiz-q"><span class="n">Q8.</span>You are designing a three-service flow. Give the two questions that decide choreography vs orchestration, and the one question that decides whether to use a saga at all.</div>
+        <button class="qbtn" hidden type="button">Reveal answer</button>
+        <div class="reveal"><b>Saga or not?</b> Can the data that must change together live in one database? If yes, do that — it is simpler, faster, and more reliable than any distributed alternative. <b>Flavour?</b> Do you need centralised visibility into where a transaction is stuck, branching logic, or one place for the compensation logic? If yes, orchestrate. If the flow is genuinely two or three independent steps with no such need, choreograph. And if you would rather not pay the eventual-consistency price at all, consider putting that data in a single distributed database that handles the strong consistency internally.</div>
+      </div>
+    </section>
+
+    <!-- ============ GLOSSARY ============ -->
+    <section id="glossary">
+      <div class="sec-head"><span class="sec-num">G</span><h2 id="heading-13">Glossary — every term, one paragraph</h2></div>
+      <p>Terms as the talk uses them, with the standard definition where it adds precision.</p>
+      <input aria-label="Search glossary" id="glossSearch" class="gloss-search" type="search" placeholder="Filter terms…" autocomplete="off">
+      <div class="glossary" id="glossList">
+        <div class="gterm"><dt>ACID</dt><dd>The four properties a database transaction provides: <strong>Atomicity</strong>, <strong>Consistency</strong>, <strong>Isolation</strong>, <strong>Durability</strong>. The talk develops only atomicity and isolation, because those are the two that stop holding once the transaction spans machines.</dd></div>
+        <div class="gterm"><dt>Atomicity</dt><dd>All the writes in a transaction happen, or none of them do. In the talk's example: "There's no world where the card gets charged, but the inventory doesn't get reserved."</dd></div>
+        <div class="gterm"><dt>Isolation</dt><dd>Other parts of the system cannot observe a transaction's half-finished state. A balance query will not see a charge for an order that has not fully processed.</dd></div>
+        <div class="gterm"><dt>Distributed transaction</dt><dd>The talk's definition: "A single logical operation that needs to span multiple independent databases or services, where all the steps need to either succeed together or be cleaned up when something goes wrong." The second clause is where the difficulty lives.</dd></div>
+        <div class="gterm"><dt>Two-phase commit (2PC)</dt><dd>A commit protocol with a coordinator and participants. <strong>Phase 1 (prepare):</strong> the coordinator asks each participant "can you commit?"; each participant does the work, writes it durably, locks the affected rows, and votes yes or no. <strong>Phase 2 (commit):</strong> if all voted yes, the coordinator tells everyone to commit permanently and release locks; if any voted no, it tells everyone to abort.</dd></div>
+        <div class="gterm"><dt>Coordinator</dt><dd>The component that makes "all participants agree on the outcome before any make their changes permanent". In 2PC it is the single point of failure that makes the protocol blocking; in an orchestrated saga it is a durable workflow service that keeps its own state and holds no locks.</dd></div>
+        <div class="gterm"><dt>Participant</dt><dd>A service or database that takes part in the transaction and holds locks during the prepare phase. "Participant" is 2PC vocabulary; in a saga the equivalent term is usually "step" or "service".</dd></div>
+        <div class="gterm"><dt>Blocking protocol</dt><dd>A protocol in which a failure can leave participants unable to proceed until an external party intervenes. 2PC is the canonical example: the failure of the single coordinator can cause the protocol to block, and it does not matter that the participants are themselves perfectly healthy.</dd></div>
+        <div class="gterm"><dt>In-doubt transaction</dt><dd>A transaction whose outcome nobody can determine because the decision-maker is unavailable. In 2PC these are the prepared records whose locks are held while the participants wait for a decision that may never come.</dd></div>
+        <div class="gterm"><dt>Saga</dt><dd>A business transaction broken into a sequence of independent <strong>local transactions</strong>, each committed to its own database on its own terms, with a <strong>compensating transaction</strong> defined for each. Introduced by García-Molina and Salem (SIGMOD 1987) for long-lived database transactions, and since repurposed for microservices. <em>See also:</em> compensating action, choreography, orchestration.</dd></div>
+        <div class="gterm"><dt>Compensating action (compensating transaction)</dt><dd>A business-level undo that reverses the effects of something already committed — "a refund instead of a rollback, a cancellation instead of an abort". The original definition adds an important caveat: a compensation "does not necessarily return the database to the state that existed when the execution of <code>T<sub>i</sub></code> began", because other transactions may have run in the meantime.</dd></div>
+        <div class="gterm"><dt>Eventual consistency</dt><dd>The guarantee that the system converges to a correct state once the work and its compensations finish, even though an intermediate state is observable in the meantime. The saga's substitute for 2PC's strong consistency, and the source of the "customer briefly sees a charge before the refund" problem.</dd></div>
+        <div class="gterm"><dt>Choreography</dt><dd>The decentralised saga style: each service publishes an event when it finishes its work and reacts to events from others. Nobody coordinates; everybody owns their own step and their own compensation. The talk's rule of thumb: it works for two or three steps and becomes untraceable at five or six.</dd></div>
+        <div class="gterm"><dt>Orchestration</dt><dd>The centralised saga style: a dedicated orchestrator service tells each participant what to do one step at a time, waits for confirmations, knows exactly which step failed, and runs the right compensations in the right order. The talk's recommendation for anything beyond simple flows.</dd></div>
+        <div class="gterm"><dt>Durable execution</dt><dd>Temporal's term for a workflow that keeps running and resumes correctly after a crash: the service re-runs the workflow code against a persisted <strong>Event History</strong> to rebuild its state, then continues. "The orchestrator doesn't leave locks dangling across your system. It's durable."</dd></div>
+        <div class="gterm"><dt>Event History</dt><dd>Temporal's append-only log of everything that has happened in a workflow execution. Durably persisted, so it survives worker crashes and service restarts; it is also the audit log and the source of truth for replay.</dd></div>
+        <div class="gterm"><dt>Dual write problem</dt><dd>Having to write to two separate systems — typically a database and a message broker — for one logical change, with no way to make the two atomic. Either write can fail alone, leaving the system half-updated. The talk's example: the database write succeeds and the publish fails, so the saga stalls.</dd></div>
+        <div class="gterm"><dt>Transactional outbox</dt><dd>Writing the business data <em>and</em> the outgoing event into the same database in one local transaction — the event goes into an outbox table alongside the data — so that either both commit or neither does. A separate relay then publishes from the outbox. From Chris Richardson's microservices patterns.</dd></div>
+        <div class="gterm"><dt>Change data capture (CDC)</dt><dd>Reading a database's own transaction log to discover committed changes, rather than polling tables. Used as one of the two ways to drive an outbox relay: the publisher tails the log and picks up new outbox rows. Debezium is the common implementation.</dd></div>
+        <div class="gterm"><dt>Transaction log tailing / polling publisher</dt><dd>Richardson's two names for the outbox relay implementations: tail the database's transaction log and publish what appears, or poll the outbox table on an interval and publish what is new.</dd></div>
+        <div class="gterm"><dt>Idempotent operation</dt><dd>An operation that "produces the same result whether you run it once or 10 times", so a retry cannot double-refund a customer. Required for every saga step, because retries and duplicate deliveries are inevitable.</dd></div>
+        <div class="gterm"><dt>Idempotency key</dt><dd>A client-supplied identifier that lets the server recognise a repeat of the same logical request and return the original result instead of acting again. The key must be stable across retries and unique per logical operation — derive it from the saga instance and step, never per attempt.</dd></div>
+        <div class="gterm"><dt>Spanner</dt><dd>Google's distributed SQL database. Its documentation describes multi-split transactions running the same prepare/vote/commit protocol the talk draws, with participants recording their locks in a Paxos log — 2PC, but entirely inside one system, hidden from the application developer.</dd></div>
+        <div class="gterm"><dt>YugabyteDB</dt><dd>A distributed SQL database whose multi-shard transactions use a transaction-status table (pending → committed / aborted) and provisional writes at each participant tablet, over Raft. Like Spanner: the 2PC-like protocol lives inside the database, not between services.</dd></div>
+        <div class="gterm"><dt>Life Beyond Distributed Transactions</dt><dd>Pat Helland's paper (CIDR 2007; ACM Queue 2016; CACM 2017) arguing that distributed transactions across autonomous services do not survive at internet scale — "the failure of a single node causes transaction commit to stall… the larger it gets, the more likely the system is going to be down" — and that the answer is workflow: "You can't use distributed transactions, so you use workflow."</dd></div>
+      </div>
+    </section>
+
+    <!-- ============ CHEAT SHEET ============ -->
+    <section id="cheat-sheet">
+      <div class="sec-head"><span class="sec-num">★</span><h2 id="heading-14">Cheat sheet — one page, printed</h2></div>
+      <p>Print this. The cards follow the order of the talk, and the decision ladder comes first because it is the part you will actually use at work.</p>
+
+      <div class="cheat-grid">
+        <div class="cheat-card"><div class="cheat-title">The one-line answer</div><div class="cheat-body">2PC is a <strong>textbook concept</strong>, not a production pattern. For cross-service transactions use a <strong>Saga</strong> — usually orchestrated — plus <strong>idempotent operations</strong> and a <strong>transactional outbox</strong>. If you need real strong consistency, put the data in one distributed database that does 2PC internally; do not build 2PC yourself.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">The decision ladder</div><div class="cheat-body"><strong>1.</strong> Can the data that changes together live in one database? → <strong>Yes:</strong> do that, it is the best answer. <strong>2.</strong> Genuinely distributed? → use a <strong>saga</strong>. <strong>3.</strong> Which flavour? → choreography for 2–3 independent steps; <strong>orchestration</strong> for branching, visibility, or tricky compensation. <strong>4.</strong> Need strong consistency? → one distributed database.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">2PC in one breath</div><div class="cheat-body">Coordinator asks every participant "can you commit?" → participant does the work, writes it durably, <strong>locks the rows</strong>, votes yes/no → any no ⇒ abort everyone and release locks → all yes ⇒ coordinator broadcasts commit, participants make it permanent and release locks. Result: strong consistency, no partial window.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Three ways 2PC fails</div><div class="cheat-body"><strong>Coordinator crash</strong> after the votes ⇒ participants can neither commit nor abort; all locks on those rows stay held. <strong>Slow participant</strong> ⇒ the whole system moves at the slowest participant's speed, locks held. <strong>Partition</strong> ⇒ the coordinator cannot reach a participant and has no safe default. One crash stalls unrelated transactions too.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Where 2PC is still fine</div><div class="cheat-body">Inside a distributed database (Spanner, YugabyteDB) where the coordinator and participants are the <em>same system</em> — they fail and recover together and the database hides the complexity. Across independent services with different deploy schedules and failure characteristics, it falls apart.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Saga in one breath</div><div class="cheat-body">Break the work into a chain of independent local transactions, each committed to its own database. On failure, run <strong>compensating actions</strong> — a refund instead of a rollback, a cancellation instead of an abort. You trade strong consistency for <strong>eventual consistency</strong>: a temporary inconsistent state, but nothing is blocked and other transactions keep flowing.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Choreography</div><div class="cheat-body">Publish/subscribe. The card service charges and publishes <em>card charged</em>; inventory reserves and publishes <em>inventory reserved</em>; the ledger service records. On failure the failing service publishes a failure event and upstream services compensate. <strong>Good:</strong> 2–3 steps, independent services, no need for central visibility. <strong>Bad:</strong> 5–6 services ⇒ state lives only in the logs.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Orchestration</div><div class="cheat-body">A dedicated orchestrator issues one command at a time, waits for confirmation, knows exactly which step failed, and runs the right compensations in the right order. It is <strong>durable</strong>: it restarts, re-reads its own state, and resumes — holding <strong>no locks</strong>, so a crash is a pause, not a deadlock. Tools: Temporal, AWS Step Functions (Standard, for durable/exactly-once).</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Why compensation is harder than it looks</div><div class="cheat-body">1. It is <strong>visible</strong> — the customer sees a charge then a refund, maybe two push notifications. 2. Some things are <strong>irreversible</strong> — you cannot unsend an email; a third-party webhook can be cancelled but not guaranteed to be processed. 3. Compensations <strong>can themselves fail</strong> ⇒ retries. 4. Retries ⇒ <strong>idempotency</strong>, or the customer gets refunded three times.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Idempotency, the short version</div><div class="cheat-body">Every saga step must produce the same result if run once or ten times. Send an <strong>idempotency key</strong> derived from (saga instance id + step name) — <strong>not</strong> from the attempt. Carry the event id on the message so consumers can dedupe: both broker redelivery and the outbox relay can publish twice.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">The dual write, and the outbox</div><div class="cheat-body"><strong>Bad:</strong> write the DB, then publish. Two writes, two systems — write-ok/publish-fail stalls the saga; publish-ok/write-fail makes downstream react to a phantom. <strong>Good:</strong> write the data <em>and</em> an outbox row in <strong>one local transaction</strong> (both commit or neither does), then let a relay publish — by CDC (tailing the transaction log) or by polling the table.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">The final pattern</div><div class="cheat-body"><strong>Saga with orchestration</strong> + <strong>independent (idempotent) operations at every step</strong> + <strong>transactional outbox</strong>. Accept eventual consistency — a deliberate industry trade-off.</div></div>
+
+        <div class="cheat-card"><div class="cheat-title">Words to use in a review</div><div class="cheat-body">"2PC is a blocking protocol, so the coordinator's availability bounds the whole system's." · "A saga trades strong consistency for eventual consistency, and pays for it with compensating actions." · "Every saga step needs an idempotency key, because retries are not an edge case." · "The dual write between the database and the broker is why we need the outbox."</div></div>
+      </div>
+    </section>
+
+    <!-- ============ SOURCES ============ -->
+    <section id="sources">
+      <div class="sec-head"><span class="sec-num">S</span><h2 id="heading-15">Sources and notes</h2></div>
+
+      <h3>Primary source</h3>
+      <p><strong><a href="https://www.youtube.com/watch?v=DOFflggE_0Q" target="_blank" rel="noopener">Distributed Transactions Explained: 2 Phase Commit vs Saga Pattern</a></strong> — Evan King, Hello Interview, published 5 May 2026, 14 min 46 s. This guide was written from the full recording and its English caption track; every timestamp above was checked against a rendered frame. Companion page linked from the video description: <a href="https://www.hellointerview.com/youtube/distributed-transactions" target="_blank" rel="noopener">hellointerview.com/youtube/distributed-transactions</a>.</p>
+
+      <h3>Supplemental sources</h3>
+      <p class="src">Everything below is added context, clearly separated from the talk. The talk itself does not cite any of these except Pat Helland's paper, which it shows on screen at 05:16.</p>
+      <ul>
+        <li>Pat Helland, <a href="https://queue.acm.org/detail.cfm?id=3025012" target="_blank" rel="noopener"><em>Life Beyond Distributed Transactions: An apostate's opinion</em></a>, ACM Queue 14(5), 2016 — updated version of the <a href="https://www.cidrdb.org/cidr2007/papers/cidr07p15.pdf" target="_blank" rel="noopener">CIDR 2007 paper</a>; also CACM 60(2), 2017. <em>Named in the talk at 05:16.</em></li>
+        <li>J. Gray, <a href="https://www.cs.utexas.edu/~rossbach/cs380p/papers/gray81vldb-transaction.pdf" target="_blank" rel="noopener"><em>The Transaction Concept: Virtues and Limitations</em></a>, VLDB 1981 — the original 2PC description ("wedding ceremony") and the abdication of the right to abort.</li>
+        <li>J. T. Gray &amp; L. Lamport, <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-2003-96.pdf" target="_blank" rel="noopener"><em>Consensus on Transaction Commit</em></a>, ACM TODS 31(1), 2006 (MSR-TR-2003-96) — why classic 2PC blocks, and what non-blocking variants cost.</li>
+        <li>H. García-Molina &amp; K. Salem, <a href="https://www.cs.princeton.edu/techreports/1987/070.pdf" target="_blank" rel="noopener"><em>Sagas</em></a>, SIGMOD 1987 — the original definition, the compensate-in-reverse guarantee, and the "does not necessarily restore the prior state" caveat.</li>
+        <li>Chris Richardson, <a href="https://microservices.io/patterns/data/saga.html" target="_blank" rel="noopener">Saga</a> and <a href="https://microservices.io/patterns/data/transactional-outbox.html" target="_blank" rel="noopener">Transactional Outbox</a> — microservices.io. The outbox pattern, its two relay implementations, and the "2PC across database and broker is not viable" argument.</li>
+        <li>Google Cloud, <a href="https://docs.cloud.google.com/spanner/docs/whitepapers/life-of-reads-and-writes" target="_blank" rel="noopener"><em>Life of Spanner Reads &amp; Writes</em></a> — 2PC inside a distributed database, phase by phase.</li>
+        <li>YugabyteDB, <a href="https://docs.yugabyte.com/stable/architecture/transactions/distributed-txns/" target="_blank" rel="noopener"><em>Distributed transactions</em></a> — the transaction-status table and provisional writes.</li>
+        <li>Temporal, <a href="https://docs.temporal.io/evaluate/understanding-temporal" target="_blank" rel="noopener"><em>Understanding Temporal</em></a> and <a href="https://docs.temporal.io/workflow-execution/event" target="_blank" rel="noopener"><em>Events and Event History</em></a>; <a href="https://temporal.io/about" target="_blank" rel="noopener"><em>About Temporal</em></a> — durable execution, and the Cadence lineage.</li>
+        <li>AWS, <a href="https://docs.aws.amazon.com/step-functions/latest/dg/choosing-workflow-type.html" target="_blank" rel="noopener"><em>Standard vs Express workflow types</em></a> — exactly-once versus at-least-once, and the "execution state doesn't persist" caveat for Express.</li>
+        <li>AWS Compute Blog, <a href="https://aws.amazon.com/blogs/compute/building-a-serverless-distributed-application-using-a-saga-orchestration-pattern/" target="_blank" rel="noopener"><em>Building a serverless distributed application using a saga orchestration pattern</em></a> — "In distributed systems architected with microservices, two-phase commit is not an option."</li>
+        <li>Debezium, <a href="https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html" target="_blank" rel="noopener"><em>Outbox Event Router</em></a> — the CDC flavour of the outbox, and the table shape it expects.</li>
+        <li>Stripe, <a href="https://docs.stripe.com/api/idempotent_requests" target="_blank" rel="noopener"><em>Idempotent requests</em></a> — key generation, reuse across retries, and the 255-character limit.</li>
+        <li>Orkes, <a href="https://orkes.io/blog/workflows-as-a-distributed-transactional-backend" target="_blank" rel="noopener"><em>Workflows as a Distributed Transactional Backend</em></a> — Netflix Conductor as a saga coordinator; and the <a href="https://medium.com/netflix-techblog/netflix-conductor-a-microservices-orchestrator-2e8d4771bf40" target="_blank" rel="noopener">original Netflix TechBlog post</a>.</li>
+        <li>InfoQ, <a href="https://www.infoq.com/articles/uber-migration-hybrid-cloud/" target="_blank" rel="noopener"><em>Uber's Blueprint for Zero-Downtime Migration of Complex Trip Fulfillment Platform</em></a> — Uber's use of the saga pattern across services.</li>
+        <li>Cockroach Labs, <a href="https://www.cockroachlabs.com/docs/stable/architecture/transaction-layer" target="_blank" rel="noopener"><em>Transaction layer</em></a> — cited only for the note in Chapter 9 about the database named in the video's description but not in the recording.</li>
+      </ul>
+
+      <h3>What this guide reconstructed, and what it did not</h3>
+      <ul>
+        <li><strong>The recording contains no code.</strong> It is a talking-head presentation with an animated slide deck. The four code blocks in Chapters 3, 7 and 8 are reconstructions written for this guide — a message-flow sketch of the protocol the speaker describes in words, an idempotency-key header in the shape Stripe documents, and two illustrative PostgreSQL outbox blocks adapted from Chris Richardson's published pattern. All are labelled as such in place.</li>
+        <li><strong>The slide diagrams were captured from the recording itself</strong> and cropped to the slide area, with the speaker's camera panel removed where it sat beside the content. Nothing has been redrawn or annotated.</li>
+        <li><strong>The caption track is machine-generated</strong> and contains recognisable errors — "those rights fails" and "two completely separate rights" for "writes", "item potent" for "idempotent", "Hello Intervu" for "Hello Interview". Every term that carries meaning in this guide was checked against the spoken audio and the on-screen text, and the timestamps were checked against rendered frames.</li>
+        <li><strong>Two small discrepancies are recorded rather than smoothed over.</strong> The video's <em>description</em> names CockroachDB where the spoken track and the slides name Spanner and YugabyteDB (see Chapter 9). The talk attributes Temporal to "the engineer behind Uber's Cadence"; it was in fact two co-founders who co-created Cadence at Uber (see Chapter 6). The talk's summary of Helland's paper is accurate as far as it goes, but the paper's formal contributions are entities, activities and workflow — not the saga pattern (see Chapter 4).</li>
+        <li><strong>Not covered here:</strong> the CAP theorem's relationship to sagas, three-phase commit, XA and the XA protocol, sagas in the "workflow/state-machine" formulation, and the differences between saga compensation and workflow rollback in process engines. Each is a legitimate follow-up, but the recording does not touch them.</li>
+      </ul>
+    </section>
+
+  <footer>
+    <p>Generated as a learning companion to "Distributed Transactions Explained: 2 Phase Commit vs Saga Pattern" by Evan King (Hello Interview).</p>
+    <p>Follow the original recording for the full walkthrough; slide captures accompany these notes, with timestamps linking back to the video.</p>
+    <p>Content for educational use only. Quotes are condensed from the video's captions; supplemental research is labelled and sourced inline.</p>
+  </footer></div>
+<div class="guide-end"><span>More ideas to explore in the library.</span><a class="button" href="../index.html">← All study guides</a></div>
+</main></div>
+<footer class="site-footer"><span>Video Notes · A developer's study library.</span><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>

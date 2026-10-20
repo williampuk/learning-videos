@@ -28,6 +28,13 @@
     "tags": ["Aeron", "Disruptor", "Distributed systems"], "source": "https://www.infoq.com/presentations/latency-race-zero/"
   },
   {
+    "id": "distributed-transactions", "topic": "Performance and distributed systems", "group": "performance-and-distributed-systems", "tone": "amber",
+    "folder": "Distributed_Transactions_Explained_2_Phase_Commit_vs_Saga_Pattern", "page": "index.html",
+    "title": "Distributed Transactions Explained: 2 Phase Commit vs Saga Pattern", "speaker": "Evan King", "venue": "Hello Interview", "duration": "14 min 46 s",
+    "description": "Once you shard your data, one order becomes three transactions on three machines. See how two-phase commit works, why it blocks once the participants are independent services, and why an orchestrated saga with a transactional outbox is the pattern that ships.",
+    "tags": ["Two-phase commit", "Saga pattern", "Transactional outbox"], "source": "https://www.youtube.com/watch?v=DOFflggE_0Q"
+  },
+  {
     "id": "computer-architecture", "topic": "Computer architecture", "group": "computer-architecture", "tone": "coral",
     "folder": "The_Most_Ambiguous_Concept_in_Computer_Science", "page": "index.html",
     "title": "The Most Ambiguous Concept in Computer Science", "speaker": "Core Dumped", "venue": "Computer science explained", "duration": "13 min",

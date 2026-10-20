@@ -8,12 +8,12 @@ Readers should be able to learn the video's concepts, code examples, and practic
 lessons without watching the entire recording.
 
 The website is a static GitHub Pages study library called **Video Notes**. The
-root `index.html` is the catalog: it links to all ten summaries, grouped into five
+root `index.html` is the catalog: it links to all eleven summaries, grouped into five
 topics. Search enhances the catalog; ordinary links work without JavaScript.
 `.github/workflows/pages.yml` packages and deploys the public site on pushes to
 `main` or manual runs once the repository's Pages source is set to GitHub Actions.
 
-All ten guides are plain HTML using the shared `assets/site.css` and
+All eleven guides are plain HTML using the shared `assets/site.css` and
 `assets/site.js`. The user prefers a dark theme. Use graphite backgrounds, warm
 white text, and lime accents throughout the site. Keep the shared typography,
 header, chapter sidebar, mobile contents, tables, code blocks, and image treatment
@@ -43,6 +43,7 @@ then regenerate the catalog and rebuild the public site.
 | Domain-driven design | `Tactical_Domain_Driven_Design_with_Java_and_Spring_by_Oliver_Drotbohm` | `index.html` | Java DDD building blocks, jMolecules, ArchUnit, Spring Modulith, module interactions. |
 | Java and concurrency | `Virtual_Threads_Structured_Concurrency_and_Scoped_Values_Putting_it_all_together_Spring_IO` | `index.html` | Project Loom, virtual threads, structured concurrency, scoped values, Spring Boot demos. |
 | Performance and distributed systems | `Latency_the_race_to_zero` | `index.html` | Latency, Disruptor, Aeron, replicated state machines, Raft, sequencer architecture. |
+| Performance and distributed systems | `Distributed_Transactions_Explained_2_Phase_Commit_vs_Saga_Pattern` | `index.html` | Two-phase commit mechanics, why 2PC blocks across services, saga choreography vs orchestration, compensating actions, idempotency, and the transactional outbox. |
 | Computer architecture | `The_Most_Ambiguous_Concept_in_Computer_Science` | `index.html` | ISA versus microarchitecture, ALUs, instruction encodings, binary compatibility, RISC/CISC. |
 | AI agents and system design | `System_Design_for_AI_Agents_Building_a_Multi_Agent_PR_Reviewer` | `LEARN.html` | Multi-agent PR review, grounding/retrieval, storage, orchestration, observability, Genesis Kit. |
 | AI agents and system design | `lauren_here_s_how_i_shipped_2_500_PRs_last_month_to_production` | `index.html` | Trust curve, verification skills (CLI + feature map), pstack, Dune agent-friendly architecture, Grok Bot automations. |
@@ -114,8 +115,18 @@ Use the following layout for every new video and when reorganizing existing work
   from the catalog and summaries and rejects private paths and media inputs.
   Keep that restriction when extending deployment; never upload the entire root.
 
-Use `.env` if you need `YTDLP_COOKIES_FILE`. Keep `.env` and `.cookies/` private
-and ignored. Do not print their contents, copy them into HTML, or publish them.
+To download recordings or captions with `yt-dlp`, provision the cookie file
+manually: discover it in the private `.cookies/` directory (prefer `cookies.txt`),
+export `YTDLP_COOKIES_FILE` in the same shell invocation as the `yt-dlp` call, and
+pass `--cookies "$YTDLP_COOKIES_FILE"`:
+
+```bash
+export YTDLP_COOKIES_FILE="$PWD/.cookies/cookies.txt"
+yt-dlp --cookies "$YTDLP_COOKIES_FILE" ... "<web-video-url>"
+```
+
+Keep `.cookies/` private and ignored. Do not print its contents, copy them into
+HTML, or publish them.
 
 ## Catalog and static hosting conventions
 
