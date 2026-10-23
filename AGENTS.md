@@ -168,6 +168,16 @@ HTML, or publish them.
 
 ## Creating or updating a summary
 
+Write for beginners using simple, concise language. Explain unfamiliar terms when
+first introduced, use short sentences, and make difficult ideas concrete with
+focused examples. Keep the technical meaning accurate.
+
+Synthesize the video's key lessons into a study guide rather than transcribing it
+or retelling every moment. Combine repeated explanations, omit filler and tangents,
+and prioritize the concepts, reasoning, code, and practical lessons readers need.
+Aim for a guide that takes substantially less time to read than watching the video,
+while retaining enough detail to understand and apply the material independently.
+
 1. Identify the video's folder, summary entry point, and available working sources.
 2. Study its transcript, recording, slides/screenshots, and companion material as
    needed. Historical prompts may refer to older working input paths.
